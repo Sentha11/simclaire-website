@@ -121,7 +121,7 @@ app.get("/api/esim/products", async (req, res) => {
   try {
     const data = await esimRequest(
       "get",
-      /products?destinationid=${encodeURIComponent(destinationid)}
+      '/products?destinationid=${encodeURIComponent(destinationid)}'
     );
     res.json(data);
   } catch (err) {
