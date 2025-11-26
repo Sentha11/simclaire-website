@@ -19,27 +19,38 @@ function App() {
 
   const [search, setSearch] = useState("");
 
+  // -----------------------------
+  // LOAD DESTINATIONS
+  // -----------------------------
   useEffect(() => {
     async function loadDestinations() {
       try {
         setLoadingDest(true);
         setDestError("");
-        const res = await fetch('${BACKEND_URL}/api/esim/destinations');
+
+        const res = await fetch(${BACKEND_URL}/api/esim/destinations);
         const data = await res.json();
+
         setDestinations(data);
         setFilteredDestinations(data);
-      } catch (err) {
+      } catch (e) {
         setDestError("Failed to load destinations.");
       } finally {
         setLoadingDest(false);
       }
     }
+
     loadDestinations();
   }, []);
 
+  // -----------------------------
+  // SEARCH BOX
+  // -----------------------------
   function handleSearch(e) {
-    const q = e.target.value.toLowerCase();
-    setSearch(e.target.value);
+    const value = e.target.value;
+    setSearch(value);
+
+    const q = value.toLowerCase();
     setFilteredDestinations(
       destinations.filter((d) =>
         d.destinationName.toLowerCase().includes(q)
@@ -47,24 +58,32 @@ function App() {
     );
   }
 
+  // -----------------------------
+  // LOAD PLANS FOR DESTINATION
+  // -----------------------------
   async function loadPlans(dest) {
     setSelectedDestination(dest);
-    setSelectedPlan(null);
     setPlans([]);
+    setSelectedPlan(null);
     setPlansError("");
 
     try {
       setLoadingPlans(true);
-      const res = await fetch('
-        ${BACKEND_URL}/api/esim/products?destinationid=${dest.destinationID}'
+
+      const res = await fetch(
+        ${BACKEND_URL}/api/esim/products?destinationid=${dest.destinationID}
       );
+
       const data = await res.json();
+
       const type1 = data.filter((p) => String(p.productType) === "1");
+
       if (!type1.length) {
         setPlansError("No instant eSIM plans available.");
       }
+
       setPlans(type1);
-    } catch (err) {
+    } catch (e) {
       setPlansError("Failed to load plans.");
     } finally {
       setLoadingPlans(false);
@@ -76,8 +95,12 @@ function App() {
     setPlans([]);
     setSelectedPlan(null);
     setQuantity(1);
+    setPlansError("");
   }
 
+  // -----------------------------
+  // RENDER UI
+  // -----------------------------
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800">
       <header className="bg-white border-b p-4 font-semibold text-lg">
@@ -85,6 +108,8 @@ function App() {
       </header>
 
       <main className="max-w-3xl mx-auto p-4 space-y-6">
+
+        {/* STEP 1: DESTINATION */}
         {!selectedDestination && (
           <div className="bg-white border rounded-lg p-4 space-y-3">
             <h2 className="text-sm font-semibold">Choose destination</h2>
@@ -104,12 +129,12 @@ function App() {
               <p className="text-xs text-slate-500">Loading…</p>
             )}
 
-            <div className="max-h-72 overflow-auto divide-y border rounded">
+            <div className="max-h-72 overflow-auto divide-y border rounded bg-slate-50">
               {filteredDestinations.map((d) => (
                 <button
                   key={d.destinationID}
                   onClick={() => loadPlans(d)}
-                  className="w-full px-3 py-2 text-left text-sm hover:bg-slate-100"
+                  className="w-full px-3 py-2 text-left text-sm hover:bg-white"
                 >
                   {d.destinationName}
                 </button>
@@ -118,12 +143,14 @@ function App() {
           </div>
         )}
 
+        {/* STEP 2: PLANS */}
         {selectedDestination && !selectedPlan && (
           <div className="bg-white border rounded-lg p-4 space-y-3">
             <div className="flex justify-between">
               <h2 className="text-sm font-semibold">
                 Plans for {selectedDestination.destinationName}
               </h2>
+
               <button
                 onClick={resetAll}
                 className="text-xs underline text-slate-500"
@@ -148,8 +175,7 @@ function App() {
                   className="w-full text-left border rounded p-3 text-sm hover:border-sky-500"
                 >
                   <div className="font-medium">
-                    {p.productDataAllowance} –{" "}
-                    {p.productValidity} days
+                    {p.productDataAllowance} – {p.productValidity} days
                   </div>
                   <div className="text-xs text-slate-600">
                     £{p.productPrice} • SKU: {p.productSku}
@@ -160,6 +186,7 @@ function App() {
           </div>
         )}
 
+        {/* STEP 3: REVIEW */}
         {selectedPlan && (
           <div className="bg-white border rounded-lg p-4 space-y-3">
             <h2 className="text-sm font-semibold">Review your plan</h2>
@@ -181,6 +208,7 @@ function App() {
 
             <div className="flex items-center gap-3">
               <span className="text-sm font-medium">Quantity</span>
+
               <input
                 type="number"
                 min="1"
