@@ -279,17 +279,14 @@ Where are you travelling today?`
       session.products = type1.slice(0, 5);
       session.step = "WAIT_PLAN";
 
-      const plansText = session.products
-        .map((p, idx) => {
-          const data = p.productDataAllowance || p.productName || "";
-          const validity = p.productValidity
-            ? ${p.productValidity} days
-            : "";
-          const price =
-            p.productPrice != null ? $${p.productPrice} : "";
-          return ${idx + 1}) ${data} ${validity} ${price};
-        })
-        .join("\n");
+      let plansText = session.products
+  .map((p, idx) => {
+    const data = p.productDataAllowance || p.productName || "";
+    const validity = p.productValidity ? ${p.productValidity} days : "";
+    const price = p.productPrice != null ? £${p.productPrice} : "";
+    return ${idx + 1}) ${data} ${validity} ${price};
+  })
+  .join("\n");
 
       return res
         .set("Content-Type", "text/xml")
