@@ -283,8 +283,8 @@ Where are you travelling today?`
   .map((p, idx) => {
     const data = p.productDataAllowance || p.productName || "";
     const validity = p.productValidity ? '${p.productValidity} days' : "";
-    const price = p.productPrice != null ? £${p.productPrice} : "";
-    return ${idx + 1}) ${data} ${validity} ${price};
+    const price = p.productPrice != null ? '£${p.productPrice}' : "";
+    return '${idx + 1}) ${data} ${validity} ${price}';
   })
   .join("\n");
 
