@@ -63,23 +63,25 @@ async function esimRequest(method, path, options = {}) {
       },
       ...options,
     });
+
     return res.data;
   } catch (err) {
     if (err.response?.status === 401) {
-      console.warn("Token expired. Refreshing…");
+      console.warn("Token expired. Refreshing...");
       esimToken = null;
-      const newToken = await getEsimToken();
+      const freshToken = await getEsimToken();
 
       const res2 = await axios({
         method,
         url,
         headers: {
-          Authorization: Bearer ${newToken},
+          Authorization: Bearer ${freshToken},
           "Content-Type": "application/json",
           ...(options.headers || {}),
         },
         ...options,
       });
+
       return res2.data;
     }
 
