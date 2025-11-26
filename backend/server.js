@@ -75,7 +75,7 @@ async function esimRequest(method, path, options = {}) {
         method,
         url,
         headers: {
-          Authorization: Bearer ${freshToken},
+          Authorization: 'Bearer ${freshToken}',
           "Content-Type": "application/json",
           ...(options.headers || {}),
         },
