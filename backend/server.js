@@ -62,7 +62,7 @@ async function esimRequest(method, path, options = {}) {
         ...(options.headers || {}),
       },
       ...options,
-    });
+    );
 
     return res.data;
   } catch (err) {
