@@ -22,7 +22,7 @@ function App() {
         setDestError("");
 
         // SAFE backtick usage:
-        const url = ${BACKEND_URL}/api/esim/destinations;
+        const url = '${BACKEND_URL}/api/esim/destinations';
 
         const res = await fetch(url);
         const data = await res.json();
