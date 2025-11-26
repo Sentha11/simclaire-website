@@ -36,7 +36,7 @@ async function getEsimToken() {
     return esimToken;
   }
 
-  const url = ${ESIM_BASE_URL}/authenticate;
+  const url = '${ESIM_BASE_URL}/authenticate';
 
   const res = await axios.post(url, {
     userName: ESIM_USERNAME,
@@ -54,14 +54,14 @@ async function getEsimToken() {
 async function esimRequest(method, path, options = {}) {
   const token = await getEsimToken();
 
-  const url = ${ESIM_BASE_URL}${path};
+  const url = '${ESIM_BASE_URL}${path}';
 
   try {
     const res = await axios({
       method,
       url,
       headers: {
-        Authorization: Bearer ${token},
+        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
         ...(options.headers || {}),
       },
@@ -79,7 +79,7 @@ async function esimRequest(method, path, options = {}) {
         method,
         url,
         headers: {
-          Authorization: Bearer ${newToken},
+          Authorization: `Bearer ${newToken}`,
           "Content-Type": "application/json",
           ...(options.headers || {}),
         },
