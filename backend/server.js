@@ -6,6 +6,7 @@ const axios = require("axios");
 
 const app = express();
 
+// Middleware
 app.use(cors());
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
@@ -13,7 +14,7 @@ app.use(express.json());
 // -----------------------------
 // ENV
 // -----------------------------
-const ESIM_BASE_URL = process.env.ESIM_BASE_URL;
+const ESIM_BASE_URL = process.env.ESIM_BASE_URL; // e.g. https://uat.esim-api.com/api/esim
 const ESIM_USERNAME = process.env.ESIM_USERNAME;
 const ESIM_PASSWORD = process.env.ESIM_PASSWORD;
 
@@ -29,11 +30,13 @@ let esimTokenExpiresAt = 0;
 
 async function getEsimToken() {
   const now = Date.now();
+
+  // Use cached token if still valid
   if (esimToken && now < esimTokenExpiresAt) {
     return esimToken;
   }
 
-  const url = '${ESIM_BASE_URL}/authenticate';
+  const url = ${ESIM_BASE_URL}/authenticate;
 
   const res = await axios.post(url, {
     userName: ESIM_USERNAME,
@@ -41,7 +44,7 @@ async function getEsimToken() {
   });
 
   esimToken = res.data.token;
-  const ttlSeconds = res.data.expirySeconds || 600;
+  const ttlSeconds = res.data.expirySeconds || 600; // default 10 mins
   esimTokenExpiresAt = now + ttlSeconds * 1000;
 
   console.log("🔐 eSIM token refreshed");
@@ -50,38 +53,40 @@ async function getEsimToken() {
 
 async function esimRequest(method, path, options = {}) {
   const token = await getEsimToken();
-  const url = '${ESIM_BASE_URL}${path}';
+
+  const url = ${ESIM_BASE_URL}${path};
 
   try {
-    const res = await axios(
+    const res = await axios({
       method,
       url,
       headers: {
-        Authorization: 'Bearer ${token}',
+        Authorization: Bearer ${token},
         "Content-Type": "application/json",
         ...(options.headers || {}),
       },
-      ...options,
-    );
+      ...(options.data ? { data: options.data } : {}),
+    });
 
     return res.data;
   } catch (err) {
-    // Retry on 401
+    // Retry once on 401 unauthorized
     if (err.response && err.response.status === 401) {
       esimToken = null;
+
       const newToken = await getEsimToken();
-      return (
-        await axios({
-          method,
-          url,
-          headers: {
-            Authorization: 'Bearer ${newToken}',
-            "Content-Type": "application/json",
-            ...(options.headers || {}),
-          },
-          ...options,
-        })
-      ).data;
+      const retry = await axios({
+        method,
+        url,
+        headers: {
+          Authorization: Bearer ${newToken},
+          "Content-Type": "application/json",
+          ...(options.headers || {}),
+        },
+        ...(options.data ? { data: options.data } : {}),
+      });
+
+      return retry.data;
     }
 
     throw err;
@@ -93,6 +98,21 @@ async function esimRequest(method, path, options = {}) {
 // -----------------------------
 app.get("/api/status", (req, res) => {
   res.json({ status: "OK", message: "Backend is running" });
+});
+
+// -----------------------------
+// TEST AUTH ENDPOINT
+// -----------------------------
+app.get("/api/test-auth", async (req, res) => {
+  try {
+    const token = await getEsimToken();
+    res.json({ ok: true, token });
+  } catch (err) {
+    res.status(500).json({
+      ok: false,
+      error: err.response?.data || err.message,
+    });
+  }
 });
 
 // -----------------------------
@@ -112,6 +132,7 @@ app.get("/api/esim/destinations", async (req, res) => {
 // -----------------------------
 app.get("/api/esim/products", async (req, res) => {
   const { destinationid } = req.query;
+
   if (!destinationid) {
     return res.status(400).json({ error: "destinationid is required" });
   }
@@ -119,7 +140,7 @@ app.get("/api/esim/products", async (req, res) => {
   try {
     const data = await esimRequest(
       "get",
-      '/products?destinationid=${encodeURIComponent(destinationid)}'
+      /products?destinationid=${encodeURIComponent(destinationid)}
     );
     res.json(data);
   } catch (err) {
@@ -137,7 +158,7 @@ app.post("/api/esim/purchase", async (req, res) => {
     return res.status(400).json({
       error: "sku, quantity, mobileno, and emailid are required",
     });
- }
+  }
 
   try {
     const payload = {
@@ -159,23 +180,8 @@ app.post("/api/esim/purchase", async (req, res) => {
   }
 });
 
-    // -----------------------------
-    // TEST AUTH ENDPOINT
-    // -----------------------------
-    app.get('/api/test-auth', async (req, res) => {
-      try {
-        const token = await getEsimToken();
-        res.json({ ok: true, token });
-      } catch (err) {
-        res.status(500).json({
-        ok: false,
-        error: err.response?.data || err.message,
-      });
-    }
-  });
-
 // ======================================================
-// ========== WHATSAPP AUTOMATION SECTION ===============
+// WHATSAPP AUTOMATION SECTION
 // ======================================================
 
 // TwiML helper
@@ -186,7 +192,7 @@ function twiml(message) {
 </Response>`;
 }
 
-// Simple session store
+// In-memory sessions
 const sessions = {};
 
 function cleanText(t) {
@@ -214,7 +220,7 @@ app.post("/webhook/whatsapp", async (req, res) => {
   const body = cleanText(req.body.Body);
   const session = getSession(from);
 
-  console.log("📲 Incoming WhatsApp:", { from, body, step: session.step });
+  console.log("📲 Incoming:", { from, body, step: session.step });
 
   try {
     // Reset
@@ -222,14 +228,7 @@ app.post("/webhook/whatsapp", async (req, res) => {
       sessions[from] = null;
       return res
         .set("Content-Type", "text/xml")
-        .send(
-          twiml(
-            `Okay, let's start again. 🌍
-
-Where are you travelling?
-Reply with the country name.`
-          )
-        );
+        .send(twiml("Restarting — where are you travelling?"));
     }
 
     // START
@@ -239,9 +238,7 @@ Reply with the country name.`
         .set("Content-Type", "text/xml")
         .send(
           twiml(
-            `👋 Welcome to SimClaire eSIMs!
-            
-Where are you travelling today?`
+            "👋 Welcome to SimClaire!\n\nWhere are you travelling?"
           )
         );
     }
@@ -262,9 +259,9 @@ Where are you travelling today?`
       });
 
       if (!matched) {
-        const msg = "I couldn't find that destiantion. PLease reply with a valid country name.";
-        res.set("Content-Type", "text/xml");
-        return res.send(twiml(msg));
+        return res
+          .set("Content-Type", "text/xml")
+          .send(twiml("Couldn't find that destination — try again."));
       }
 
       session.country = matched.destinationName;
@@ -272,9 +269,7 @@ Where are you travelling today?`
 
       const products = await esimRequest(
         "get",
-        `/products?destinationid=${encodeURIComponent(
-          matched.destinationID
-        )}`
+        /products?destinationid=${encodeURIComponent(matched.destinationID)}
       );
 
       const type1 = products.filter((p) => String(p.productType) === "1");
@@ -284,7 +279,7 @@ Where are you travelling today?`
           .set("Content-Type", "text/xml")
           .send(
             twiml(
-              "We don't have instant eSIMs for ${matched.destinationName} right now. Try another country."
+              We don't have instant eSIMs for ${matched.destinationName}. Try another country.
             )
           );
       }
@@ -293,25 +288,22 @@ Where are you travelling today?`
       session.step = "WAIT_PLAN";
 
       let plansText = session.products
-  .map((p, idx) => {
-    const data = p.productDataAllowance || p.productName || "";
-    const validity = p.productValidity ? '${p.productValidity} days' : "";
-    const price = p.productPrice != null ? '£${p.productPrice}' : "";
-    return '${idx + 1}) ${data} ${validity} ${price}';
-  })
-  .join("\n");
+        .map((p, idx) => {
+          const data = p.productDataAllowance || p.productName || "";
+          const validity = p.productValidity
+            ? ${p.productValidity} days
+            : "";
+          const price =
+            p.productPrice != null ? £${p.productPrice} : "";
+          return ${idx + 1}) ${data} ${validity} ${price};
+        })
+        .join("\n");
 
       return res
         .set("Content-Type", "text/xml")
         .send(
           twiml(
-            `You're travelling to ${matched.destinationName} 🌍
-
-Here are the plans:
-
-${plansText}
-
-Reply with 1, 2, 3… to choose.`
+            Great — you're travelling to ${matched.destinationName}.\n\nHere are the plans:\n\n${plansText}\n\nReply with 1, 2, 3…
           )
         );
     }
@@ -319,6 +311,7 @@ Reply with 1, 2, 3… to choose.`
     // PLAN
     if (session.step === "WAIT_PLAN") {
       const choice = parseInt(body, 10);
+
       if (
         Number.isNaN(choice) ||
         choice < 1 ||
@@ -328,7 +321,7 @@ Reply with 1, 2, 3… to choose.`
           .set("Content-Type", "text/xml")
           .send(
             twiml(
-              'Please reply with a number between 1 and ${session.products.length}.'
+              Please reply with a number between 1 and ${session.products.length}.
             )
           );
       }
@@ -338,24 +331,16 @@ Reply with 1, 2, 3… to choose.`
 
       return res
         .set("Content-Type", "text/xml")
-        .send(
-          twiml(
-            `Great choice!
-
-How many eSIMs do you need?`
-          )
-        );
+        .send(twiml("How many eSIMs do you need?"));
     }
 
-    // QTY
+    // QUANTITY
     if (session.step === "WAIT_QTY") {
       const qty = parseInt(body, 10);
       if (Number.isNaN(qty) || qty < 1 || qty > 10) {
         return res
           .set("Content-Type", "text/xml")
-          .send(
-            twiml('Please reply with a quantity between 1 and 10.')
-          );
+          .send(twiml("Please reply with a number between 1 and 10."));
       }
 
       session.quantity = qty;
@@ -363,22 +348,17 @@ How many eSIMs do you need?`
 
       return res
         .set("Content-Type", "text/xml")
-        .send(
-          twiml(
-            'Perfect. Send your mobile number (with country code).'
-          )
-        );
+        .send(twiml("Send your mobile number (with country code)."));
     }
 
     // MOBILE
     if (session.step === "WAIT_MOBILE") {
       const mobile = body.replace(/\s+/g, "");
+
       if (!/^\+?\d{6,15}$/.test(mobile)) {
         return res
           .set("Content-Type", "text/xml")
-          .send(
-            twiml('Please send a valid number including country code.')
-          );
+          .send(twiml("Send a valid mobile number (include country code)."));
       }
 
       session.mobile = mobile;
@@ -389,9 +369,10 @@ How many eSIMs do you need?`
         .send(twiml("Great — now send your email address."));
     }
 
-    // EMAIL
+    // EMAIL + PURCHASE
     if (session.step === "WAIT_EMAIL") {
       const email = body;
+
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
         return res
           .set("Content-Type", "text/xml")
@@ -399,9 +380,7 @@ How many eSIMs do you need?`
       }
 
       session.email = email;
-      session.step = "COMPLETE";
 
-      // PURCHASE
       const p = session.selectedProduct;
 
       const payload = {
@@ -421,33 +400,24 @@ How many eSIMs do you need?`
           data: payload,
         });
 
-        const esimInfo = purchase.esims?.[0] || null;
+        const esimInfo = purchase.esims?.[0];
 
-        let message = "";
-
-        if (esimInfo?.activationcode) {
-          message = `🎉 Your eSIM order is complete!
-
-Activation Code:
-${esimInfo.activationcode}
-
-We've also emailed the details to ${session.email}.`;
-        } else {
-          message = "Your order was received. We will email your eSIM shortly.";
-        }
+        const message = esimInfo?.activationcode
+          ? 🎉 Your eSIM order is complete!\n\nActivation Code:\n${esimInfo.activationcode}\n\nWe've emailed full details to ${session.email}.
+          : "Order received — your eSIM will be emailed shortly.";
 
         sessions[from] = null;
 
         return res
           .set("Content-Type", "text/xml")
-          .send(twiml("message"));
+          .send(twiml(message));
       } catch (err) {
         console.error("Purchase error:", err);
         return res
           .set("Content-Type", "text/xml")
           .send(
             twiml(
-              "Something went wrong while processing your order. Try again later."
+              "There was an issue processing your order. Try again later."
             )
           );
       }
@@ -456,7 +426,7 @@ We've also emailed the details to ${session.email}.`;
     // FALLBACK
     return res
       .set("Content-Type", "text/xml")
-      .send(twiml("I got confused 😅 — reply \"restart\" to start again."));
+      .send(twiml('I got confused 😅 — reply "restart" to start again.'));
   } catch (err) {
     console.error("Webhook error:", err);
     return res
@@ -470,5 +440,5 @@ We've also emailed the details to ${session.email}.`;
 // -----------------------------
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log('🔥 Backend running on port ${PORT}');
+  console.log(🔥 Backend running on port ${PORT});
 });
