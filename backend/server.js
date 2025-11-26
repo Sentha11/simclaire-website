@@ -53,7 +53,7 @@ async function esimRequest(method, path, options = {}) {
   const url = '${ESIM_BASE_URL}${path}';
 
   try {
-    const res = await axios({
+    const res = await axios(
       method,
       url,
       headers: {
