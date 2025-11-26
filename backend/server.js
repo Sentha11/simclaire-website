@@ -33,7 +33,7 @@ async function getEsimToken() {
     return esimToken;
   }
 
-  const url = ${ESIM_BASE_URL}/authenticate;
+  const url = '${ESIM_BASE_URL}/authenticate';
 
   const res = await axios.post(url, {
     userName: ESIM_USERNAME,
