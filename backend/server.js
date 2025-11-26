@@ -269,7 +269,7 @@ app.post("/webhook/whatsapp", async (req, res) => {
 
       const products = await esimRequest(
         "get",
-        /products?destinationid=${encodeURIComponent(matched.destinationID)}
+        `/products?destinationid=${encodeURIComponent(matched.destinationID)}`
       );
 
       const type1 = products.filter((p) => String(p.productType) === "1");
@@ -279,7 +279,7 @@ app.post("/webhook/whatsapp", async (req, res) => {
           .set("Content-Type", "text/xml")
           .send(
             twiml(
-              We don't have instant eSIMs for ${matched.destinationName}. Try another country.
+              "We don't have instant eSIMs for ${matched.destinationName}. Try another country."
             )
           );
       }
@@ -303,7 +303,7 @@ app.post("/webhook/whatsapp", async (req, res) => {
         .set("Content-Type", "text/xml")
         .send(
           twiml(
-            Great — you're travelling to ${matched.destinationName}.\n\nHere are the plans:\n\n${plansText}\n\nReply with 1, 2, 3…
+            "Great — you're travelling to ${matched.destinationName}.\n\nHere are the plans:\n\n${plansText}\n\nReply with 1, 2, 3…"
           )
         );
     }
@@ -321,7 +321,7 @@ app.post("/webhook/whatsapp", async (req, res) => {
           .set("Content-Type", "text/xml")
           .send(
             twiml(
-              Please reply with a number between 1 and ${session.products.length}.
+              "Please reply with a number between 1 and ${session.products.length}."
             )
           );
       }
