@@ -443,7 +443,7 @@ We've also emailed the details to ${session.email}.`;
     // FALLBACK
     return res
       .set("Content-Type", "text/xml")
-      .send(twiml("I got confused 😅 — reply "restart" to start again."));
+      .send(twiml("I got confused 😅 — reply \"restart\" to start again."));
   } catch (err) {
     console.error("Webhook error:", err);
     return res
