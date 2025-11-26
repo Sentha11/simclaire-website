@@ -249,13 +249,9 @@ Where are you travelling today?`
       });
 
       if (!matched) {
-        return res
-          .set("Content-Type", "text/xml")
-          .send(
-            twiml(
-              'I couldn't find that destination. Please reply with a valid country name.'
-            )
-          );
+        const msg = "I couldn't find that destiantion. PLease reply with a valid country name.";
+        res.set("Content-Type", "text/xml");
+        return res.send(twiml(msg));
       }
 
       session.country = matched.destinationName;
