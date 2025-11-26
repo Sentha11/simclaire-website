@@ -252,9 +252,7 @@ Where are you travelling today?`
         return res
           .set("Content-Type", "text/xml")
           .send(
-            twiml(
-              'I couldn't find that destination. Please reply with a valid country name.'
-            )
+            twiml('I couldn't find that destination. Please reply with a valid country name.')
           );
       }
 
