@@ -50,7 +50,7 @@ async function getEsimToken() {
 
 async function esimRequest(method, path, options = {}) {
   const token = await getEsimToken();
-  const url = ${ESIM_BASE_URL}${path};
+  const url = '${ESIM_BASE_URL}${path}';
 
   try {
     const res = await axios({
