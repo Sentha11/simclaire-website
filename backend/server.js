@@ -448,7 +448,7 @@ We've also emailed the details to ${session.email}.`;
     console.error("Webhook error:", err);
     return res
       .set("Content-Type", "text/xml")
-      .send(twiml"(Something went wrong — try again."));
+      .send(twiml("Something went wrong — try again."));
   }
 });
 
