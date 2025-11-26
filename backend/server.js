@@ -403,7 +403,7 @@ app.post("/webhook/whatsapp", async (req, res) => {
         const esimInfo = purchase.esims?.[0];
 
         const message = esimInfo?.activationcode
-          ? 🎉 Your eSIM order is complete!\n\nActivation Code:\n${esimInfo.activationcode}\n\nWe've emailed full details to ${session.email}.
+          ? `🎉 Your eSIM order is complete!\n\nActivation Code:\n${esimInfo.activationcode}\n\nWe've emailed full details to ${session.email}.`
           : "Order received — your eSIM will be emailed shortly.";
 
         sessions[from] = null;
