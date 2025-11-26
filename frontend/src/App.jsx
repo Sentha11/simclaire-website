@@ -24,7 +24,7 @@ function App() {
       try {
         setLoadingDest(true);
         setDestError("");
-        const res = await fetch(${BACKEND_URL}/api/esim/destinations);
+        const res = await fetch('${BACKEND_URL}/api/esim/destinations');
         const data = await res.json();
         setDestinations(data);
         setFilteredDestinations(data);
@@ -55,8 +55,8 @@ function App() {
 
     try {
       setLoadingPlans(true);
-      const res = await fetch(
-        ${BACKEND_URL}/api/esim/products?destinationid=${dest.destinationID}
+      const res = await fetch('
+        ${BACKEND_URL}/api/esim/products?destinationid=${dest.destinationID}'
       );
       const data = await res.json();
       const type1 = data.filter((p) => String(p.productType) === "1");
