@@ -139,6 +139,22 @@ app.post("/api/esim/purchase", async (req, res) => {
     return res.status(400).json({
       error: "sku, quantity, mobileno, and emailid are required",
     });
+    
+    // -----------------------------
+    // TEST AUTH ENDPOINT
+    // -----------------------------
+    app.get('/api/test-auth', async (req, res) => {
+      try {
+        const token = await getEsimToken();
+        res.json({ ok: true, token });
+      } catch (err) {
+        res.status(500).json({
+        ok: false,
+        error: err.response?.data || err.message,
+      });
+    }
+  });
+    
   }
 
   try {
