@@ -315,7 +315,7 @@ Reply with 1, 2, 3… to choose.`
           .set("Content-Type", "text/xml")
           .send(
             twiml(
-              Please reply with a number between 1 and ${session.products.length}.
+              'Please reply with a number between 1 and ${session.products.length}.'
             )
           );
       }
