@@ -373,7 +373,7 @@ How many eSIMs do you need?`
 
       return res
         .set("Content-Type", "text/xml")
-        .send(twiml(Great — now send your email address.));
+        .send(twiml("Great — now send your email address."));
     }
 
     // EMAIL
@@ -382,7 +382,7 @@ How many eSIMs do you need?`
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
         return res
           .set("Content-Type", "text/xml")
-          .send(twiml(Send a valid email address.));
+          .send(twiml("Send a valid email address."));
       }
 
       session.email = email;
@@ -420,21 +420,21 @@ ${esimInfo.activationcode}
 
 We've also emailed the details to ${session.email}.`;
         } else {
-          message = Your order was received. We will email your eSIM shortly.;
+          message = "Your order was received. We will email your eSIM shortly.";
         }
 
         sessions[from] = null;
 
         return res
           .set("Content-Type", "text/xml")
-          .send(twiml(message));
+          .send(twiml("message"));
       } catch (err) {
         console.error("Purchase error:", err);
         return res
           .set("Content-Type", "text/xml")
           .send(
             twiml(
-              Something went wrong while processing your order. Try again later.
+              "Something went wrong while processing your order. Try again later."
             )
           );
       }
@@ -443,12 +443,12 @@ We've also emailed the details to ${session.email}.`;
     // FALLBACK
     return res
       .set("Content-Type", "text/xml")
-      .send(twiml(I got confused 😅 — reply "restart" to start again.));
+      .send(twiml("I got confused 😅 — reply "restart" to start again."));
   } catch (err) {
     console.error("Webhook error:", err);
     return res
       .set("Content-Type", "text/xml")
-      .send(twiml(Something went wrong — try again.));
+      .send(twiml"(Something went wrong — try again."));
   }
 });
 
