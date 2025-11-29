@@ -4,6 +4,14 @@ const express = require("express");
 const cors = require("cors");
 const axios = require("axios");
 
+// ------------------------------------
+// QuotaGuard Proxy Setup
+// ------------------------------------
+const { HttpsProxyAgent } = require('https-proxy-agent');
+const QUOTAGUARD_URL = process.env.QUOTAGUARD_URL;
+const proxyAgent = new HttpsProxyAgent(QUOTAGUARD_URL);
+// -----------------------------
+
 const app = express();
 
 // Middleware
@@ -36,12 +44,16 @@ async function getEsimToken() {
     return esimToken;
   }
 
-  const url = '${ESIM_BASE_URL}/authenticate';
+  const url = `${ESIM_BASE_URL}/authenticate`;
 
   const res = await axios.post(url, {
     userName: ESIM_USERNAME,
     password: ESIM_PASSWORD,
-  });
+  },
+  {
+   httpsAgent: proxyAgent, 
+  }
+  );
 
   esimToken = res.data.token;
   const ttlSeconds = res.data.expirySeconds || 600; // default 10 mins
