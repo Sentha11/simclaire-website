@@ -7,10 +7,27 @@ const axios = require("axios");
 // ------------------------------------
 // QuotaGuard Proxy Setup
 // ------------------------------------
-const { HttpsProxyAgent } = require('https-proxy-agent');
-const QUOTAGUARD_URL = process.env.QUOTAGUARD_URL;
-const proxyAgent = new HttpsProxyAgent(QUOTAGUARD_URL);
+//const { HttpsProxyAgent } = require('https-proxy-agent');
+//const QUOTAGUARD_URL = process.env.QUOTAGUARD_URL;
+//const proxyAgent = new HttpsProxyAgent(QUOTAGUARD_URL);
 // -----------------------------
+
+// -----------------------------------------------------
+// QuotaGuard Proxy Setup (SAFE)
+// -----------------------------------------------------
+let proxyAgent = null;
+
+if (process.env.QUOTAGUARD_URL) {
+  try {
+    const { HttpsProxyAgent } = require("https-proxy-agent");
+    proxyAgent = new HttpsProxyAgent(process.env.QUOTAGUARD_URL);
+    console.log("🔐 QuotaGuard proxy enabled");
+  } catch (err) {
+    console.error("❌ Failed to initialize QuotaGuard:", err.message);
+  }
+} else {
+  console.warn("⚠️ QUOTAGUARD_URL not found — running without proxy");
+}
 
 const app = express();
 
@@ -51,7 +68,7 @@ async function getEsimToken() {
     password: ESIM_PASSWORD,
   },
   {
-   httpsAgent: proxyAgent, 
+   httpsAgent: proxyAgent || undefined, 
   }
   );
 
@@ -62,7 +79,7 @@ async function getEsimToken() {
   console.log("🔐 eSIM token refreshed");
   return esimToken;
 }
-
+/*
 async function esimRequest(method, path, options = {}) {
   const token = await getEsimToken();
 
@@ -104,7 +121,50 @@ async function esimRequest(method, path, options = {}) {
     throw err;
   }
 }
+*/
+async function esimRequest(method, path, options = {}) {
+  const token = await getEsimToken();
+  const url = `${ESIM_BASE_URL}${path}`;
 
+  try {
+    const res = await axios({
+      method,
+      url,
+      httpsAgent: proxyAgent,   // <— ADD THIS
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        ...(options.headers || {}),
+      },
+      ...options,
+    });
+
+    return res.data;
+
+  } catch (err) {
+    // Retry on expired token
+    if (err.response && err.response.status === 401) {
+      esimToken = null;
+      const newToken = await getEsimToken();
+
+      return (
+        await axios({
+          method,
+          url,
+          httpsAgent: proxyAgent,  // <— ADD THIS IN RETRY TOO
+          headers: {
+            Authorization: `Bearer ${newToken}`,
+            "Content-Type": "application/json",
+            ...(options.headers || {}),
+          },
+          ...options,
+        })
+      ).data;
+    }
+
+    throw err;
+  }
+}
 // -----------------------------
 // Simple health check
 // -----------------------------
