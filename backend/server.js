@@ -356,7 +356,7 @@ app.post("/webhook/whatsapp", async (req, res) => {
           .set("Content-Type", "text/xml")
           .send(
             twiml(
-              "We don't have instant eSIMs for ${matched.destinationName}. Try another country."
+              `We don't have instant eSIMs for ${matched.destinationName}. Try another country.`
             )
           );
       }
@@ -378,7 +378,7 @@ app.post("/webhook/whatsapp", async (req, res) => {
         .set("Content-Type", "text/xml")
         .send(
           twiml(
-            "Great — you're travelling to ${matched.destinationName}.\n\nHere are the plans:\n\n${plansText}\n\nReply with 1, 2, 3…"
+            `Great — you're travelling to ${matched.destinationName}.\n\nHere are the plans:\n\n${plansText}\n\nReply with 1, 2, 3…`
           )
         );
     }
