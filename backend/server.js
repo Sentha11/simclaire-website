@@ -318,7 +318,8 @@ app.post("/webhook/whatsapp", async (req, res) => {
     // COUNTRY
     if (session.step === "WAIT_COUNTRY") {
       const countryInput = body.toLowerCase();
-      const destinations = await esimRequest("get", "/destinations");
+      const response = await esimRequest("get", "/destinations");
+      const destinations = response.data;
 
       const matched = destinations.find((d) => {
         const name = (d.destinationName || "").toLowerCase();
