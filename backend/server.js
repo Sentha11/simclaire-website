@@ -318,6 +318,8 @@ app.post("/webhook/whatsapp", async (req, res) => {
     // COUNTRY
     if (session.step === "WAIT_COUNTRY") {
       const countryInput = body.toLowerCase();
+      
+      // fetch destinations
       const response = await esimRequest("get", "/destinations");
       const destinations = response.data;
 
@@ -340,10 +342,12 @@ app.post("/webhook/whatsapp", async (req, res) => {
       session.country = matched.destinationName;
       session.destinationId = matched.destinationID;
 
-      const products = await esimRequest(
+      const productResponse = await esimRequest(
         "get",
         `/products?destinationid=${encodeURIComponent(matched.destinationID)}`
       );
+
+      const products = productResponse.data; // <-- Fixed
 
       const type1 = products.filter((p) => String(p.productType) === "1");
 
@@ -363,9 +367,7 @@ app.post("/webhook/whatsapp", async (req, res) => {
       let plansText = session.products
         .map((p, idx) => {
           const data = p.productDataAllowance || p.productName || "";
-          const validity = p.productValidity
-            ? `${p.productValidity} days`
-            : "";
+          const validity = p.productValidity ? `${p.productValidity} days`: "";
           const price =
             p.productPrice != null ? `£${p.productPrice}` : "";
           return `${idx + 1}) ${data} ${validity} ${price}`;
