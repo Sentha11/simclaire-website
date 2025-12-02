@@ -79,6 +79,15 @@ async function getEsimToken() {
   console.log("🔐 eSIM token refreshed");
   return esimToken;
 }
+
+// ---- FLAG EMOJI HELPER ----
+function flagEmoji(isoCode) {
+  if (!isoCode) return "";
+  const code = isoCode.toUpperCase();
+  return code.replace(/./g, char =>
+    String.fromCodePoint(char.charCodeAt(0) + 127397)
+  );
+}
 /*
 async function esimRequest(method, path, options = {}) {
   const token = await getEsimToken();
@@ -341,6 +350,9 @@ app.post("/webhook/whatsapp", async (req, res) => {
 
       session.country = matched.destinationName;
       session.destinationId = matched.destinationID;
+      session.countryIso = matched.isoCode;
+
+      const flag =flagEmoji(matched.iscode);
 
       const productResponse = await esimRequest(
         "get",
@@ -378,7 +390,7 @@ app.post("/webhook/whatsapp", async (req, res) => {
         .set("Content-Type", "text/xml")
         .send(
           twiml(
-            `Great — you're travelling to ${matched.destinationName}.\n\nHere are the plans:\n\n${plansText}\n\nReply with 1, 2, 3…`
+            `${flag} Great — you're travelling to ${matched.destinationName}.\n\nHere are the plans:\n\n${plansText}\n\nReply with 1, 2, 3…`
           )
         );
     }
