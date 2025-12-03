@@ -10,6 +10,10 @@ const axios = require("axios");
 const { HttpsProxyAgent } = require("hpagent");
 process.env.NODE_TLS_REJECT_UNAUTHORIZED ="0";
 
+const tls = require("tls");
+tls.DEFAULT_MIN_VERSION = "TLSv1.2";
+tls.DEFAULT_MAX_VERSION = "TLSv1.2";
+
 let proxyAgent = null;
 
 if (process.env.QUOTAGUARD_URL) {
@@ -62,7 +66,7 @@ async function getEsimToken() {
     },
     {
       httpsAgent: proxyAgent,
-      //proxy: false
+      proxy: false
     }
   );
 
@@ -95,7 +99,7 @@ async function esimRequest(method, path, options = {}) {
       method,
       url,
       httpsAgent: proxyAgent,
-      //proxy: false,
+      proxy: false,
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
