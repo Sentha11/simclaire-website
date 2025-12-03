@@ -18,8 +18,8 @@ tls.DEFAULT_MAX_VERSION = "TLSv1.2";
 let proxyAgent = null;
 
 if (process.env.QUOTAGUARD_URL) {
-  proxyAgent = new HttpsProxyAgent
-    proxy: (process.env.QUOTAGUARD_URL);
+  proxyAgent = new HttpsProxyAgent (
+    {proxy: process.env.QUOTAGUARD_URL});
     //keepAlive: true,
     //keepAliveMsecs: 10000,
     //maxSockets: 256,
@@ -34,6 +34,19 @@ if (process.env.QUOTAGUARD_URL) {
 } else {
   console.warn("⚠️ QUOTAGUARD_URL missing — proxy is OFF");
 }
+
+
+const http = require("http");
+
+http.get({
+  host: "api.ipify.org",
+  path: "/",
+  agent: proxyAgent
+}, res => {
+  let body = "";
+  res.on("data", chunk => body += chunk);
+  res.on("end", () => console.log("🌍 Proxy IP:", body));
+});
 
 // ------------------------------------
 const app = express();
