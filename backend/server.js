@@ -96,6 +96,9 @@ function flagEmoji(code) {
 async function esimRequest(method, path, options = {}) {
   const token = await getEsimToken();
   const url = `${ESIM_BASE_URL}${path}`;
+  console.log("Using proxy:", proxyAgent != null);
+  console.log("Requesting:", url);
+
 
   try {
     const res = await axios({
