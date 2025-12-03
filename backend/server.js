@@ -15,7 +15,7 @@ const axios = require("axios");
 // -----------------------------------------------------
 // QuotaGuard Proxy Setup (SAFE)
 // -----------------------------------------------------
-let proxyAgent = null;
+/*let proxyAgent = null;
 
 if (process.env.QUOTAGUARD_URL) {
   try {
@@ -27,6 +27,21 @@ if (process.env.QUOTAGUARD_URL) {
   }
 } else {
   console.warn("⚠️ QUOTAGUARD_URL not found — running without proxy");
+}
+*/
+const { HttpsProxyAgent } = require("hpagent");
+
+let proxyAgent = null;
+
+if (process.env.QUOTAGUARD_URL) {
+  proxyAgent = new HttpsProxyAgent({
+    proxy: process.env.QUOTAGUARD_URL,
+    keepAlive: true,
+    keepAliveMsecs: 10000,
+    maxSockets: 256,
+    maxFreeSockets: 256,
+  });
+  console.log("🔐 QuotaGuard STATIC proxy enabled (hpagent)");
 }
 
 const app = express();
@@ -139,7 +154,8 @@ async function esimRequest(method, path, options = {}) {
     const res = await axios({
       method,
       url,
-      httpsAgent: proxyAgent,   // <— ADD THIS
+      httpsAgent: proxyAgent || false,   // <— ADD THIS
+      proxy: false,
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
@@ -147,7 +163,8 @@ async function esimRequest(method, path, options = {}) {
       },
       ...options,
     });
-
+    
+    console.log("🚨 Proxy being used:", !!proxyAgent);
     return res.data;
 
   } catch (err) {
@@ -160,7 +177,8 @@ async function esimRequest(method, path, options = {}) {
         await axios({
           method,
           url,
-          httpsAgent: proxyAgent,  // <— ADD THIS IN RETRY TOO
+          httpsAgent: proxyAgent || false,  // <— ADD THIS IN RETRY TOO
+          proxy: false,
           headers: {
             Authorization: `Bearer ${newToken}`,
             "Content-Type": "application/json",
@@ -352,7 +370,7 @@ app.post("/webhook/whatsapp", async (req, res) => {
       session.destinationId = matched.destinationID;
       session.countryIso = matched.isoCode;
 
-      const flag =flagEmoji(matched.iscode);
+      const flag =flagEmoji(matched.isoCode);
 
       const productResponse = await esimRequest(
         "get",
