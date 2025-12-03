@@ -307,6 +307,8 @@ function formatProductsList(countryName, flag, products) {
 
 // WhatsApp webhook – set this URL in Twilio: /webhook/whatsapp
 app.post("/webhook/whatsapp", async (req, res) => {
+    res.set("Content-Type", "text/xml");
+  
   const from = req.body.WaId || req.body.From || "unknown";
   const body = cleanText(req.body.Body || "");
   const lower = body.toLowerCase();
@@ -322,9 +324,9 @@ app.post("/webhook/whatsapp", async (req, res) => {
 1) Browse eSIM plans
 2) Help & FAQ
 3) Contact support
-
+  }
 Reply with 1, 2, or 3.`;
-    res.set("Content-Type", "text/xml");
+   // res.set("Content-Type", "text/xml");
     return res.send(twiml(msg));
   }
 
@@ -343,7 +345,6 @@ Reply with 1, 2, or 3.`;
     return res.send(twiml(msg));
   }
 
-  try {
     // ----------------- MENU STATE -----------------
     if (session.step === "MENU") {
       // First-time or generic hi
@@ -360,17 +361,17 @@ I can help you instantly buy travel eSIMs.
 3) Contact support
 
 Reply with 1, 2, or 3.`;
-        res.set("Content-Type", "text/xml");
+        //res.set("Content-Type", "text/xml");
         return res.send(twiml(msg));
       }
-
+/* ---- Browse plan ---- */
       if (lower === "1") {
         session.step = "WAIT_COUNTRY";
         const msg = `🌍 Great! Let's find you a plan.
 
 Please type the country you're travelling to.
 For example: Italy, USA, Japan, United Kingdom.`;
-        res.set("Content-Type", "text/xml");
+       // res.set("Content-Type", "text/xml");
         return res.send(twiml(msg));
       }
 
@@ -382,7 +383,7 @@ For example: Italy, USA, Japan, United Kingdom.`;
 * Most eSIMs activate when you land.
 
 Type menu to go back or 1 to browse plans.`;
-        res.set("Content-Type", "text/xml");
+      //  res.set("Content-Type", "text/xml");
         return res.send(twiml(msg));
       }
 
@@ -393,7 +394,7 @@ Email: support@simclaire.com
 We'll help you with any eSIM issues.
 
 Type menu to go back.`;
-        res.set("Content-Type", "text/xml");
+      //  res.set("Content-Type", "text/xml");
         return res.send(twiml(msg));
       }
 
@@ -404,7 +405,7 @@ Reply with:
 1) Browse eSIM plans
 2) Help & FAQ
 3) Contact support`;
-      res.set("Content-Type", "text/xml");
+     // res.set("Content-Type", "text/xml");
       return res.send(twiml(msg));
     }
 
