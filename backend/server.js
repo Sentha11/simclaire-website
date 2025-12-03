@@ -3,50 +3,25 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const axios = require("axios");
+const { HttpsProxyAgent } = require("https-proxy-agent");
 
 // ------------------------------------
 // 🔐 QuotaGuard STATIC Proxy (Stable)
 // ------------------------------------
-const { HttpsProxyAgent } = require("https-proxy-agent");
-//const { HttpsProxyAgent } = require("hpagent");
-//process.env.NODE_TLS_REJECT_UNAUTHORIZED ="0";
-
-const tls = require("tls");
-tls.DEFAULT_MIN_VERSION = "TLSv1.2";
-tls.DEFAULT_MAX_VERSION = "TLSv1.2";
 
 let proxyAgent = null;
 
 if (process.env.QUOTAGUARD_URL) {
+  try {
   proxyAgent = new HttpsProxyAgent (process.env.QUOTAGUARD_URL);
-    //keepAlive: true,
-    //keepAliveMsecs: 10000,
-    //maxSockets: 256,
-    //maxFreeSockets: 256,
-    //rejectUnauthorized: false,
-    //checkServerIdentity: () => undefined,
-   // minVersion: "TLSv1.2",
-   // maxVersion: "TLSv1.2",
-  
-
   console.log("🔐 QuotaGuard STATIC proxy enabled!");
   console.log(" QUOTAGUARD_URL =", process.env.QUOTAGUARD_URL);
-} else {
-  console.warn("⚠️ QUOTAGUARD_URL missing — proxy is OFF");
+} catch (err) {
+  console.error("⚠️ Failed to create proxy agent:", err.message);
 }
-
-
-const http = require("http");
-
-http.get({
-  host: "api.ipify.org",
-  path: "/",
-  agent: proxyAgent
-}, res => {
-  let body = "";
-  res.on("data", chunk => body += chunk);
-  res.on("end", () => console.log("🌍 Proxy IP:", body));
-});
+} else {
+  console.warn(" ⚠️ QUOTAGUARD_URL not set - calls will go direct (no proxy).");
+}
 
 // ------------------------------------
 const app = express();
@@ -61,19 +36,26 @@ const ESIM_BASE_URL = process.env.ESIM_BASE_URL;
 const ESIM_USERNAME = process.env.ESIM_USERNAME;
 const ESIM_PASSWORD = process.env.ESIM_PASSWORD;
 
+if (!ESIM_BASE_URL || !ESIM_USERNAME || !ESIM_PASSWORD) {
+  console.warn ("⚠️ missing esim api environment variables");
+}
 // -----------------------------
 // Token cache
 // -----------------------------
 let esimToken = null;
 let esimTokenExpiresAt = 0;
 
+// gets esim function
 async function getEsimToken() {
   const now = Date.now();
 
   if (esimToken && now < esimTokenExpiresAt) return esimToken;
-
+}
   const url = `${ESIM_BASE_URL}/authenticate`;
+  console.log("GetEsimToken ->", url);
+  console.log("Using proxy:", !!proxyAgent);
 
+  try {
   const res = await axios.post(
     url,
     {
@@ -81,16 +63,25 @@ async function getEsimToken() {
       password: ESIM_PASSWORD
     },
     {
-      httpsAgent: proxyAgent,
-      proxy: false
+      httpsAgent: proxyAgent || undefined,
+      proxy: false,
     }
   );
 
   esimToken = res.data.token;
-  esimTokenExpiresAt = now + (res.data.expirySeconds || 600) * 1000;
+  const ttlSeconds = res.data.expirySeconds || 600;
+  esimTokenExpiresAt = now + ttlSeconds * 1000;
 
   console.log("🔐 eSIM token refreshed");
   return esimToken;
+}catch(err) {
+  console.error(
+    " getEsimToken error:",
+    err.code,
+    err.response?.status,
+    err.response?.data || err.message
+  );
+  throw err;
 }
 
 // -----------------------------
@@ -108,17 +99,58 @@ function flagEmoji(code) {
 // -----------------------------
 async function esimRequest(method, path, options = {}) {
   const token = await getEsimToken();
+  const url =  `${ESIM_BASE_URL}${path}`;
+
+  console.log("🔗 esimRequest →", method.toUpperCase(), url);
+
+  const Config = {
+    method,
+    url,
+    httpsAgent: proxyAgent || undefined,
+    proxy: false,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    },
+    ...options,
+  };
+
+  try {
+    const res = await axios(axiosConfig);
+    return res.data;
+  } catch (err) {
+    console.error(
+      " esimrequest error:",
+      err.code,
+      err.response?.status,
+      err.response?.data || err.message
+    );
+
+    // retry on 401
+    if (err.response && err.response.status === 401) {
+      esimToken = null;
+      const newToken = await getEsimToken();
+      Config.headers.Authorization = `Bearer ${newToken}`;
+      const retry = await axios(Config);
+      return retry.data;
+    }
+    throw err;
+  }
+}
+/*async function esimRequest(method, path, options = {}) {
+  const token = await getEsimToken();
   const url = `${ESIM_BASE_URL}${path}`;
-  console.log("Using proxy:", proxyAgent != null);
-  console.log("Requesting:", url);
+  console.log("esimRequest ->", method.toUpperCase(), url);
+  console.log("Using proxy:", !!proxyAgent);
 
 
   try {
     const res = await axios({
       method,
       url,
-      httpsAgent: proxyAgent,
-      proxy: false,
+      //httpsAgent: proxyAgent || undefined,
+      //proxy: false,
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
@@ -126,6 +158,11 @@ async function esimRequest(method, path, options = {}) {
       },
       ...options
     });
+
+    if (proxyAgent) {
+      axiosConfig.httpsAgent = proxyAgent;
+      axiosConfig.proxy = false;
+    }
 
     return res.data;
   } catch (err) {
@@ -154,7 +191,7 @@ async function esimRequest(method, path, options = {}) {
     throw err;
   }
 }
-
+*/
 // -----------------------------
 // STATUS ENDPOINT
 // -----------------------------
