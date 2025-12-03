@@ -11,7 +11,7 @@ const app = express();
 // BASIC MIDDLEWARE
 // -----------------------------------------------------
 app.use(cors());
-app.use(express.urlencoded({ extended: false })); // Twilio sends x-www-form-urlencoded
+app.use(express.urlencoded({ extended: true })); // Twilio sends x-www-form-urlencoded
 app.use(express.json());
 
 // -----------------------------------------------------
