@@ -18,8 +18,7 @@ tls.DEFAULT_MAX_VERSION = "TLSv1.2";
 let proxyAgent = null;
 
 if (process.env.QUOTAGUARD_URL) {
-  proxyAgent = new HttpsProxyAgent (
-    {proxy: process.env.QUOTAGUARD_URL});
+  proxyAgent = new HttpsProxyAgent (process.env.QUOTAGUARD_URL);
     //keepAlive: true,
     //keepAliveMsecs: 10000,
     //maxSockets: 256,
@@ -31,6 +30,7 @@ if (process.env.QUOTAGUARD_URL) {
   
 
   console.log("🔐 QuotaGuard STATIC proxy enabled!");
+  console.log(" QUOTAGUARD_URL =", process.env.QUOTAGUARD_URL);
 } else {
   console.warn("⚠️ QUOTAGUARD_URL missing — proxy is OFF");
 }
