@@ -10,7 +10,7 @@ let proxyAgent = null;
 
 if (process.env.QUOTAGUARD_URL) {
   proxyAgent = new HttpsProxyAgent(process.env.QUOTAGUARD_URL, {
-    tunnel: true,        // REQUIRED for HTTPS over HTTP proxy
+    tunnel: true,        // REQUIRED for HTTPS through HTTP proxy
     keepAlive: true
   });
 
@@ -34,7 +34,7 @@ app.get("/api/test-auth", async (req, res) => {
       },
       {
         httpsAgent: proxyAgent,
-        proxy: false        // IMPORTANT!!
+        proxy: false   // IMPORTANT!!!
       }
     );
 
