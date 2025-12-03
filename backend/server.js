@@ -1,40 +1,41 @@
 require("dotenv").config();
 const express = require("express");
 const axios = require("axios");
-const { HttpsProxyAgent } = require("https-proxy-agent");
+const { SocksProxyAgent } = require("socks-proxy-agent");
 
 const app = express();
 app.use(express.json());
 
+// ----------------------------
+// CREATE SOCKS5 PROXY AGENT
+// ----------------------------
 let proxyAgent = null;
 
-if (process.env.QUOTAGUARD_URL) {
-  proxyAgent = new HttpsProxyAgent(process.env.QUOTAGUARD_URL, {
-    tunnel: true,        // REQUIRED for HTTPS through HTTP proxy
-    keepAlive: true
-  });
-
-  console.log("🚀 Proxy enabled:", process.env.QUOTAGUARD_URL);
+if (process.env.QUOTAGUARD_SOCKS_URL) {
+  proxyAgent = new SocksProxyAgent(process.env.QUOTAGUARD_SOCKS_URL);
+  console.log("🟢 SOCKS proxy enabled:", process.env.QUOTAGUARD_SOCKS_URL);
 } else {
-  console.log("⚠️ No proxy enabled");
+  console.log("🔴 No SOCKS proxy found in environment");
 }
 
+// ----------------------------
+// TEST AUTH ENDPOINT
+// ----------------------------
 app.get("/api/test-auth", async (req, res) => {
   try {
-    const url = "https://uat.esim-api.com/api/esim/authenticate";
+    const url = ${process.env.ESIM_BASE_URL}/authenticate;
 
-    console.log("🔗 Sending request to:", url);
-    console.log("🌐 Using proxy:", !!proxyAgent);
+    console.log("🔗 Requesting:", url);
 
     const response = await axios.post(
       url,
       {
-        username: process.env.ESIM_USERNAME,
+        userName: process.env.ESIM_USERNAME,
         password: process.env.ESIM_PASSWORD
       },
       {
         httpsAgent: proxyAgent,
-        proxy: false   // IMPORTANT!!!
+        proxy: false // CRITICAL — DO NOT REMOVE
       }
     );
 
@@ -46,6 +47,9 @@ app.get("/api/test-auth", async (req, res) => {
   }
 });
 
+// ----------------------------
+// START SERVER
+// ----------------------------
 app.listen(process.env.PORT || 10000, () =>
-  console.log("Backend running!")
+  console.log("🚀 Backend running on port 10000")
 );
