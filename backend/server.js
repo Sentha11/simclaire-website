@@ -8,6 +8,7 @@ const axios = require("axios");
 // 🔐 QuotaGuard STATIC Proxy (Stable)
 // ------------------------------------
 const { HttpsProxyAgent } = require("hpagent");
+process.env.NODE_TLS_REJECT_UNAUTHORIZED ="0";
 
 let proxyAgent = null;
 
@@ -18,7 +19,8 @@ if (process.env.QUOTAGUARD_URL) {
     keepAliveMsecs: 15000,
     maxSockets: 128,
     maxFreeSockets: 10,
-    rejectUnauthorized: false
+    rejectUnauthorized: false,
+    secureOptions: require("constants").SSL_OP_NO_TLSv1_3,
   });
 
   console.log("🔐 QuotaGuard STATIC proxy enabled!");
@@ -60,7 +62,7 @@ async function getEsimToken() {
     },
     {
       httpsAgent: proxyAgent,
-      proxy: false
+      //proxy: false
     }
   );
 
@@ -93,7 +95,7 @@ async function esimRequest(method, path, options = {}) {
       method,
       url,
       httpsAgent: proxyAgent,
-      proxy: false,
+      //proxy: false,
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
@@ -224,6 +226,7 @@ function getSession(id) {
   if (!sessions[id])
     sessions[id] = {
       step: "START",
+
       products: []
     };
   return sessions[id];
