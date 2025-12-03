@@ -7,7 +7,8 @@ const axios = require("axios");
 // ------------------------------------
 // 🔐 QuotaGuard STATIC Proxy (Stable)
 // ------------------------------------
-const { HttpsProxyAgent } = require("https-proxy-agent");
+//const { HttpsProxyAgent } = require("https-proxy-agent");
+const { HttpsProxyAgent } = require("hpagent");
 //process.env.NODE_TLS_REJECT_UNAUTHORIZED ="0";
 
 const tls = require("tls");
@@ -17,16 +18,17 @@ tls.DEFAULT_MAX_VERSION = "TLSv1.2";
 let proxyAgent = null;
 
 if (process.env.QUOTAGUARD_URL) {
-  proxyAgent = new HttpsProxyAgent(process.env.QUOTAGUARD_URL);{
-   // proxy: process.env.QUOTAGUARD_URL,
-   // keepAlive: true,
-   // keepAliveMsecs: 10000,
-   // maxSockets: 256,
-   // maxFreeSockets: 256,
-   // rejectUnauthorized: false,
+  proxyAgent = new HttpsProxyAgent({
+    proxy: process.env.QUOTAGUARD_URL,
+    keepAlive: true,
+    keepAliveMsecs: 10000,
+    maxSockets: 256,
+    maxFreeSockets: 256,
+    rejectUnauthorized: false,
+    checkServerIdentity: () => undefined,
    // minVersion: "TLSv1.2",
    // maxVersion: "TLSv1.2",
-  };
+  });
 
   console.log("🔐 QuotaGuard STATIC proxy enabled!");
 } else {
