@@ -102,7 +102,7 @@ async function esimRequest(method, path, options = {}) {
       method,
       url,
       httpsAgent: proxyAgent,
-      proxy: false,
+      //proxy: false,
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
@@ -122,7 +122,7 @@ async function esimRequest(method, path, options = {}) {
         method,
         url,
         httpsAgent: proxyAgent,
-        proxy: false,
+        //proxy: false,
         headers: {
           Authorization: `Bearer ${newToken}`,
           "Content-Type": "application/json",
