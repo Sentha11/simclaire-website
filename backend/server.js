@@ -20,11 +20,12 @@ if (process.env.QUOTAGUARD_URL) {
   proxyAgent = new HttpsProxyAgent({
     proxy: process.env.QUOTAGUARD_URL,
     keepAlive: true,
-    keepAliveMsecs: 15000,
-    maxSockets: 128,
-    maxFreeSockets: 10,
+    keepAliveMsecs: 10000,
+    maxSockets: 256,
+    maxFreeSockets: 256,
     rejectUnauthorized: false,
-    secureOptions: require("constants").SSL_OP_NO_TLSv1_3,
+    minVersion: "TLSv1.2",
+    maxVersion: "TLSv1.2",
   });
 
   console.log("🔐 QuotaGuard STATIC proxy enabled!");
