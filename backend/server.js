@@ -49,8 +49,8 @@ let esimTokenExpiresAt = 0;
 async function getEsimToken() {
   const now = Date.now();
 
-  if (esimToken && now < esimTokenExpiresAt) return esimToken;
-}
+  if (esimToken && now < esimTokenExpiresAt) {return esimToken;}
+
   const url = `${ESIM_BASE_URL}/authenticate`;
   console.log("GetEsimToken ->", url);
   console.log("Using proxy:", !!proxyAgent);
@@ -81,7 +81,9 @@ async function getEsimToken() {
     err.response?.status,
     err.response?.data || err.message
   );
+ 
   throw err;
+}
 }
 
 // -----------------------------
