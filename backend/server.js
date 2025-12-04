@@ -147,7 +147,7 @@ function getFlag(dest) {
 // TwiML helper
 // -----------------------------------------------------
 function twiml(message) {
-  return `<?xml version="1.0" encoding="UTF-8"?><Response><Message>${message}</Message></Response>`;
+  return `<?xml version="1.0" encoding="UTF-8"?><Response><Message><![CDATA]${message}</Message></Response>`;
 }
 
 // -----------------------------------------------------
