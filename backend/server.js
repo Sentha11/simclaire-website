@@ -1,5 +1,5 @@
 // =====================================================
-// server.js – FINAL CLEAN VERSION (FULL WHATSAPP FLOW)
+// server.js – FINAL WORKING VERSION (TwiML + WhatsApp)
 // =====================================================
 
 require("dotenv").config();
@@ -14,7 +14,7 @@ const app = express();
 // MIDDLEWARE
 // -----------------------------------------------------
 app.use(cors());
-app.use(express.urlencoded({ extended: false })); // Twilio webhook
+app.use(express.urlencoded({ extended: false })); // Twilio sends x-www-form-urlencoded
 app.use(express.json());
 
 // -----------------------------------------------------
@@ -25,6 +25,7 @@ let proxyAgent = null;
 if (process.env.QUOTAGUARD_URL) {
   proxyAgent = new HttpsProxyAgent(process.env.QUOTAGUARD_URL);
   console.log("🔐 QuotaGuard STATIC proxy enabled!");
+  console.log("QUOTAGUARD_URL =", process.env.QUOTAGUARD_URL);
 } else {
   console.warn("⚠️ QUOTAGUARD_URL missing — proxy OFF");
 }
@@ -36,6 +37,10 @@ const ESIM_BASE_URL = process.env.ESIM_BASE_URL;
 const ESIM_USERNAME = process.env.ESIM_USERNAME;
 const ESIM_PASSWORD = process.env.ESIM_PASSWORD;
 
+if (!ESIM_BASE_URL || !ESIM_USERNAME || !ESIM_PASSWORD) {
+  console.warn("⚠️ Missing eSIM environment variables.");
+}
+
 // -----------------------------------------------------
 // TOKEN CACHE
 // -----------------------------------------------------
@@ -45,9 +50,12 @@ let esimTokenExpiresAt = 0;
 async function getEsimToken() {
   const now = Date.now();
 
-  if (esimToken && now < esimTokenExpiresAt) return esimToken;
+  if (esimToken && now < esimTokenExpiresAt) {
+    return esimToken;
+  }
 
   const url = `${ESIM_BASE_URL}/authenticate`;
+  console.log("🚀 [AUTH] Requesting:", url, "via proxy:", !!proxyAgent);
 
   const res = await axios.post(
     url,
@@ -65,15 +73,18 @@ async function getEsimToken() {
   const ttlSeconds = res.data.expirySeconds || 600;
   esimTokenExpiresAt = now + ttlSeconds * 1000;
 
+  console.log("🔐 eSIM token refreshed");
   return esimToken;
 }
 
 // -----------------------------------------------------
-// GENERIC API WRAPPER
+// GENERIC ESIM REQUEST WRAPPER
 // -----------------------------------------------------
 async function esimRequest(method, path, options = {}) {
   const token = await getEsimToken();
   const url = `${ESIM_BASE_URL}${path}`;
+
+  console.log("➡️ [ESIM] Request:", method.toUpperCase(), url);
 
   try {
     const res = await axios({
@@ -91,8 +102,10 @@ async function esimRequest(method, path, options = {}) {
 
     return res.data;
   } catch (err) {
+    // Retry once on 401
     if (err.response?.status === 401) {
-      esimToken = null; // refresh token
+      console.warn("🔁 Token expired, retrying once…");
+      esimToken = null;
       const newToken = await getEsimToken();
 
       const res2 = await axios({
@@ -112,17 +125,20 @@ async function esimRequest(method, path, options = {}) {
     }
 
     console.error("❌ esimRequest error:", err.message);
+    if (err.response?.data) {
+      console.error("❌ esimRequest response data:", err.response.data);
+    }
     throw err;
   }
 }
 
 // -----------------------------------------------------
-// FLAG EMOJI
+// FLAG EMOJI HELPERS
 // -----------------------------------------------------
 function flagEmojiFromIso(iso) {
   if (!iso) return "";
   const code = iso.toUpperCase();
-  return code.replace(/./g, c =>
+  return code.replace(/./g, (c) =>
     String.fromCodePoint(127397 + c.charCodeAt(0))
   );
 }
@@ -139,19 +155,101 @@ const flagOverride = {
 function getFlag(dest) {
   const name = (dest.destinationName || "").toUpperCase();
   const iso = (dest.isoCode || "").toUpperCase();
-
   return flagOverride[name] || flagOverride[iso] || flagEmojiFromIso(iso);
 }
 
 // -----------------------------------------------------
-// TwiML helper
+// TwiML HELPER (NO CDATA, SAFE STRING)
 // -----------------------------------------------------
+function escapeXml(str = "") {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
 function twiml(message) {
-  return `<?xml version="1.0" encoding="UTF-8"?><Response><Message><![CDATA]${message}</Message></Response>`;
+  const safe = escapeXml(message);
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Message>${safe}</Message>
+</Response>`;
 }
 
 // -----------------------------------------------------
-// SESSION SYSTEM (in-memory)
+// SIMPLE API ROUTES (for testing / Postman)
+// -----------------------------------------------------
+app.get("/api/status", (req, res) => {
+  res.json({ status: "OK", backend: "running" });
+});
+
+app.get("/api/test-auth", async (req, res) => {
+  try {
+    const token = await getEsimToken();
+    res.json({ ok: true, token });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+app.get("/api/esim/destinations", async (req, res) => {
+  try {
+    const data = await esimRequest("get", "/destinations");
+    res.json(data);
+  } catch {
+    res.status(500).json({ error: "Cannot fetch destinations" });
+  }
+});
+
+app.get("/api/esim/products", async (req, res) => {
+  const { destinationid } = req.query;
+  if (!destinationid) {
+    return res.status(400).json({ error: "destinationid required" });
+  }
+
+  try {
+    const data = await esimRequest(
+      "get",
+      `/products?destinationid=${encodeURIComponent(destinationid)}`
+    );
+    res.json(data);
+  } catch {
+    res.status(500).json({ error: "Cannot fetch products" });
+  }
+});
+
+app.post("/api/esim/purchase", async (req, res) => {
+  const { sku, quantity, mobileno, emailid } = req.body;
+
+  if (!sku || !quantity || !mobileno || !emailid) {
+    return res.status(400).json({
+      error: "sku, quantity, mobileno, and emailid are required",
+    });
+  }
+
+  const payload = {
+    items: [
+      {
+        type: "1",
+        sku,
+        quantity,
+        mobileno,
+        emailid,
+      },
+    ],
+  };
+
+  try {
+    const data = await esimRequest("post", "/purchaseesim", { data: payload });
+    res.json(data);
+  } catch (err) {
+    console.error("Purchase error:", err.message);
+    res.status(500).json({ error: "Failed to purchase eSIM" });
+  }
+});
+
+// -----------------------------------------------------
+// WHATSAPP SESSION SYSTEM
 // -----------------------------------------------------
 const sessions = {};
 
@@ -175,236 +273,351 @@ function resetSession(id) {
   delete sessions[id];
 }
 
-function clean(t) {
+function cleanText(t) {
   return (t || "").trim();
 }
 
+// Format plans for WhatsApp
+function formatPlans(country, flag, products) {
+  let msg = `${flag ? flag + " " : ""}Here are eSIM plans for *${country}*:\n\n`;
+
+  const top = products.slice(0, 5);
+  top.forEach((p, idx) => {
+    const label = idx + 1;
+    const name = p.productName || p.productDisplayName || "Plan";
+    const data =
+      p.productDataAllowance || p.productData || p.dataAllowance || "Data bundle";
+    const validity = p.productValidity || p.validityDays || p.validity || "";
+    const price =
+      p.productPrice != null
+        ? `£${p.productPrice}`
+        : p.price != null
+        ? `£${p.price}`
+        : "";
+
+    msg += `*${label}) ${name}*\n`;
+    msg += `   💾 ${data}\n`;
+    if (validity) msg += `   📅 ${validity} days\n`;
+    if (price) msg += `   💵 ${price}\n`;
+    msg += "\n";
+  });
+
+  msg += `Reply with *1–${top.length}* to choose a plan.\n`;
+  msg += `You can also type *menu* to start again.`;
+  return msg;
+}
+
 // -----------------------------------------------------
-// WhatsApp Webhook
+// WHATSAPP WEBHOOK (Twilio → POST → /webhook/whatsapp)
 // -----------------------------------------------------
 app.post("/webhook/whatsapp", async (req, res) => {
   res.set("Content-Type", "text/xml");
 
   const from = req.body.WaId || req.body.From || "unknown";
-  const body = clean(req.body.Body || "");
+  const body = cleanText(req.body.Body || "");
   const lower = body.toLowerCase();
   const session = getSession(from);
 
   console.log("📲 Incoming WhatsApp:", { from, body, step: session.step });
 
-  // ---------------- GLOBAL COMMANDS ----------------
-  if (["menu", "main"].includes(lower)) {
-    resetSession(from);
-    return res.send(twiml(
-      `👋 Welcome to SimClaire eSIMs 🌍
+  try {
+    // ---------------- GLOBAL COMMANDS ----------------
+    if (["menu", "main"].includes(lower)) {
+      resetSession(from);
+      const msg = `👋 Welcome to SimClaire eSIMs 🌍
 
-      1) Browse eSIM plans
-      2) Help & FAQ
-      3) Contact support`)
-    );
-  }
+1) Browse eSIM plans
+2) Help & FAQ
+3) Contact support
 
-  if (["restart", "reset"].includes(lower)) {
-    resetSession(from);
-    return res.send(twiml(
-      `🔄 Session reset.
-
-      1) Browse eSIM plans
-      2) Help & FAQ
-      3) Contact support`)
-    );
-  }
-
-  // ---------------- MENU ----------------
-  if (session.step === "MENU") {
-    if (
-      ["hi", "hello", "hey"].includes(lower) ||
-      !["1", "2", "3"].includes(lower)
-    ) {
-      return res.send(twiml(
-        `👋 Welcome to SimClaire eSIMs 🌍
-
-        1) Browse eSIM plans
-        2) Help & FAQ
-        3) Contact support
-
-        Reply with 1, 2, or 3.`)
-      );
+Reply with 1, 2, or 3.`;
+      return res.send(twiml(msg));
     }
 
-    if (lower === "1") {
-      session.step = "WAIT_COUNTRY";
-      return res.send(twiml(
-        `🌍 Great!  
-        Please type the country you are travelling to.`)
-      );
+    if (["restart", "reset", "start over"].includes(lower)) {
+      resetSession(from);
+      const msg = `✅ Session reset.
+
+👋 Welcome to SimClaire eSIMs 🌍
+
+1) Browse eSIM plans
+2) Help & FAQ
+3) Contact support
+
+Reply with 1, 2, or 3.`;
+      return res.send(twiml(msg));
     }
 
-    if (lower === "2") {
-      return res.send(twiml(
-        `ℹ️ FAQ  
-      * You will receive an eSIM by email.  
-      * Scan the activation code.  
-      * Most eSIMs activate when you land.`)
-      );
+    // ---------------- MENU ----------------
+    if (session.step === "MENU") {
+      if (
+        ["hi", "hello", "hey"].includes(lower) ||
+        !["1", "2", "3"].includes(lower)
+      ) {
+        const msg = `👋 Welcome to SimClaire eSIMs 🌍
+
+I can help you instantly buy travel eSIMs.
+
+1) Browse eSIM plans
+2) Help & FAQ
+3) Contact support
+
+Reply with 1, 2, or 3.`;
+        return res.send(twiml(msg));
+      }
+
+      if (lower === "1") {
+        session.step = "WAIT_COUNTRY";
+        const msg = `🌍 Great! Let's find you a plan.
+
+Please type the country you're travelling to.
+For example: Italy, USA, Japan, United Kingdom.`;
+        return res.send(twiml(msg));
+      }
+
+      if (lower === "2") {
+        const msg = `ℹ️ Help & FAQ
+
+* You'll receive an eSIM via email.
+* Scan or enter the activation code on your device.
+* Most eSIMs activate when you land.
+
+Type menu to go back or 1 to browse plans.`;
+        return res.send(twiml(msg));
+      }
+
+      if (lower === "3") {
+        const msg = `📞 Support
+
+Email: support@simclaire.com
+
+Type menu to go back.`;
+        return res.send(twiml(msg));
+      }
+
+      const fallback = `❓ I didn't understand that.
+
+Reply with:
+1) Browse eSIM plans
+2) Help & FAQ
+3) Contact support`;
+      return res.send(twiml(fallback));
     }
 
-    if (lower === "3") {
-      return res.send(twiml(
-        `📞 Support  
-        support@simclaire.com`)
+    // ---------------- COUNTRY ----------------
+    if (session.step === "WAIT_COUNTRY") {
+      const destData = await esimRequest("get", "/destinations");
+      const list = Array.isArray(destData) ? destData : destData.data || [];
+
+      if (!list.length) {
+        const msg = `⚠️ We couldn't load destinations right now.
+
+Please try again in a few minutes or type menu to go back.`;
+        return res.send(twiml(msg));
+      }
+
+      const match = list.find((d) => {
+        const name = (d.destinationName || "").toLowerCase();
+        const iso = (d.isoCode || "").toLowerCase();
+        return (
+          name === lower ||
+          iso === lower ||
+          name.includes(lower)
+        );
+      });
+
+      if (!match) {
+        const msg = `❌ I couldn't find that destination.
+
+Please type the country name again (e.g. Spain, USA, Turkey),
+or type menu to go back.`;
+        return res.send(twiml(msg));
+      }
+
+      const flag = getFlag(match);
+
+      session.country = match.destinationName;
+      session.destinationId = match.destinationID;
+      session.countryIso = match.isoCode;
+      session.step = "WAIT_PLAN";
+
+      const productsData = await esimRequest(
+        "get",
+        `/products?destinationid=${encodeURIComponent(match.destinationID)}`
       );
-    }
-  }
 
-  // ---------------- COUNTRY ----------------
-  if (session.step === "WAIT_COUNTRY") {
-    const destData = await esimRequest("get", "/destinations");
+      const allProducts = Array.isArray(productsData)
+        ? productsData
+        : productsData.data || [];
 
-    const list = Array.isArray(destData)
-      ? destData
-      : destData.data || [];
-
-    const match = list.find(d => {
-      const name = (d.destinationName || "").toLowerCase();
-      const iso = (d.isoCode || "").toLowerCase();
-      return name.includes(lower) || name === lower || iso === lower;
-    });
-
-    if (!match) {
-      return res.send(twiml(
-        `❌ Country not found. Try again.`)
+      const type1 = allProducts.filter(
+        (p) => !p.productType || String(p.productType) === "1"
       );
+
+      if (!type1.length) {
+        const msg = `⚠️ ${flag} We currently don't have instant eSIMs available for ${match.destinationName}.
+
+Please try another country, or type menu to go back.`;
+        return res.send(twiml(msg));
+      }
+
+      session.products = type1;
+
+      const plansText = formatPlans(match.destinationName, flag, type1);
+      return res.send(twiml(plansText));
     }
 
-    const flag = getFlag(match);
+    // ---------------- PLAN ----------------
+    if (session.step === "WAIT_PLAN") {
+      const choice = parseInt(lower, 10);
 
-    session.country = match.destinationName;
-    session.destinationId = match.destinationID;
-    session.step = "WAIT_PLAN";
+      if (
+        Number.isNaN(choice) ||
+        choice < 1 ||
+        choice > session.products.length
+      ) {
+        const msg = `❌ Please reply with a number between 1 and ${session.products.length} to choose a plan.
 
-    const productsData = await esimRequest(
-      "get",
-      `/products?destinationid=${match.destinationID}`
-    );
+Or type menu to go back.`;
+        return res.send(twiml(msg));
+      }
 
-    const products = Array.isArray(productsData)
-      ? productsData
-      : productsData.data || [];
+      session.selectedProduct = session.products[choice - 1];
+      session.step = "WAIT_QTY";
 
-    if (!products.length) {
-      return res.send(twiml(
-        `⚠️ ${flag} No instant eSIMs found for ${match.destinationName}.`)
-      );
+      const msg = `✅ Got it.
+
+How many eSIMs do you need?
+Reply with a number between 1 and 10.`;
+      return res.send(twiml(msg));
     }
 
-    session.products = products;
+    // ---------------- QUANTITY ----------------
+    if (session.step === "WAIT_QTY") {
+      const qty = parseInt(lower, 10);
+      if (Number.isNaN(qty) || qty < 1 || qty > 10) {
+        const msg = `❌ Please reply with a number between *1* and *10* for how many eSIMs you need.`;
+        return res.send(twiml(msg));
+      }
 
-    // FORMAT PLAN LIST
-    let msg = `${flag} Plans for *${session.country}*:\n\n`;
+      session.quantity = qty;
+      session.step = "WAIT_MOBILE";
 
-    products.slice(0, 5).forEach((p, i) => {
-      msg += `*${i + 1}) ${p.productName}*\n`;
-      msg += `   💾 ${p.productDataAllowance || p.productData}\n`;
-      msg += `   📅 ${p.productValidity || ""} days\n`;
-      msg += `   💵 £${p.productPrice}\n\n`;
-    });
+      const msg = `📱 Great — ${qty} eSIM(s).
 
-    msg += `Reply with *1–${products.length}* to choose a plan.`;
+Please send your mobile number including country code.
+For example: +44 7123 456789`;
+      return res.send(twiml(msg));
+    }
 
+    // ---------------- MOBILE ----------------
+    if (session.step === "WAIT_MOBILE") {
+      const mobile = body.replace(/\s+/g, "");
+      if (!/^\+?\d{6,15}$/.test(mobile)) {
+        const msg = `❌ That doesn't look like a valid number.
+
+Please send your mobile number with country code.
+Example: +44 7123 456789`;
+        return res.send(twiml(msg));
+      }
+
+      session.mobile = mobile;
+      session.step = "WAIT_EMAIL";
+
+      const msg = `📧 Almost done!
+
+Please send your email address so we can send your eSIM details.`;
+      return res.send(twiml(msg));
+    }
+
+    // ---------------- EMAIL + PURCHASE ----------------
+    if (session.step === "WAIT_EMAIL") {
+      const email = body.trim();
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+        const msg = `❌ That doesn't look like a valid email.
+
+Please send a valid email address.
+Example: name@example.com`;
+        return res.send(twiml(msg));
+      }
+
+      session.email = email;
+
+      const product = session.selectedProduct;
+      if (!product) {
+        const msg = `⚠️ Something went wrong with your selected plan.
+
+Please type menu to start again.`;
+        return res.send(twiml(msg));
+      }
+
+      const payload = {
+        items: [
+          {
+            type: "1",
+            sku: product.productSku || product.sku,
+            quantity: session.quantity,
+            mobileno: session.mobile,
+            emailid: session.email,
+          },
+        ],
+      };
+
+      try {
+        const purchaseRes = await esimRequest("post", "/purchaseesim", {
+          data: payload,
+        });
+
+        const esimInfo = Array.isArray(purchaseRes.esims)
+          ? purchaseRes.esims[0]
+          : purchaseRes.esims?.[0];
+
+        let msg;
+        if (esimInfo?.activationcode) {
+          msg = `🎉 Your eSIM order is complete!
+
+Destination: ${session.country}
+Quantity: ${session.quantity}
+
+Your activation code (LPA):
+${esimInfo.activationcode}
+
+We've also emailed full details to:
+${session.email}
+
+If you need help installing your eSIM, reply help.`;
+        } else {
+          msg = `✅ Your order has been received.
+
+We couldn't automatically retrieve your activation code, but our team will email your full eSIM details to:
+${session.email} shortly.
+
+If you don't see it, check your spam folder or reply support.`;
+        }
+
+        resetSession(from);
+        return res.send(twiml(msg));
+      } catch (err) {
+        console.error("❌ Purchase error:", err.message);
+        const msg = `⚠️ There was an issue processing your order.
+
+No payment will be taken. Please try again later or type support for help.`;
+        return res.send(twiml(msg));
+      }
+    }
+
+    // ---------------- FALLBACK ----------------
+    const fallback = `😅 I got a bit lost.
+
+Type menu to go back to the main menu, or restart to start again.`;
+    return res.send(twiml(fallback));
+  } catch (err) {
+    console.error("WhatsApp webhook error:", err);
+    const msg = `⚠️ Something went wrong on our side.
+
+Please try again in a moment or type menu to start over.`;
     return res.send(twiml(msg));
   }
-
-  // ---------------- PLAN ----------------
-  if (session.step === "WAIT_PLAN") {
-    const choice = parseInt(lower);
-
-    if (isNaN(choice) || choice < 1 || choice > session.products.length) {
-      return res.send(twiml(`❌ Invalid choice. Try again.`));
-    }
-
-    session.selectedProduct = session.products[choice - 1];
-    session.step = "WAIT_QTY";
-
-    return res.send(twiml(
-      `📦 How many eSIMs would you like? (1–10)`)
-    );
-  }
-
-  // ---------------- QUANTITY ----------------
-  if (session.step === "WAIT_QTY") {
-    const qty = parseInt(lower);
-
-    if (isNaN(qty) || qty < 1 || qty > 10) {
-      return res.send(twiml(`❌ Enter a number 1–10`));
-    }
-
-    session.quantity = qty;
-    session.step = "WAIT_MOBILE";
-
-    return res.send(twiml(
-      `📱 Enter your *mobile number* with country code.\nExample: +44 7123 456789`)
-    );
-  }
-
-  // ---------------- MOBILE ----------------
-  if (session.step === "WAIT_MOBILE") {
-    const mobile = body.replace(/\s+/g, "");
-
-    if (!/^\+?\d{6,15}$/.test(mobile)) {
-      return res.send(twiml(`❌ Invalid mobile number. Try again.`));
-    }
-
-    session.mobile = mobile;
-    session.step = "WAIT_EMAIL";
-
-    return res.send(twiml(`📧 Send your *email address*.`));
-  }
-
-  // ---------------- EMAIL + PURCHASE ----------------
-  if (session.step === "WAIT_EMAIL") {
-    const email = body.trim();
-
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
-      return res.send(twiml(`❌ Invalid email. Try again.`));
-    }
-
-    session.email = email;
-
-    const product = session.selectedProduct;
-
-    const payload = {
-      items: [
-        {
-          type: "1",
-          sku: product.productSku || product.sku,
-          quantity: session.quantity,
-          mobileno: session.mobile,
-          emailid: session.email,
-        },
-      ],
-    };
-
-    try {
-      await esimRequest("post", "/purchaseesim", { data: payload });
-
-      resetSession(from);
-
-      return res.send(
-        twiml(`🎉 Your eSIM order is complete!\nDetails sent to *${email}*.`)
-      );
-    } catch (err) {
-      console.error("Purchase error:", err.message);
-      return res.send(
-        twiml(`⚠️ Unable to complete order. Try again later.`)
-      );
-    }
-  }
-
-  // ---------------- FALLBACK ----------------
-  return res.send(
-    twiml(`😅 I got lost.\nType *menu* to restart.`)
-  );
 });
 
 // -----------------------------------------------------
