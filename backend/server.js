@@ -147,10 +147,7 @@ function getFlag(dest) {
 // TwiML helper
 // -----------------------------------------------------
 function twiml(message) {
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-  <Message>${message}</Message>
-</Response>`;
+  return `<?xml version="1.0" encoding="UTF-8"?><Response><Message>${message}</Message></Response>`;
 }
 
 // -----------------------------------------------------
@@ -198,23 +195,23 @@ app.post("/webhook/whatsapp", async (req, res) => {
   // ---------------- GLOBAL COMMANDS ----------------
   if (["menu", "main"].includes(lower)) {
     resetSession(from);
-    return res.send(
-      twiml(`👋 Welcome to SimClaire eSIMs 🌍
+    return res.send(twiml(
+      `👋 Welcome to SimClaire eSIMs 🌍
 
-1) Browse eSIM plans
-2) Help & FAQ
-3) Contact support`)
+      1) Browse eSIM plans
+      2) Help & FAQ
+      3) Contact support`)
     );
   }
 
   if (["restart", "reset"].includes(lower)) {
     resetSession(from);
-    return res.send(
-      twiml(`🔄 Session reset.
+    return res.send(twiml(
+      `🔄 Session reset.
 
-1) Browse eSIM plans
-2) Help & FAQ
-3) Contact support`)
+      1) Browse eSIM plans
+      2) Help & FAQ
+      3) Contact support`)
     );
   }
 
@@ -224,38 +221,38 @@ app.post("/webhook/whatsapp", async (req, res) => {
       ["hi", "hello", "hey"].includes(lower) ||
       !["1", "2", "3"].includes(lower)
     ) {
-      return res.send(
-        twiml(`👋 Welcome to SimClaire eSIMs 🌍
+      return res.send(twiml(
+        `👋 Welcome to SimClaire eSIMs 🌍
 
-1) Browse eSIM plans
-2) Help & FAQ
-3) Contact support
+        1) Browse eSIM plans
+        2) Help & FAQ
+        3) Contact support
 
-Reply with 1, 2, or 3.`)
+        Reply with 1, 2, or 3.`)
       );
     }
 
     if (lower === "1") {
       session.step = "WAIT_COUNTRY";
-      return res.send(
-        twiml(`🌍 Great!  
-Please type the country you are travelling to.`)
+      return res.send(twiml(
+        `🌍 Great!  
+        Please type the country you are travelling to.`)
       );
     }
 
     if (lower === "2") {
-      return res.send(
-        twiml(`ℹ️ FAQ  
-* You will receive an eSIM by email.  
-* Scan the activation code.  
-* Most eSIMs activate when you land.`)
+      return res.send(twiml(
+        `ℹ️ FAQ  
+      * You will receive an eSIM by email.  
+      * Scan the activation code.  
+      * Most eSIMs activate when you land.`)
       );
     }
 
     if (lower === "3") {
-      return res.send(
-        twiml(`📞 Support  
-support@simclaire.com`)
+      return res.send(twiml(
+        `📞 Support  
+        support@simclaire.com`)
       );
     }
   }
@@ -275,8 +272,8 @@ support@simclaire.com`)
     });
 
     if (!match) {
-      return res.send(
-        twiml(`❌ Country not found. Try again.`)
+      return res.send(twiml(
+        `❌ Country not found. Try again.`)
       );
     }
 
@@ -296,8 +293,8 @@ support@simclaire.com`)
       : productsData.data || [];
 
     if (!products.length) {
-      return res.send(
-        twiml(`⚠️ ${flag} No instant eSIMs found for ${match.destinationName}.`)
+      return res.send(twiml(
+        `⚠️ ${flag} No instant eSIMs found for ${match.destinationName}.`)
       );
     }
 
@@ -329,8 +326,8 @@ support@simclaire.com`)
     session.selectedProduct = session.products[choice - 1];
     session.step = "WAIT_QTY";
 
-    return res.send(
-      twiml(`📦 How many eSIMs would you like? (1–10)`)
+    return res.send(twiml(
+      `📦 How many eSIMs would you like? (1–10)`)
     );
   }
 
@@ -345,8 +342,8 @@ support@simclaire.com`)
     session.quantity = qty;
     session.step = "WAIT_MOBILE";
 
-    return res.send(
-      twiml(`📱 Enter your *mobile number* with country code.\nExample: +44 7123 456789`)
+    return res.send(twiml(
+      `📱 Enter your *mobile number* with country code.\nExample: +44 7123 456789`)
     );
   }
 
