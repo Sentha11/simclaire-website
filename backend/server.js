@@ -221,43 +221,41 @@ app.get("/api/esim/destinations", async (req, res) => {
 // =====================================================
 // STRIPE CHECKOUT SESSION
 // =====================================================
-app.post("/api/payments/create-checkout-session", async (req, res) => {
-  if (!stripe) return res.status(500).json({ error: "Stripe disabled" });
 
-  const { sku, planName, quantity, price, currency, email, country } = req.body;
+app.post("/api/payments/create-checkout-session", async (req, res) => {
+  console.log("🔥 Stripe route hit");
+  console.log("Body:", req.body);
 
   try {
+    if (!stripe) {
+      console.log("❌ STRIPE NOT INITIALIZED");
+      return res.status(500).json({ error: "Stripe not initialized" });
+    }
+
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       payment_method_types: ["card"],
-      customer_email: email,
-      success_url: process.env.STRIPE_SUCCESS_URL,
-      cancel_url: process.env.STRIPE_CANCEL_URL,
+      customer_email: req.body.email,
+      success_url: "https://example.com/success",
+      cancel_url: "https://example.com/cancel",
       line_items: [
         {
-          quantity,
+          quantity: req.body.quantity,
           price_data: {
-            currency,
-            unit_amount: Math.round(price * 100),
-            product_data: { name: `${country} - ${planName}` },
-          },
-        },
-      ],
-      metadata: { sku, email, quantity, country },
+            currency: req.body.currency || "gbp",
+            unit_amount: Math.round(req.body.price * 100),
+            product_data: { name: req.body.planName }
+          }
+        }
+      ]
     });
 
-    recordOrder({
-      source: "website",
-      channel: "stripe",
-      sku,
-      quantity,
-      email,
-      sessionId: session.id,
-    });
+    console.log("Stripe session created:", session.id);
+    return res.json({ id: session.id, url: session.url });
 
-    res.json({ id: session.id, url: session.url });
   } catch (err) {
-    res.status(500).json({ error: "Stripe session failed" });
+    console.log("❌ Stripe ERROR:", err);
+    return res.status(500).json({ error: err.message });
   }
 });
 
