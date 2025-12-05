@@ -672,26 +672,17 @@ Reply with 1, 2, or 3.`
   }
 });
 
-// =====================================================
-// SIMPLE ADMIN DASHBOARD (HTML UI)
-// Route: GET /admin
-// =====================================================
-
+// -----------------------------------------------------
+// SIMPLE ADMIN DASHBOARD (HTML VIEW)
+// -----------------------------------------------------
 app.get("/admin", (req, res) => {
-  const apiKey = req.query.key;
-
-  // Validate key from ?key=XXXX
-  if (!apiKey || apiKey !== process.env.ADMIN_API_KEY) {
-    return res.status(401).send(`
-      <h2>Unauthorized</h2>
-      <p>Missing or invalid API key.</p>
-      <p>Access like this:</p>
-      <pre>/admin?key=YOUR_ADMIN_API_KEY</pre>
-    `);
+  const role = getRoleFromRequest(req);
+  if (!role) {
+    return res.status(401).send("Unauthorized");
   }
 
-  // Display orders (from the in-memory array)
   let rows = "";
+
   if (orders.length === 0) {
     rows = <tr><td colspan="6" style="text-align:center;">No orders yet</td></tr>;
   } else {
@@ -701,56 +692,48 @@ app.get("/admin", (req, res) => {
       <tr>
         <td>${o.id}</td>
         <td>${o.createdAt}</td>
-        <td>${o.country || "-"}</td>
+        <td>${o.source}</td>
         <td>${o.sku}</td>
         <td>${o.quantity}</td>
-        <td>${o.emailid}</td>
+        <td>${o.emailid || ""}</td>
       </tr>
     `
       )
       .join("");
   }
 
-  res.send(`
-    <html>
-      <head>
-        <title>SimClaire Admin Dashboard</title>
-        <style>
-          body { font-family: Arial; background: #f3f3f3; padding: 20px; }
-          h1 { color: #333; }
-          table {
-            width: 100%;
-            border-collapse: collapse;
-            background: #fff;
-          }
-          th, td {
-            border: 1px solid #ccc;
-            padding: 10px;
-          }
-          th {
-            background: #555;
-            color: white;
-          }
-        </style>
-      </head>
-      <body>
-        <h1>SimClaire Admin Dashboard</h1>
-        <h3>Total Orders: ${orders.length}</h3>
+  const html = `
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <title>SimClaire Admin</title>
+    <style>
+      body { font-family: Arial; padding: 20px; }
+      table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+      th, td { border: 1px solid #ddd; padding: 8px; }
+      th { background: #333; color: white; }
+    </style>
+  </head>
+  <body>
+    <h1>SimClaire Admin Dashboard</h1>
+    <p>Role: <strong>${role}</strong></p>
 
-        <table>
-          <tr>
-            <th>Order ID</th>
-            <th>Created</th>
-            <th>Country</th>
-            <th>SKU</th>
-            <th>Qty</th>
-            <th>Email</th>
-          </tr>
-          ${rows}
-        </table>
-      </body>
-    </html>
-  `);
+    <table>
+      <tr>
+        <th>Order ID</th>
+        <th>Date</th>
+        <th>Source</th>
+        <th>SKU</th>
+        <th>Qty</th>
+        <th>Email</th>
+      </tr>
+      ${rows}
+    </table>
+  </body>
+  </html>
+  `;
+
+  res.send(html);
 });
 
 // -----------------------------------------------------
