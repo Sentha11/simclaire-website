@@ -41,18 +41,18 @@ if (!ESIM_BASE_URL || !ESIM_USERNAME || !ESIM_PASSWORD) {
 }
 
 // -----------------------------------------------------
-// STRIPE SETUP (for website checkout)
+// STRIPE SETUP (Test or Live Mode)
 // -----------------------------------------------------
 let stripe = null;
 if (process.env.STRIPE_SECRET_KEY) {
   stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
-  console.log("💳 Stripe enabled");
+  console.log("💳 Stripe enabled (test or live based on key)");
 } else {
   console.warn("⚠️ STRIPE_SECRET_KEY not set — Stripe checkout disabled");
 }
 
 // -----------------------------------------------------
-// SIMPLE ORDER LOG (in-memory for now)
+// SIMPLE ORDER LOG (in-memory)
 // -----------------------------------------------------
 const orders = [];
 
@@ -84,7 +84,7 @@ function getRoleFromRequest(req) {
 }
 
 // -----------------------------------------------------
-// TOKEN CACHE
+// TOKEN CACHE (ESIM)
 // -----------------------------------------------------
 let esimToken = null;
 let esimTokenExpiresAt = 0;
@@ -193,18 +193,16 @@ const flagOverride = {
 function getFlag(dest) {
   const name = (dest.destinationName || "").toUpperCase();
   const iso = (dest.isoCode || "").toUpperCase();
-
   return flagOverride[name] || flagOverride[iso] || flagEmojiFromIso(iso);
 }
 
 // -----------------------------------------------------
-// TwiML helper (SAFE)
+// TwiML helper
 // -----------------------------------------------------
 function twiml(message) {
-  // No CDATA; Twilio accepts plain text body
   return `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Message><![CDATA[${message}]]></Message>
+  <Message>${message}</Message>
 </Response>`;
 }
 
@@ -242,87 +240,60 @@ function clean(t) {
 // -----------------------------------------------------
 function formatPlans(country, flag, products) {
   if (!products || !products.length) {
-    return `${flag ? flag + " " : ""}No instant eSIMs are available for *${country}* right now. Please try another destination or type *menu*.`;
-  }
+    return `${flag ? flag + " " : ""}No instant eSIMs available for *${country}*. Try another country or type *menu*.;
+  `}
 
   let out = `${flag ? flag + " " : ""}Here are top plans for *${country}*:\n\n`;
 
-  const top = products.slice(0, 5);
-  top.forEach((p, idx) => {
-    const name = p.productName || p.productDisplayName || "Plan";
-    const data =
-      p.productDataAllowance ||
-      p.productData ||
-      p.dataAllowance ||
-      "Data bundle";
-    const validity = p.productValidity || p.validity || "";
-    const price =
-      p.productPrice != null
-        ? `£${p.productPrice}`
-        : p.price != null
-        ? `£${p.price}`
-        : "";
-
-    out += `*${idx + 1}) ${name}*\n`;
-    out += `   💾 ${data}\n`;
-    if (validity) out += `   📅 ${validity} days\n`;
-    if (price) out += `   💵 ${price}\n`;
-    out += "\n";
+  products.slice(0, 5).forEach((p, idx) => {
+    out += `*${idx + 1}) ${p.productName}*\n`;
+    out += `   💾 ${p.productDataAllowance || p.productData}\n`;
+    out += `   📅 ${p.productValidity} days\n`;
+    out += `   💵 £${p.productPrice}\n\n`;
   });
 
-  out += `Reply with *1–${top.length}* to choose a plan.\nType *menu* to restart.`;
+  out += `Reply with *1–${products.length}* to choose a plan.\nType *menu* to restart.`;
   return out;
 }
 
 // -----------------------------------------------------
-// BASIC API ROUTES (health + ESIM)
+// BASIC API ROUTES
 // -----------------------------------------------------
 app.get("/api/status", (req, res) => {
   res.json({ status: "OK", backend: "running" });
-});
-
-app.get("/api/test-auth", async (req, res) => {
-  try {
-    const token = await getEsimToken();
-    res.json({ ok: true, token });
-  } catch (err) {
-    res.status(500).json({ ok: false, error: err.message });
-  }
 });
 
 app.get("/api/esim/destinations", async (req, res) => {
   try {
     const data = await esimRequest("get", "/destinations");
     res.json(data);
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: "Cannot fetch destinations" });
   }
 });
 
 app.get("/api/esim/products", async (req, res) => {
-  const { destinationid } = req.query;
-  if (!destinationid) {
+  if (!req.query.destinationid)
     return res.status(400).json({ error: "destinationid required" });
-  }
 
   try {
     const data = await esimRequest(
       "get",
-      `/products?destinationid=${encodeURIComponent(destinationid)}`
+      `/products?destinationid=${req.query.destinationid}`
     );
     res.json(data);
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: "Cannot fetch products" });
   }
 });
 
-// Website/API eSIM purchase endpoint (no-KYC, type=1)
+// Website/API eSIM purchase endpoint
 app.post("/api/esim/purchase", async (req, res) => {
   const { sku, quantity, mobileno, emailid, country, source } = req.body;
 
   if (!sku || !quantity || !mobileno || !emailid) {
     return res.status(400).json({
-      error: "sku, quantity, mobileno, and emailid are required",
+      error: "sku, quantity, mobileno, emailid are required",
     });
   }
 
@@ -341,7 +312,6 @@ app.post("/api/esim/purchase", async (req, res) => {
   try {
     const data = await esimRequest("post", "/purchaseesim", { data: payload });
 
-    // Log order (website/api)
     recordOrder({
       source: source || "website",
       channel: "api",
@@ -355,51 +325,33 @@ app.post("/api/esim/purchase", async (req, res) => {
 
     res.json(data);
   } catch (err) {
-    console.error("❌ /api/esim/purchase error:", err.message);
     res.status(500).json({ error: "Failed to purchase eSIM" });
   }
 });
 
 // -----------------------------------------------------
-// STRIPE CHECKOUT (simple)
+// STRIPE CHECKOUT (test or live mode)
 // -----------------------------------------------------
-// Body: { sku, country, planName, quantity, price, currency, email }
+
 app.post("/api/payments/create-checkout-session", async (req, res) => {
-  if (!stripe) {
-    return res
-      .status(500)
-      .json({ error: "Stripe is not configured on the server." });
-  }
+  if (!stripe)
+    return res.status(500).json({ error: "Stripe not configured" });
 
-  const {
-    sku,
-    country,
-    planName,
-    quantity,
-    price, // numeric, e.g. 15.99
-    currency,
-    email,
-  } = req.body;
+  const { sku, planName, country, quantity, price, currency, email } =
+    req.body;
 
-  if (
-    !sku ||
-    !planName ||
-    !quantity ||
-    !price ||
-    !currency ||
-    !email
-  ) {
+  if (!sku || !planName || !quantity || !price || !currency || !email) {
     return res.status(400).json({
       error:
-        "sku, planName, quantity, price, currency, and email are required",
+        "sku, planName, quantity, price, currency, email are required",
     });
   }
 
   try {
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
-      payment_method_types: ["card"],
       customer_email: email,
+      payment_method_types: ["card"],
       success_url:
         process.env.STRIPE_SUCCESS_URL ||
         "https://simclaire.com/payment-success",
@@ -413,8 +365,8 @@ app.post("/api/payments/create-checkout-session", async (req, res) => {
             currency: currency.toLowerCase(),
             unit_amount: Math.round(Number(price) * 100),
             product_data: {
-              name: `${country || ""} ${planName}.trim()`,
-              metadata: { sku, country: country || "" },
+              name: `${country} ${planName}.trim()`,
+              metadata: { sku, country },
             },
           },
         },
@@ -422,29 +374,27 @@ app.post("/api/payments/create-checkout-session", async (req, res) => {
       metadata: {
         sku,
         quantity,
-        country: country || "",
+        country,
         planName,
         email,
         source: "website",
       },
     });
 
-    // Optional: log intent/order stub
     recordOrder({
       source: "website",
       channel: "stripe",
       sku,
       quantity,
       emailid: email,
-      country: country || null,
+      country,
       stripeSessionId: session.id,
       stripeUrl: session.url,
     });
 
     res.json({ id: session.id, url: session.url });
   } catch (err) {
-    console.error("❌ Stripe session error:", err.message);
-    res.status(500).json({ error: "Failed to create checkout session" });
+    res.status(500).json({ error: "Stripe session creation failed" });
   }
 });
 
@@ -453,9 +403,7 @@ app.post("/api/payments/create-checkout-session", async (req, res) => {
 // -----------------------------------------------------
 app.get("/api/admin/orders", (req, res) => {
   const role = getRoleFromRequest(req);
-  if (!role) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
+  if (!role) return res.status(401).json({ error: "Unauthorized" });
 
   res.json({
     role,
@@ -465,8 +413,9 @@ app.get("/api/admin/orders", (req, res) => {
 });
 
 // -----------------------------------------------------
-// WHATSAPP WEBHOOK (Twilio) – Conversational eSIM flow
+// WHATSApp chatbot webhook (Twilio)
 // -----------------------------------------------------
+
 app.post("/webhook/whatsapp", async (req, res) => {
   res.set("Content-Type", "text/xml");
 
@@ -475,9 +424,9 @@ app.post("/webhook/whatsapp", async (req, res) => {
   const lower = body.toLowerCase();
   const session = getSession(from);
 
-  console.log("📲 Incoming WhatsApp:", { from, body, step: session.step });
+  console.log("📲 WA:", { from, body, step: session.step });
 
-  // ------------- GLOBAL COMMANDS -------------
+  // MENU COMMANDS
   if (["menu", "main"].includes(lower)) {
     resetSession(from);
     return res.send(
@@ -501,15 +450,13 @@ Reply with 1, 2, or 3.`
 
 1) Browse eSIM plans
 2) Help & FAQ
-3) Contact support
-
-Reply with 1, 2, or 3.`
+3) Contact support`
       )
     );
   }
 
   try {
-    // ------------- MENU -------------
+    // MENU
     if (session.step === "MENU") {
       if (
         ["hi", "hello", "hey"].includes(lower) ||
@@ -518,8 +465,6 @@ Reply with 1, 2, or 3.`
         return res.send(
           twiml(
             `👋 Welcome to SimClaire eSIMs 🌍
-
-I can help you instantly buy travel eSIMs.
 
 1) Browse eSIM plans
 2) Help & FAQ
@@ -533,24 +478,14 @@ Reply with 1, 2, or 3.`
       if (lower === "1") {
         session.step = "WAIT_COUNTRY";
         return res.send(
-          twiml(
-            `🌍 Great! Let's find you a plan.
-
-Please type the country you are travelling to.`
-          )
+          twiml(`🌍 Great! Type the *country* you're travelling to.`)
         );
       }
 
       if (lower === "2") {
         return res.send(
           twiml(
-            `ℹ️ Help & FAQ
-
-* You’ll receive an eSIM by email.
-* Scan or enter the activation code on your device.
-* Most eSIMs activate when you land.
-
-Type menu to go back.`
+            `ℹ️ FAQ\n• eSIM delivered instantly by email.\n• Activate by scanning the QR code.\n• Most eSIMs activate upon arrival.\n\nType *menu* to go back.`
           )
         );
       }
@@ -558,59 +493,30 @@ Type menu to go back.`
       if (lower === "3") {
         return res.send(
           twiml(
-            `📞 Support
-
-Email: support@simclaire.com
-
-Type menu to go back.`
+            `📞 Support\nEmail: support@simclaire.com\n\nType *menu* to go back.`
           )
         );
       }
-
-      return res.send(
-        twiml(
-          `❓ I didn't understand that.
-
-Reply with:
-1) Browse eSIM plans
-2) Help & FAQ
-3) Contact support`
-        )
-      );
     }
 
-    // ------------- COUNTRY -------------
+    // COUNTRY
     if (session.step === "WAIT_COUNTRY") {
-      const destData = await esimRequest("get", "/destinations");
-      const list = Array.isArray(destData)
-        ? destData
-        : destData.data || [];
-
-      if (!list.length) {
-        return res.send(
-          twiml(
-            `⚠️ I couldn't load destinations right now. Please try again in a few minutes or type *menu*.
-          `)
-        );
-      }
+      const dests = await esimRequest("get", "/destinations");
+      const list = Array.isArray(dests) ? dests : dests.data || [];
 
       const match = list.find((d) => {
         const name = (d.destinationName || "").toLowerCase();
-        const iso = (d.isoCode || "").toLowerCase();
         return (
           name === lower ||
-          iso === lower ||
-          name.includes(lower)
+          name.includes(lower) ||
+          (d.isoCode || "").toLowerCase() === lower
         );
       });
 
       if (!match) {
         return res.send(
           twiml(
-            `❌ I couldn't find that destination.
-
-Please type the country name again, e.g. Spain, USA, Japan,
-or type menu to go back.`
+            `❌ Country not found.\nTry again (e.g. Spain, USA, Turkey).`
           )
         );
       }
@@ -621,60 +527,51 @@ or type menu to go back.`
       session.destinationId = match.destinationID;
       session.step = "WAIT_PLAN";
 
-      const productsData = await esimRequest(
+      const productData = await esimRequest(
         "get",
         `/products?destinationid=${match.destinationID}`
       );
 
-      const products = Array.isArray(productsData)
-        ? productsData
-        : productsData.data || [];
+      const products = Array.isArray(productData)
+        ? productData
+        : productData.data || [];
 
       if (!products.length) {
         return res.send(
           twiml(
-            `⚠️ ${flag} No instant eSIMs available for ${match.destinationName} right now.
-
-Try another country or type menu.`
+            `⚠️ ${flag} No instant eSIMs available for *${match.destinationName}*.\nTry another country.`
           )
         );
       }
 
       session.products = products;
-      const msg = formatPlans(session.country, flag, products);
-      return res.send(twiml(msg));
+      return res.send(twiml(formatPlans(match.destinationName, flag, products)));
     }
 
-    // ------------- PLAN -------------
+    // PLAN
     if (session.step === "WAIT_PLAN") {
       const num = parseInt(lower, 10);
-      if (
-        Number.isNaN(num) ||
-        num < 1 ||
-        num > session.products.length
-      ) {
+
+      if (isNaN(num) || num < 1 || num > session.products.length) {
         return res.send(
-          twiml(
-            `❌ Invalid choice. Reply with a number *1–${session.products.length}*.
-          `)
+          twiml(`❌ Invalid choice. Reply with 1–${session.products.length}.`)
         );
       }
 
       session.selectedProduct = session.products[num - 1];
       session.step = "WAIT_QTY";
-
       return res.send(
-        twiml(`📦 How many eSIMs would you like?\nReply with *1–10*.`)
+        twiml(`📦 How many eSIMs would you like? (1–10)`)
       );
     }
 
-    // ------------- QUANTITY -------------
+    // QTY
     if (session.step === "WAIT_QTY") {
       const qty = parseInt(lower, 10);
 
-      if (Number.isNaN(qty) || qty < 1 || qty > 10) {
+      if (isNaN(qty) || qty < 1 || qty > 10) {
         return res.send(
-          twiml(`❌ Please reply with a number between *1* and *10*.`)
+          twiml(`❌ Please choose between 1 and 10.`)
         );
       }
 
@@ -682,20 +579,16 @@ Try another country or type menu.`
       session.step = "WAIT_MOBILE";
 
       return res.send(
-        twiml(
-          `📱 Great — *${qty}* eSIM(s).\n\nPlease send your *mobile number* including country code.\nExample: *+44 7123 456789*
-       `)
+        twiml(`📱 Send your *mobile number* with country code.\nExample: +44 7123 456789`)
       );
     }
 
-    // ------------- MOBILE -------------
+    // MOBILE
     if (session.step === "WAIT_MOBILE") {
       const mobile = body.replace(/\s+/g, "");
       if (!/^\+?\d{6,15}$/.test(mobile)) {
         return res.send(
-          twiml(
-            `❌ That doesn't look like a valid number.\n\nPlease send your mobile number with country code.\nExample: *+44 7123 456789*
-          `)
+          twiml(`❌ Invalid number. Try again with country code.`)
         );
       }
 
@@ -703,21 +596,16 @@ Try another country or type menu.`
       session.step = "WAIT_EMAIL";
 
       return res.send(
-        twiml(
-          `📧 Almost done!\n\nPlease send your *email address* so we can send your eSIM details.
-        `)
+        twiml(`📧 Great! Now send your *email address*.`)
       );
     }
 
-    // ------------- EMAIL + PURCHASE -------------
+    // EMAIL + PURCHASE
     if (session.step === "WAIT_EMAIL") {
       const email = body.trim();
+
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
-        return res.send(
-          twiml(
-            `❌ That doesn't look like a valid email.\n\nPlease send a valid email address.\nExample: *name@example.com*`
-          )
-        );
+        return res.send(twiml(`❌ Invalid email. Try again.`));
       }
 
       session.email = email;
@@ -725,11 +613,7 @@ Try another country or type menu.`
 
       if (!product) {
         resetSession(from);
-        return res.send(
-          twiml(
-            `⚠️ Something went wrong with your selected plan.\nType *menu* to start again.`
-          )
-        );
+        return res.send(twiml(`⚠️ Error. Type *menu* to restart.`));
       }
 
       const payload = {
@@ -749,7 +633,6 @@ Try another country or type menu.`
           data: payload,
         });
 
-        // log order
         recordOrder({
           source: "whatsapp",
           channel: "twilio",
@@ -765,31 +648,109 @@ Try another country or type menu.`
 
         return res.send(
           twiml(
-            `🎉 Your eSIM order is complete!\n\nWe’ve sent full details to *${email}*.\n\nIf you don't see it, check spam or reply *support*.
-          `)
+            `🎉 Your eSIM order is complete!\nDetails sent to *${email}*.\nReply *menu* to start again.`
+          )
         );
       } catch (err) {
-        console.error("WhatsApp purchase error:", err.message);
         return res.send(
           twiml(
-            `⚠️ There was an issue processing your order.\nNo payment will be taken. Please try again later or type *menu* to start over.
-          `)
+            `⚠️ Could not process your order.\nPlease try again later or type *menu*.`
+          )
         );
       }
     }
 
-    // ------------- FALLBACK -------------
+    // FALLBACK
     return res.send(
-      twiml(`😅 I got a bit lost.\nType *menu* to go back to the main menu.`)
+      twiml(`😅 I didn’t understand that. Type *menu* to restart.`)
     );
   } catch (err) {
-    console.error("WhatsApp webhook error:", err);
+    console.error("WA error:", err);
     return res.send(
-      twiml(
-        `⚠️ Something went wrong on our side.\nPlease try again in a moment or type *menu* to restart.
-      `)
+      twiml(`⚠️ Server issue. Try again or type *menu*.`)
     );
   }
+});
+
+// =====================================================
+// SIMPLE ADMIN DASHBOARD (HTML UI)
+// Route: GET /admin
+// =====================================================
+
+app.get("/admin", (req, res) => {
+  const apiKey = req.query.key;
+
+  // Validate key from ?key=XXXX
+  if (!apiKey || apiKey !== process.env.ADMIN_API_KEY) {
+    return res.status(401).send(`
+      <h2>Unauthorized</h2>
+      <p>Missing or invalid API key.</p>
+      <p>Access like this:</p>
+      <pre>/admin?key=YOUR_ADMIN_API_KEY</pre>
+    `);
+  }
+
+  // Display orders (from the in-memory array)
+  let rows = "";
+  if (orders.length === 0) {
+    rows = <tr><td colspan="6" style="text-align:center;">No orders yet</td></tr>;
+  } else {
+    rows = orders
+      .map(
+        (o) => `
+      <tr>
+        <td>${o.id}</td>
+        <td>${o.createdAt}</td>
+        <td>${o.country || "-"}</td>
+        <td>${o.sku}</td>
+        <td>${o.quantity}</td>
+        <td>${o.emailid}</td>
+      </tr>
+    `
+      )
+      .join("");
+  }
+
+  res.send(`
+    <html>
+      <head>
+        <title>SimClaire Admin Dashboard</title>
+        <style>
+          body { font-family: Arial; background: #f3f3f3; padding: 20px; }
+          h1 { color: #333; }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fff;
+          }
+          th, td {
+            border: 1px solid #ccc;
+            padding: 10px;
+          }
+          th {
+            background: #555;
+            color: white;
+          }
+        </style>
+      </head>
+      <body>
+        <h1>SimClaire Admin Dashboard</h1>
+        <h3>Total Orders: ${orders.length}</h3>
+
+        <table>
+          <tr>
+            <th>Order ID</th>
+            <th>Created</th>
+            <th>Country</th>
+            <th>SKU</th>
+            <th>Qty</th>
+            <th>Email</th>
+          </tr>
+          ${rows}
+        </table>
+      </body>
+    </html>
+  `);
 });
 
 // -----------------------------------------------------
