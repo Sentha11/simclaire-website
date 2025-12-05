@@ -1,5 +1,6 @@
 {
   "dependencies": {
-    "socks-proxy-agent": "^8.0.5"
+    "socks-proxy-agent": "^8.0.5",
+    "stripe": "^20.0.0"
   }
 }
