@@ -176,6 +176,18 @@ function twiml(message) {
 </Response>`;
 }
 
+app.get("/myip", async (req, res) => {
+  try {
+    const response = await axios.get("https://api.ipify.org?format=json", {
+      httpsAgent: proxyAgent || undefined,
+      proxy: false
+    });
+    res.json({ throughProxy: true, ip: response.data.ip });
+  } catch (err) {
+    res.json({ throughProxy: false, error: err.message });
+  }
+});
+
 // -----------------------------------------------------
 // SIMPLE API ROUTES (for testing / Postman)
 // -----------------------------------------------------
