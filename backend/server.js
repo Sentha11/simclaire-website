@@ -173,7 +173,7 @@ async function esimRequest(method, path, options = {}) {
 function twiml(message) {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Message><![CDATA[${message}]]</Message>
+  <Message>${message}</Message>
 </Response>`;
 }
 
