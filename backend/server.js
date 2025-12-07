@@ -320,37 +320,50 @@ app.post("/webhook/whatsapp", async (req, res) => {
       );
     }
 
-    // COUNTRY
-    if (session.step === "COUNTRY") {
-      const list = await esimRequest("get", "/destinations");
+   // COUNTRY
+if (session.step === "COUNTRY") {
+  let list = await esimRequest("get", "/destinations");
 
-      const match = list.find((d) =>
-        d.destinationName.toLowerCase().includes(text)
-      );
+  // Normalize API response safely
+  if (Array.isArray(list)) {
+    // OK
+  } else if (Array.isArray(list.data)) {
+    list = list.data;
+  } else {
+    console.error("❌ Unexpected /destinations response:", list);
+    return res.send(
+      twiml("⚠️ Destination list unavailable. Please try again later.")
+    );
+  }
 
-      if (!match)
-        return res.send(twiml("❌ No match. Try another country."));
+  const match = list.find((d) =>
+    d.destinationName.toLowerCase().includes(text)
+  );
 
-      session.country = match.destinationName;
-      session.destinationId = match.destinationID;
-      session.step = "PLAN";
+  if (!match)
+    return res.send(twiml("❌ No match. Try another country."));
 
-      const products = await esimRequest(
-        "get",
-        `/products?destinationid=${match.destinationID}`
-      );
-      session.products = products;
+  session.country = match.destinationName;
+  session.destinationId = match.destinationID;
+  session.step = "PLAN";
 
-      let msg = `📡 Plans for *${session.country}*:\n\n`;
-      products.slice(0, 5).forEach((p, i) => {
-        msg += `${i + 1}) ${p.productName}\n💾 ${
-          p.productDataAllowance
-        }\n📅 ${p.validity} days\n💵 £${p.productPrice}\n\n`;
-      });
+  const products = await esimRequest(
+    "get",
+    `/products?destinationid=${match.destinationID}`
+  );
 
-      msg += "Reply with 1–5 to choose a plan.";
-      return res.send(twiml(msg));
-    }
+  session.products = Array.isArray(products)
+    ? products
+    : products.data || [];
+
+  let msg = `📡 Plans for *${session.country}*:\n\n`;
+  session.products.slice(0, 5).forEach((p, i) => {
+    msg += `${i + 1}) ${p.productName}\n💾 ${p.productDataAllowance}\n📅 ${p.validity} days\n💵 £${p.productPrice}\n\n`;
+  });
+
+  msg += "Reply with 1–5 to choose a plan.";
+  return res.send(twiml(msg));
+}
 
     // PLAN SELECT
     if (session.step === "PLAN") {
