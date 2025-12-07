@@ -7,15 +7,16 @@ const express = require("express");
 const cors = require("cors");
 const axios = require("axios");
 const { HttpsProxyAgent } = require("https-proxy-agent");
+const twilio = require("twilio");
 
 const app = express();
 
 // -----------------------------------------------------
-// MIDDLEWARE
+// MIDDLEWARE (CORS + URLENCODED)
 // -----------------------------------------------------
 app.use(cors());
+// Twilio + WhatsApp webhooks use x-www-form-urlencoded
 app.use(express.urlencoded({ extended: false }));
-app.use(express.json());
 
 // -----------------------------------------------------
 // QUOTAGUARD (STATIC) PROXY
@@ -40,7 +41,12 @@ if (!ESIM_BASE_URL || !ESIM_USERNAME || !ESIM_PASSWORD) {
 }
 
 // -----------------------------------------------------
-// STRIPE (Optional, Test mode supported)
+// APP BASE URL (FOR STRIPE REDIRECTS)
+// -----------------------------------------------------
+const APP_BASE_URL = process.env.APP_BASE_URL || "https://example.com";
+
+// -----------------------------------------------------
+// STRIPE
 // -----------------------------------------------------
 let stripe = null;
 if (process.env.STRIPE_SECRET_KEY) {
@@ -51,13 +57,30 @@ if (process.env.STRIPE_SECRET_KEY) {
 }
 
 // -----------------------------------------------------
+// TWILIO CLIENT (FOR OUTBOUND WHATSAPP MESSAGES)
+// -----------------------------------------------------
+let twilioClient = null;
+if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
+  twilioClient = twilio(
+    process.env.TWILIO_ACCOUNT_SID,
+    process.env.TWILIO_AUTH_TOKEN
+  );
+  console.log("📲 Twilio client enabled");
+} else {
+  console.warn("⚠️ Twilio client disabled (no TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN)");
+}
+
+// -----------------------------------------------------
 // SIMPLE IN-MEMORY ORDER LOG
 // -----------------------------------------------------
 const orders = [];
 
 function recordOrder(data) {
   orders.push({
-    id: Date.now().toString() + "-" + Math.random().toString(36).substring(2, 8),
+    id:
+      Date.now().toString() +
+      "-" +
+      Math.random().toString(36).substring(2, 8),
     createdAt: new Date().toISOString(),
     ...data,
   });
@@ -204,6 +227,115 @@ function formatPlans(country, products) {
   return msg;
 }
 
+// -----------------------------------------------------
+// STRIPE WEBHOOK (RAW BODY) – Option A
+// -----------------------------------------------------
+// NOTE: this must come BEFORE express.json()
+if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
+  app.post(
+    "/webhook/stripe",
+    express.raw({ type: "application/json" }),
+    async (req, res) => {
+      const sig = req.headers["stripe-signature"];
+
+      let event;
+      try {
+        event = stripe.webhooks.constructEvent(
+          req.body,
+          sig,
+          process.env.STRIPE_WEBHOOK_SECRET
+        );
+      } catch (err) {
+        console.error("❌ Stripe webhook signature error:", err.message);
+        return res.status(400).send(`Webhook Error: ${err.message}`);
+      }
+
+      if (event.type === "checkout.session.completed") {
+        const session = event.data.object;
+
+        try {
+          const amount = (session.amount_total / 100).toFixed(2);
+          const currency = (session.currency || "gbp").toUpperCase();
+          const email =
+            session.customer_details?.email ||
+            session.customer_email ||
+            "N/A";
+          const meta = session.metadata || {};
+
+          // Very simple currency symbol mapping
+          let symbol = "£";
+          if (currency === "USD") symbol = "$";
+          if (currency === "EUR") symbol = "€";
+
+          const country =
+            meta.country ||
+            meta.destinationName ||
+            "your destination";
+          const planName =
+            meta.planName ||
+            meta.productName ||
+            "Holiday eSIM";
+          const dataAmount =
+            meta.data ||
+            meta.dataAllowance ||
+            "10GB High-Speed Data";
+
+          const flagEmoji = meta.flagEmoji || "📶";
+
+          const msg = `
+🎉 Payment Successful!
+
+Your eSIM order is confirmed.
+
+──────────────────────
+
+${flagEmoji} ${country} — ${planName}  
+📶 ${dataAmount}  
+${symbol} ${symbol}${amount} Paid
+
+🧾 Receipt ID: ${session.id}  
+📧 Email: ${email}  
+
+──────────────────────
+
+Your QR code & installation steps will follow shortly.  
+Type menu to return to the home screen.
+          `.trim();
+
+          const whatsappTo =
+            meta.whatsappTo || process.env.TEST_CUSTOMER_WHATSAPP_TO;
+
+          if (twilioClient && process.env.TWILIO_WHATSAPP_FROM && whatsappTo) {
+            await twilioClient.messages.create({
+              from: process.env.TWILIO_WHATSAPP_FROM,
+              to: whatsappTo, // e.g. "whatsapp:+1XXXXXX"
+              body: msg,
+            });
+            console.log("✅ WhatsApp payment confirmation sent");
+          } else {
+            console.warn(
+              "⚠️ Skipped WhatsApp send – missing Twilio config or recipient"
+            );
+          }
+        } catch (err) {
+          console.error("❌ Error handling checkout.session.completed:", err);
+        }
+      }
+
+      res.json({ received: true });
+    }
+  );
+} else {
+  console.warn(
+    "⚠️ Stripe webhook disabled (missing STRIPE_SECRET_KEY or STRIPE_WEBHOOK_SECRET)"
+  );
+}
+
+// -----------------------------------------------------
+// JSON BODY PARSER (AFTER STRIPE WEBHOOK)
+// -----------------------------------------------------
+app.use(express.json());
+
 // =====================================================
 // BASIC API ROUTES
 // =====================================================
@@ -219,9 +351,8 @@ app.get("/api/esim/destinations", async (req, res) => {
 });
 
 // =====================================================
-// STRIPE CHECKOUT SESSION
+// STRIPE CHECKOUT SESSION (FRONTEND TRIGGER)
 // =====================================================
-
 app.post("/api/payments/create-checkout-session", async (req, res) => {
   console.log("🔥 Stripe route hit");
   console.log("Body:", req.body);
@@ -232,31 +363,52 @@ app.post("/api/payments/create-checkout-session", async (req, res) => {
       return res.status(500).json({ error: "Stripe not initialized" });
     }
 
+    const { email, quantity, price, currency, planName, metadata } = req.body;
+
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       payment_method_types: ["card"],
-      customer_email: req.body.email,
-      success_url: "https://example.com/success",
-      cancel_url: "https://example.com/cancel",
+      customer_email: email,
+      success_url: `${APP_BASE_URL}/success`,
+      cancel_url: `${APP_BASE_URL}/cancel`,
       line_items: [
         {
-          quantity: req.body.quantity,
+          quantity,
           price_data: {
-            currency: req.body.currency || "gbp",
-            unit_amount: Math.round(req.body.price * 100),
-            product_data: { name: req.body.planName }
-          }
-        }
-      ]
+            currency: currency || "gbp",
+            unit_amount: Math.round(price * 100),
+            product_data: { name: planName || "eSIM Plan" },
+          },
+        },
+      ],
+      // Pass through any extra info for WhatsApp message (country, data, WA number, etc.)
+      metadata: metadata || {},
     });
 
     console.log("Stripe session created:", session.id);
     return res.json({ id: session.id, url: session.url });
-
   } catch (err) {
     console.log("❌ Stripe ERROR:", err);
     return res.status(500).json({ error: err.message });
   }
+});
+
+// =====================================================
+// SUCCESS / CANCEL PAGES – Option B
+// =====================================================
+app.get("/success", (req, res) => {
+  res.send(`
+    <h1>Payment Successful ✔️</h1>
+    <p>Thank you! Your eSIM payment was received.</p>
+    <p>You can now return to WhatsApp to continue.</p>
+  `);
+});
+
+app.get("/cancel", (req, res) => {
+  res.send(`
+    <h1>Payment Cancelled ❌</h1>
+    <p>Your payment was not completed. You can close this window and try again from WhatsApp.</p>
+  `);
 });
 
 // =====================================================
@@ -270,7 +422,7 @@ app.get("/api/admin/orders", (req, res) => {
 });
 
 // =====================================================
-// WHATSAPP WEBHOOK
+// WHATSAPP WEBHOOK (INBOUND FROM TWILIO)
 // =====================================================
 app.post("/webhook/whatsapp", async (req, res) => {
   res.set("Content-Type", "text/xml");
@@ -362,7 +514,9 @@ app.post("/webhook/whatsapp", async (req, res) => {
     session.quantity = qty;
     session.step = "MOBILE";
     return res.send(
-      twiml("📱 Enter your mobile number with country code (e.g., +447900123456)")
+      twiml(
+        "📱 Enter your mobile number with country code (e.g., +447900123456)"
+      )
     );
   }
 
@@ -376,7 +530,7 @@ app.post("/webhook/whatsapp", async (req, res) => {
     return res.send(twiml("📧 Enter your email address:"));
   }
 
-  // --- EMAIL + PURCHASE ---
+  // --- EMAIL + PURCHASE (Direct eSIM purchase) ---
   if (session.step === "EMAIL") {
     const email = req.body.Body.trim();
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))
