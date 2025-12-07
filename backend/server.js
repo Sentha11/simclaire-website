@@ -110,6 +110,32 @@ Your eSIM will arrive shortly.
   );
 }
 
+// -----------------------------------------------------
+// TWILIO CLIENT INIT (LOGS STATUS CLEARLY)
+// -----------------------------------------------------
+let twilioClient = null;
+
+if (
+  process.env.TWILIO_ACCOUNT_SID &&
+  process.env.TWILIO_AUTH_TOKEN &&
+  process.env.TWILIO_WHATSAPP_FROM
+) {
+  try {
+    twilioClient = twilio(
+      process.env.TWILIO_ACCOUNT_SID,
+      process.env.TWILIO_AUTH_TOKEN
+    );
+    console.log("📨 Twilio client enabled");
+  } catch (err) {
+    console.error("❌ Failed to initialize Twilio client:", err.message);
+  }
+} else {
+  console.warn("⚠️ Twilio disabled — missing one or more variables:");
+  console.warn(" TWILIO_ACCOUNT_SID:", !!process.env.TWILIO_ACCOUNT_SID);
+  console.warn(" TWILIO_AUTH_TOKEN:", !!process.env.TWILIO_AUTH_TOKEN);
+  console.warn(" TWILIO_WHATSAPP_FROM:", !!process.env.TWILIO_WHATSAPP_FROM);
+}
+
 // 3️⃣ JSON parser for ALL normal API routes
 app.use(express.json());
 
