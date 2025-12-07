@@ -455,6 +455,34 @@ if (session.step === "COUNTRY") {
 });
 
 // =====================================================
+// TEST ESIM ENDPOINT (for IP + API debugging)
+// =====================================================
+app.get("/test-esim", async (req, res) => {
+  try {
+    console.log("🔍 Running /test-esim check...");
+
+    const token = await getEsimToken();
+    console.log("🔐 Token received:", token ? "YES" : "NO");
+
+    const data = await esimRequest("get", "/destinations");
+    console.log("🌍 Destinations response:", data);
+
+    return res.json({
+      ok: true,
+      message: "Render → Proxy → eSIM API connection works!",
+      destinationsCount: Array.isArray(data) ? data.length : "unknown",
+      sample: Array.isArray(data) ? data.slice(0, 3) : data,
+    });
+  } catch (err) {
+    console.error("❌ /test-esim ERROR:", err.response?.data || err.message);
+    return res.json({
+      ok: false,
+      error: err.response?.data || err.message,
+    });
+  }
+});
+
+// =====================================================
 // START SERVER
 // =====================================================
 const PORT = process.env.PORT || 10000;
