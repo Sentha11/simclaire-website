@@ -98,10 +98,10 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
         try {
           const sku = meta.productSku;
           const qty = parseInt(meta.quantity || "1", 10) || 1;
-          const type = meta.productType || "1";
+          const type = meta.productType;
 
           if (sku) {
-            purchaseResult = await purchaseEsim({ sku, quantity: qty, type });
+            purchaseResult = await purchaseEsim({ sku, quantity: qty, type:String(type) });
             console.log("✅ purchaseEsim response:", purchaseResult);
           }
         } catch (err) {
@@ -461,21 +461,31 @@ app.post("/webhook/whatsapp", async (req, res) => {
       session.step = "PLAN";
 
       const productsRes = await esimRequest(
-        "get",
-        `/products?destinationid=${match.destinationID}`
-      );
-      const products = productsRes.data || productsRes || [];
-      session.products = products;
+  "get",
+  `/products?destinationid=${match.destinationID}`
+);
+        const products = productsRes.data || productsRes || [];
+        session.products = products;
 
-      let msg = `📡 Plans for *${session.country}*:\n\n`;
-      products.slice(0, 5).forEach((p, i) => {
-        msg += `${i + 1}) ${p.productName}\n💾 ${
-          p.productDataAllowance
-        }\n📅 ${p.validity} days\n💵 £${p.productPrice}\n\n`;
-      });
+        // ✅ If no products, handle cleanly
+        if (!products || products.length === 0) {
+          return res.send(
+            twiml(
+              `😕 We don’t have any eSIM plans available for *${session.country}* yet.\n\n +
+              Please type *menu* to choose another destination.`
+            )
+          );
+        }
 
-      msg += "Reply with 1–5 to choose a plan.";
-      return res.send(twiml(msg));
+        let msg = `📡 Plans for *${session.country}*:\n\n`;
+        products.slice(0, 5).forEach((p, i) => {
+          msg += `${i + 1}) ${p.productName}\n💾 ${
+            p.productDataAllowance
+          }\n📅 ${p.validity} days\n💵 £${p.productPrice}\n\n`;
+        });
+
+        msg += "Reply with 1–5 to choose a plan.";
+        return res.send(twiml(msg));
     }
 
     // PLAN SELECT
@@ -533,7 +543,7 @@ app.post("/webhook/whatsapp", async (req, res) => {
             currency: "gbp",
             planName: p.productName,
             productSku: p.productSku || p.productSKU,
-            productType: p.productType || "1",
+            productType: p.productType,
             data: p.productDataAllowance,
             validity: p.validity,
             country: session.country,
