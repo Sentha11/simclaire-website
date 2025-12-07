@@ -371,6 +371,37 @@ app.get("/test-esim", async (req, res) => {
 });
 
 // =====================================================
+// DEBUG — GET PRODUCTS FOR A DESTINATION
+// =====================================================
+app.get("/debug/products", async (req, res) => {
+  try {
+    const id = req.query.destinationid;
+    if (!id) {
+      return res.json({ error: "destinationid query parameter is required" });
+    }
+
+    console.log("🔍 Fetching products for destination:", id);
+
+    const data = await esimRequest("get", `/products?destinationid=${id}`);
+
+    const products = Array.isArray(data?.data) ? data.data : data;
+
+    return res.json({
+      ok: true,
+      destinationid: id,
+      count: Array.isArray(products) ? products.length : 0,
+      products
+    });
+  } catch (err) {
+    console.error("❌ /debug/products error:", err.response?.data || err.message);
+    return res.json({
+      ok: false,
+      error: err.response?.data || err.message,
+    });
+  }
+});
+
+// =====================================================
 // WHATSAPP WEBHOOK — MAIN FLOW
 // =====================================================
 app.post("/webhook/whatsapp", async (req, res) => {
