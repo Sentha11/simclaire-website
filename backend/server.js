@@ -458,7 +458,7 @@ app.post("/webhook/whatsapp", async (req, res) => {
     if (["1"].includes(body)) {
       session.step = "COUNTRY";
       return res.send(
-        twiml("🌍 Enter the country you're travelling to:")
+        twiml("🌍 Enter the country you're travelling to. Please type the country you're travelling to. Example: Italy, USA, Japan, United Kingdom.")
       );
     }
     if (body === "2")
