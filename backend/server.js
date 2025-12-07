@@ -114,7 +114,7 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
               sku,
               quantity: qty,
               type: String(type),
-              destinationId: String(destinationId),  // <-- NEW
+              destinationId: type == "1" ? undefined : String(destinationId)  // <-- NEW
             });
             console.log("✅ purchaseEsim response:", purchaseResult);
           }
