@@ -234,7 +234,7 @@ async function esimRequest(method, path, options = {}) {
 }
 
 // PURCHASE ESIM
-async function purchaseEsim({ sku, quantity, type }) {
+async function purchaseEsim({ sku, quantity, type, destinationId }) {
   const body = { destinationId, items: [{ sku, quantity, type }] };
 
   console.log("➡️ Calling /purchaseesim with:", body);
