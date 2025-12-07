@@ -94,20 +94,32 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
 
         let purchaseResult = null;
 
-        // PURCHASE ESIM
+       // PURCHASE ESIM
         try {
           const sku = meta.productSku;
           const qty = parseInt(meta.quantity || "1", 10) || 1;
-          const type = meta.productType;
+          const type = meta.productType;  // MUST be provided in metadata from checkout
 
-          if (sku) {
-            purchaseResult = await purchaseEsim({ sku, quantity: qty, type:String(type) });
+          // Validate required fields
+          if (!sku) {
+            console.error("❌ Missing productSku in metadata");
+          } else if (!type) {
+            console.error("❌ Missing productType in metadata");
+          } else {
+            // Safe string conversion
+            purchaseResult = await purchaseEsim({
+              sku,
+              quantity: qty,
+              type: String(type),  // MUST be "2" or "3"
+            });
             console.log("✅ purchaseEsim response:", purchaseResult);
           }
         } catch (err) {
-          console.error("❌ Error calling purchaseEsim:", err.response?.data || err.message);
+          console.error(
+            "❌ Error calling purchaseEsim:",
+            err.response?.data || err.message
+          );
         }
-
         // BUILD WHATSAPP MESSAGE
         try {
           let msg = `
@@ -466,6 +478,7 @@ app.post("/webhook/whatsapp", async (req, res) => {
 );
         const products = productsRes.data || productsRes || [];
         session.products = products;
+        console.log("DEBUG PRODUCTS:", JSON.stringify(products, null, 2));
 
         // ✅ If no products, handle cleanly
         if (!products || products.length === 0) {
@@ -543,15 +556,18 @@ app.post("/webhook/whatsapp", async (req, res) => {
             currency: "gbp",
             planName: p.productName,
             productSku: p.productSku || p.productSKU,
-            productType: p.productType,
+            productType: p.productType,           // <-- Correct
             data: p.productDataAllowance,
             validity: p.validity,
             country: session.country,
             mobile: session.mobile,
+
             metadata: {
               country: session.country,
               planName: p.productName,
               data: p.productDataAllowance,
+              productSku: p.productSku || p.productSKU,  // <-- REQUIRED
+              productType: p.productType,                // <-- MISSING BEFORE
               flagEmoji: "🇬🇧",
               whatsappTo: `whatsapp:${from}`,
             },
