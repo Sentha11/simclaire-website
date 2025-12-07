@@ -412,22 +412,25 @@ if (session.step === "COUNTRY") {
 
       try {
         const response = await axios.post(
-          "/api/payments/create-checkout-session",
-          {
-            email,
-            quantity: session.quantity,
-            price: p.productPrice,
-            currency: "gbp",
+            `${APP_BASE_URL}/api/payments/create-checkout-session`,
+        {
+          email,
+          quantity: session.quantity,
+          price: p.productPrice,
+          currency: "gbp",
+          planName: p.productName,
+          metadata: {
+            country: session.country,
             planName: p.productName,
-            metadata: {
-              country: session.country,
-              planName: p.productName,
-              data: p.productDataAllowance,
-              flagEmoji: "🇬🇧",
-              whatsappTo: `whatsapp:${from}`,
-            },
-          }
-        );
+            data: p.productDataAllowance,
+            flagEmoji: "🇬🇧",
+            whatsappTo: `whatsapp:${from}`,
+          },
+        },
+        {
+          proxy: false, // VERY IMPORTANT — prevents QuotaGuard interference
+        }
+      );
 
         resetSession(from);
 
