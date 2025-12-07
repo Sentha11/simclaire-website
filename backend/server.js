@@ -97,14 +97,21 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
           const sku = meta.productSku;
           const qty = parseInt(meta.quantity || "1", 10) || 1;
           const type = meta.productType;
+          const destinationId = meta.destinationId; // <-- NEW
 
-          if (!sku) console.error("❌ Missing productSku in metadata");
-          else if (!type) console.error("❌ Missing productType in metadata");
-          else {
+          // Validate fields
+          if (!sku) {
+            console.error("❌ Missing productSku in metadata");
+          } else if (!type) {
+            console.error("❌ Missing productType in metadata");
+          } else if (!destinationId) {
+            console.error("❌ Missing destinationId in metadata");
+          } else {
             purchaseResult = await purchaseEsim({
               sku,
               quantity: qty,
               type: String(type),
+              destinationId: String(destinationId),  // <-- NEW
             });
             console.log("✅ purchaseEsim response:", purchaseResult);
           }
@@ -225,7 +232,7 @@ async function esimRequest(method, path, options = {}) {
 
 // PURCHASE ESIM
 async function purchaseEsim({ sku, quantity, type }) {
-  const body = { items: [{ sku, quantity, type }] };
+  const body = { destinationId, items: [{ sku, quantity, type }] };
 
   console.log("➡️ Calling /purchaseesim with:", body);
   return await esimRequest("post", "/purchaseesim", { data: body });
@@ -334,6 +341,7 @@ app.post("/api/payments/create-checkout-session", async (req, res) => {
       validity,
       country,
       mobile,
+      destinationId,
       metadata,
     } = req.body;
 
@@ -363,6 +371,7 @@ app.post("/api/payments/create-checkout-session", async (req, res) => {
         email,
         mobile,
         country,
+        destinationId,
         whatsappTo: metadata?.whatsappTo || "",
         flagEmoji: metadata?.flagEmoji || "",
       },
@@ -582,6 +591,7 @@ app.post("/webhook/whatsapp", async (req, res) => {
             validity: p.validity,
             country: session.country,
             mobile: session.mobile,
+            destinationId: session.destinationId,
             metadata: {
               country: session.country,
               planName: p.productName,
