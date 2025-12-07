@@ -114,7 +114,7 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
               sku,
               quantity: qty,
               type: String(type),
-              destinationId: type == "1" ? undefined : String(destinationId)  // <-- NEW
+              destinationId: String(destinationId)  // <-- NEW
             });
             console.log("✅ purchaseEsim response:", purchaseResult);
           }
@@ -241,7 +241,7 @@ async function purchaseEsim({ sku, quantity, type, destinationId }) {
         sku,
         quantity,
         type,
-        destinationId,   // <-- REQUIRED BY API
+        destinationid: destinationId   // <-- REQUIRED BY API
       }
     ],
   };
