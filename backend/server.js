@@ -170,12 +170,23 @@ async function esimRequest(method, path, options = {}) {
 // -----------------------------------------------------
 // TwiML Helper (SAFE TEXT ONLY — NO CDATA)
 // -----------------------------------------------------
+function escapeXml(unsafe) {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
+
 function twiml(message) {
+  const safe = escapeXml(message);
   return `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Message>${message}</Message>
+  <Message>${safe}</Message>
 </Response>`;
 }
+
 
 // -----------------------------------------------------
 // SESSION SYSTEM
