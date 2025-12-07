@@ -235,9 +235,18 @@ async function esimRequest(method, path, options = {}) {
 
 // PURCHASE ESIM
 async function purchaseEsim({ sku, quantity, type, destinationId }) {
-  const body = { destinationId, items: [{ sku, quantity, type }] };
+  const body = {
+    items: [
+      {
+        sku,
+        quantity,
+        type,
+        destinationId,   // <-- REQUIRED BY API
+      }
+    ],
+  };
 
-  console.log("➡️ Calling /purchaseesim with:", body);
+  console.log("📦 purchaseEsim payload:", JSON.stringify(body, null, 2));
   return await esimRequest("post", "/purchaseesim", { data: body });
 }
 
