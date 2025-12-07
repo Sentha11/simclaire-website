@@ -86,6 +86,8 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
         const sessionObj = event.data.object;
         const meta = sessionObj.metadata || {};
         const destinationId = meta.destinationId;
+        console.log("🔎 destinationId from Stripe:", destinationId);
+        console.log("🔎 Stripe metadata:", meta);
 
         const amount = (sessionObj.amount_total / 100).toFixed(2);
         const currency = (sessionObj.currency || "GBP").toUpperCase();
