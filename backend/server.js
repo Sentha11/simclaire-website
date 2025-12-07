@@ -13,9 +13,9 @@ const app = express();
 
 // -----------------------------------------------------
 // MIDDLEWARE (CORS + URLENCODED)
+// Twilio WhatsApp webhook uses x-www-form-urlencoded
 // -----------------------------------------------------
 app.use(cors());
-// Twilio + WhatsApp webhooks use x-www-form-urlencoded
 app.use(express.urlencoded({ extended: false }));
 
 // -----------------------------------------------------
@@ -41,9 +41,11 @@ if (!ESIM_BASE_URL || !ESIM_USERNAME || !ESIM_PASSWORD) {
 }
 
 // -----------------------------------------------------
-// APP BASE URL (FOR STRIPE REDIRECTS)
+// APP BASE URL (FOR STRIPE REDIRECTS & INTERNAL CALLS)
 // -----------------------------------------------------
-const APP_BASE_URL = process.env.APP_BASE_URL || "https://example.com";
+const APP_BASE_URL =
+  process.env.APP_BASE_URL ||
+  "https://simclaire-website-backend.onrender.com";
 
 // -----------------------------------------------------
 // STRIPE
@@ -67,7 +69,9 @@ if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
   );
   console.log("📲 Twilio client enabled");
 } else {
-  console.warn("⚠️ Twilio client disabled (no TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN)");
+  console.warn(
+    "⚠️ Twilio client disabled (no TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN)"
+  );
 }
 
 // -----------------------------------------------------
@@ -168,10 +172,10 @@ async function esimRequest(method, path, options = {}) {
 }
 
 // -----------------------------------------------------
-// TwiML Helper (SAFE TEXT ONLY — NO CDATA)
+// TwiML Helper with XML Escaping (prevents Twilio 12200)
 // -----------------------------------------------------
 function escapeXml(unsafe) {
-  return unsafe
+  return (unsafe || "")
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
@@ -186,7 +190,6 @@ function twiml(message) {
   <Message>${safe}</Message>
 </Response>`;
 }
-
 
 // -----------------------------------------------------
 // SESSION SYSTEM
@@ -239,9 +242,8 @@ function formatPlans(country, products) {
 }
 
 // -----------------------------------------------------
-// STRIPE WEBHOOK (RAW BODY) – Option A
+// STRIPE WEBHOOK (RAW BODY) – for checkout.session.completed
 // -----------------------------------------------------
-// NOTE: this must come BEFORE express.json()
 if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
   app.post(
     "/webhook/stripe",
@@ -273,24 +275,16 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
             "N/A";
           const meta = session.metadata || {};
 
-          // Very simple currency symbol mapping
           let symbol = "£";
           if (currency === "USD") symbol = "$";
           if (currency === "EUR") symbol = "€";
 
           const country =
-            meta.country ||
-            meta.destinationName ||
-            "your destination";
+            meta.country || meta.destinationName || "your destination";
           const planName =
-            meta.planName ||
-            meta.productName ||
-            "Holiday eSIM";
+            meta.planName || meta.productName || "Holiday eSIM";
           const dataAmount =
-            meta.data ||
-            meta.dataAllowance ||
-            "10GB High-Speed Data";
-
+            meta.data || meta.dataAllowance || "High-Speed Data";
           const flagEmoji = meta.flagEmoji || "📶";
 
           const msg = `
@@ -319,7 +313,7 @@ Type menu to return to the home screen.
           if (twilioClient && process.env.TWILIO_WHATSAPP_FROM && whatsappTo) {
             await twilioClient.messages.create({
               from: process.env.TWILIO_WHATSAPP_FROM,
-              to: whatsappTo, // e.g. "whatsapp:+1XXXXXX"
+              to: whatsappTo, // e.g. "whatsapp:+1647..."
               body: msg,
             });
             console.log("✅ WhatsApp payment confirmation sent");
@@ -329,7 +323,10 @@ Type menu to return to the home screen.
             );
           }
         } catch (err) {
-          console.error("❌ Error handling checkout.session.completed:", err);
+          console.error(
+            "❌ Error handling checkout.session.completed:",
+            err
+          );
         }
       }
 
@@ -362,7 +359,7 @@ app.get("/api/esim/destinations", async (req, res) => {
 });
 
 // =====================================================
-// STRIPE CHECKOUT SESSION (FRONTEND TRIGGER)
+// STRIPE CHECKOUT SESSION (CALLED FROM WHATSAPP FLOW)
 // =====================================================
 app.post("/api/payments/create-checkout-session", async (req, res) => {
   console.log("🔥 Stripe route hit");
@@ -392,20 +389,19 @@ app.post("/api/payments/create-checkout-session", async (req, res) => {
           },
         },
       ],
-      // Pass through any extra info for WhatsApp message (country, data, WA number, etc.)
       metadata: metadata || {},
     });
 
     console.log("Stripe session created:", session.id);
     return res.json({ id: session.id, url: session.url });
   } catch (err) {
-    console.log("❌ Stripe ERROR:", err);
+    console.log("❌ Stripe ERROR:", err.response?.data || err.message);
     return res.status(500).json({ error: err.message });
   }
 });
 
 // =====================================================
-// SUCCESS / CANCEL PAGES – Option B
+// SUCCESS / CANCEL PAGES – simple HTML
 // =====================================================
 app.get("/success", (req, res) => {
   res.send(`
@@ -438,7 +434,7 @@ app.get("/api/admin/orders", (req, res) => {
 app.post("/webhook/whatsapp", async (req, res) => {
   res.set("Content-Type", "text/xml");
 
-  const from = req.body.WaId || req.body.From;
+  const from = req.body.WaId || req.body.From; // WaId = number only, From = 'whatsapp:+1...'
   const body = clean(req.body.Body || "").toLowerCase();
   const session = getSession(from);
 
@@ -458,7 +454,7 @@ app.post("/webhook/whatsapp", async (req, res) => {
     if (["1"].includes(body)) {
       session.step = "COUNTRY";
       return res.send(
-        twiml("🌍 Enter the country you're travelling to. Please type the country you're travelling to. Example: Italy, USA, Japan, United Kingdom.")
+        twiml("🌍 Enter the country you're travelling to:")
       );
     }
     if (body === "2")
@@ -541,7 +537,7 @@ app.post("/webhook/whatsapp", async (req, res) => {
     return res.send(twiml("📧 Enter your email address:"));
   }
 
-  // --- EMAIL + PURCHASE (Direct eSIM purchase) ---
+  // --- EMAIL + STRIPE PAYMENT LINK ---
   if (session.step === "EMAIL") {
     const email = req.body.Body.trim();
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))
@@ -551,42 +547,52 @@ app.post("/webhook/whatsapp", async (req, res) => {
 
     const p = session.selectedProduct;
 
-    const payload = {
-      items: [
-        {
-          type: "1",
-          sku: p.productSku,
-          quantity: session.quantity,
-          mobileno: session.mobile,
-          emailid: session.email,
-        },
-      ],
-    };
-
     try {
-      const order = await esimRequest("post", "/purchaseesim", {
-        data: payload,
-      });
-
-      recordOrder({
-        source: "whatsapp",
-        country: session.country,
-        sku: p.productSku,
-        quantity: session.quantity,
-        email: session.email,
-        providerResponse: order,
-      });
+      // 🔥 Create Stripe Checkout Session instead of immediate eSIM purchase
+      const stripeRes = await axios.post(
+        `${APP_BASE_URL}/api/payments/create-checkout-session`,
+        {
+          email: session.email,
+          quantity: session.quantity,
+          price: p.productPrice,
+          currency: "gbp",
+          planName: p.productName,
+          metadata: {
+            country: session.country,
+            destinationName: session.country,
+            planName: p.productName,
+            data: p.productDataAllowance || p.dataAllowance,
+            flagEmoji: "🇬🇧", // TODO: make dynamic per country
+            whatsappTo: `whatsapp:${from}`,
+          },
+        },
+        {
+          headers: { "Content-Type": "application/json" },
+        }
+      );
 
       resetSession(from);
 
       return res.send(
-        twiml(`🎉 Your eSIM order is complete!
-The details have been sent to ${email}.`)
+        twiml(
+          `💳 Secure Payment Link
+
+Please complete your purchase here:
+${stripeRes.data.url}
+
+Once paid, your eSIM will be delivered instantly.`
+        )
       );
     } catch (err) {
-      console.error("Purchase error:", err);
+      console.error(
+        "❌ Stripe checkout creation failed:",
+        err.response?.data || err.message
+      );
+
       return res.send(
-        twiml("⚠️ Error processing your order. Try again later.")
+        twiml(
+          "⚠️ Unable to start payment. Please try again or type menu to restart."
+        )
       );
     }
   }
