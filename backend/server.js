@@ -85,6 +85,7 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
       if (event.type === "checkout.session.completed") {
         const sessionObj = event.data.object;
         const meta = sessionObj.metadata || {};
+        const destinationId = meta.destinationId;
 
         const amount = (sessionObj.amount_total / 100).toFixed(2);
         const currency = (sessionObj.currency || "GBP").toUpperCase();
@@ -598,6 +599,7 @@ app.post("/webhook/whatsapp", async (req, res) => {
               data: p.productDataAllowance,
               productSku: p.productSku || p.productSKU,
               productType: p.productType,
+              destinationId: session.destinationId,
               flagEmoji: "📶",
               whatsappTo: `whatsapp:${from}`,
             },
