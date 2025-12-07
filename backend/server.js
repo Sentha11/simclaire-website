@@ -411,25 +411,25 @@ if (session.step === "COUNTRY") {
       const p = session.selectedProduct;
 
       try {
-       const response = await axios.post(
-  `${APP_BASE_URL}/api/payments/create-checkout-session`,
-  {
-    email,
-    quantity: session.quantity,
-    price: p.productPrice,
-    currency: "gbp",
-    planName: p.productName,
-    metadata: {
-      country: session.country,
-      planName: p.productName,
-      data: p.productDataAllowance,
-      flagEmoji: "🇬🇧",
-      whatsappTo: `whatsapp:${from}`,
-    },
-  },
-  { proxy: false }
-);
-
+      const response = await axios.post(
+          `http://simclaire-website-backend:10000/api/payments/create-checkout-session`,
+          {
+            email,
+            quantity: session.quantity,
+            price: p.productPrice,
+            currency: "gbp",
+            planName: p.productName,
+            metadata: {
+              country: session.country,
+              planName: p.productName,
+              data: p.productDataAllowance,
+              flagEmoji: "🇬🇧",
+              whatsappTo: `whatsapp:${from}`,
+            },
+          },
+          { proxy: false }
+        );
+          
         resetSession(from);
 
         return res.send(
