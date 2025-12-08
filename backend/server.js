@@ -16,6 +16,27 @@ const sgMail = require("@sendgrid/mail");
 
 const app = express();
 
+// ------------------------------------------------------------
+// ESIM API AXIOS WITH QUOTAGUARD STATIC PROXY
+// ------------------------------------------------------------
+const axios = require("axios");
+const { SocksProxyAgent } = require("socks-proxy-agent");
+const { HttpsProxyAgent } = require("https-proxy-agent");
+
+let proxyAgent = null;
+
+// If using QuotaGuard STATIC (HTTP Proxy)
+if (process.env.QUOTAGUARD_URL) {
+  proxyAgent = new HttpsProxyAgent(process.env.QUOTAGUARD_URL);
+  console.log("🛡️ Using QuotaGuard STATIC HTTP proxy");
+} 
+// If using QuotaGuard SOCKS5
+else if (process.env.QUOTAGUARD_SOCKS_URL) {
+  proxyAgent = new SocksProxyAgent(process.env.QUOTAGUARD_SOCKS_URL);
+  console.log("🛡️ Using QuotaGuard SOCKS5 proxy");
+}
+
+
 // =====================================================
 // BASE URL + AXIOS DEFAULTS
 // =====================================================
@@ -80,11 +101,6 @@ const LOGO_PATH = path.join(__dirname, "assets", "simclaire-logo.png");
 // =====================================================
 // QUOTAGUARD STATIC IP PROXY
 // =====================================================
-let proxyAgent = null;
-if (process.env.QUOTAGUARD_URL) {
-  proxyAgent = new HttpsProxyAgent(process.env.QUOTAGUARD_URL);
-  console.log("🔐 QuotaGuard STATIC proxy enabled");
-}
 
 // =====================================================
 // ESIM API AUTH + WRAPPER
@@ -137,7 +153,6 @@ async function esimRequest(method, path, options = {}) {
 const axios = require("axios");
 const { SocksProxyAgent } = require("socks-proxy-agent");
 
-const proxyAgent = new SocksProxyAgent(process.env.QUOTAGUARD_SOCKS_URL);
 
 const esimAxios = axios.create({
   baseURL: process.env.ESIM_BASE_URL,
@@ -146,38 +161,7 @@ const esimAxios = axios.create({
   timeout: 20000,
 });
 
-async function purchaseEsim(payload) {
-  try {
-    console.log("purchaseEsim payload:", payload);
 
-    const res = await esimAxios.post(
-      "/purchase",
-      payload,
-      {
-        auth: {
-          username: process.env.ESIM_USERNAME,
-          password: process.env.ESIM_PASSWORD
-        }
-      }
-    );
-
-    console.log("ESIM API success:", res.data);
-    return res.data;
-
-  } catch (err) {
-    console.error("ESIM request error:", {
-      success: false,
-      error: err.response?.data?.error || err.message,
-      message: err.response?.data?.message,
-      timestamp: err.response?.data?.timestamp,
-      requestId: err.response?.data?.requestId
-    });
-
-    return { success: false };
-  }
-}
-
-module.exports = { purchaseEsim };
 
 // =====================================================
 // Twilio XML SAFE RESPONSE
