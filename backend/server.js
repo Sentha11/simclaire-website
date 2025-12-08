@@ -134,22 +134,40 @@ async function esimRequest(method, path, options = {}) {
   }
 }
 
-// PURCHASE ESIM WRAPPER
 async function purchaseEsim({ sku, quantity, type, destinationId }) {
-  const body = {
+  const url = `${process.env.ESIM_BASE_URL}/purchase`;
+
+  const payload = {
     items: [
       {
         sku,
-        quantity,
-        type,
-        destinationId,
-      },
-    ],
+        quantity: Number(quantity),
+        type: Number(type),                // MUST be a number
+        destinationId: Number(destinationId) // MUST be a number
+      }
+    ]
   };
 
-  console.log("📦 purchaseEsim payload:", JSON.stringify(body, null, 2));
+  console.log("📦 purchaseEsim payload:", JSON.stringify(payload, null, 2));
 
-  return await esimRequest("post", "/purchaseesim", { data: body });
+  try {
+    const response = await axios.post(url, payload, {
+      auth: {
+        username: process.env.ESIM_USERNAME,
+        password: process.env.ESIM_PASSWORD,
+      },
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    console.log("✅ ESIM API Response:", response.data);
+    return response.data;
+
+  } catch (err) {
+    console.error("❌ ESIM request error:", err.response?.data || err.message);
+    throw err;
+  }
 }
 
 // =====================================================
