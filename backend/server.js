@@ -21,7 +21,7 @@ const app = express();
 // ------------------------------------------------------------
 //const axios = require("axios");
 const { SocksProxyAgent } = require("socks-proxy-agent");
-const { HttpsProxyAgent } = require("https-proxy-agent");
+//const { HttpsProxyAgent } = require("https-proxy-agent");
 
 let proxyAgent = null;
 
@@ -151,7 +151,7 @@ async function esimRequest(method, path, options = {}) {
 }
 
 //const axios = require("axios");
-const { SocksProxyAgent } = require("socks-proxy-agent");
+//const { SocksProxyAgent } = require("socks-proxy-agent");
 
 
 const esimAxios = axios.create({
