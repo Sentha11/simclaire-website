@@ -157,17 +157,17 @@ async function purchaseEsim({ sku, quantity, type, destinationId }) {
   const payload = {
     items: [
       {
-        sku,
-        quantity,
-        type,
-        destinationId
+        sku: String(sku),
+        quantity: Number(quantity),
+        type: Number(type),
+        destinationId: Number(destinationId),
       }
     ]
   };
 
-  console.log("📦 purchaseEsim payload:", JSON.stringify(payload, null, 2));
+  console.log("📦 FINAL PURCHASE PAYLOAD:", JSON.stringify(payload, null, 2));
 
-  const res = await esimRequest("post", "/purchaseesim", {
+  return await esimRequest("post", "/purchase", {
     data: payload,
   });
 
