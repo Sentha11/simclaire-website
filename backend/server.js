@@ -179,6 +179,7 @@ async function purchaseEsim({ sku, quantity, type, destinationId }) {
     status: res?.status || res?.statusdesc || null,
     statusmsg: res?.statusmsg || null,
   };
+}
 //const axios = require("axios");
 //const { SocksProxyAgent } = require("socks-proxy-agent");
 
