@@ -150,6 +150,35 @@ async function esimRequest(method, path, options = {}) {
   }
 }
 
+// =====================================================
+// PURCHASE ESIM WRAPPER
+// =====================================================
+async function purchaseEsim({ sku, quantity, type, destinationId }) {
+  const payload = {
+    items: [
+      {
+        sku,
+        quantity,
+        type,
+        destinationId
+      }
+    ]
+  };
+
+  console.log("📦 purchaseEsim payload:", JSON.stringify(payload, null, 2));
+
+  const res = await esimRequest("post", "/purchaseesim", {
+    data: payload,
+  });
+
+  console.log("✅ purchaseEsim raw response:", res);
+
+  return {
+    transactionId: res?.transactionId || res?.txnrefid || null,
+    activationCode: res?.activationCode || null,
+    status: res?.status || res?.statusdesc || null,
+    statusmsg: res?.statusmsg || null,
+  };
 //const axios = require("axios");
 //const { SocksProxyAgent } = require("socks-proxy-agent");
 
