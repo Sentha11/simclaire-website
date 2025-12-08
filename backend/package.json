@@ -12,6 +12,8 @@
     "express": "^4.18.2",
     "hpagent": "^1.2.0",
     "https-proxy-agent": "^7.0.2",
+    "nodemailer": "^7.0.11",
+    "pdfkit": "^0.17.2",
     "stripe": "^20.0.0",
     "twilio": "^5.10.7"
   }
