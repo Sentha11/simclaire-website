@@ -416,10 +416,10 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
             console.error("❌ Missing destinationId in metadata");
           } else {
             purchaseResult = await purchaseEsim({
-              sku,
+              sku: meta.productSku,
               quantity: qty,
-              type: String(type),
-              destinationId: String(destinationId),
+              type: Number(meta.productType),
+              destinationId: Number(meta.destinationId),
             });
             console.log("✅ purchaseEsim response:", purchaseResult);
           }
