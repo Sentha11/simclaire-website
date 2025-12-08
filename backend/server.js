@@ -134,41 +134,50 @@ async function esimRequest(method, path, options = {}) {
   }
 }
 
-async function purchaseEsim({ sku, quantity, type, destinationId }) {
-  const url = `${process.env.ESIM_BASE_URL}/purchase`;
+const axios = require("axios");
+const { SocksProxyAgent } = require("socks-proxy-agent");
 
-  const payload = {
-    items: [
-      {
-        sku,
-        quantity: Number(quantity),
-        type: Number(type),                // MUST be a number
-        destinationId: Number(destinationId) // MUST be a number
-      }
-    ]
-  };
+const proxyAgent = new SocksProxyAgent(process.env.QUOTAGUARD_SOCKS_URL);
 
-  console.log("📦 purchaseEsim payload:", JSON.stringify(payload, null, 2));
+const esimAxios = axios.create({
+  baseURL: process.env.ESIM_BASE_URL,
+  httpAgent: proxyAgent,
+  httpsAgent: proxyAgent,
+  timeout: 20000,
+});
 
+async function purchaseEsim(payload) {
   try {
-    const response = await axios.post(url, payload, {
-      auth: {
-        username: process.env.ESIM_USERNAME,
-        password: process.env.ESIM_PASSWORD,
-      },
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+    console.log("purchaseEsim payload:", payload);
 
-    console.log("✅ ESIM API Response:", response.data);
-    return response.data;
+    const res = await esimAxios.post(
+      "/purchase",
+      payload,
+      {
+        auth: {
+          username: process.env.ESIM_USERNAME,
+          password: process.env.ESIM_PASSWORD
+        }
+      }
+    );
+
+    console.log("ESIM API success:", res.data);
+    return res.data;
 
   } catch (err) {
-    console.error("❌ ESIM request error:", err.response?.data || err.message);
-    throw err;
+    console.error("ESIM request error:", {
+      success: false,
+      error: err.response?.data?.error || err.message,
+      message: err.response?.data?.message,
+      timestamp: err.response?.data?.timestamp,
+      requestId: err.response?.data?.requestId
+    });
+
+    return { success: false };
   }
 }
+
+module.exports = { purchaseEsim };
 
 // =====================================================
 // Twilio XML SAFE RESPONSE
