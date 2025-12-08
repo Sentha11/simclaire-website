@@ -19,7 +19,7 @@ const app = express();
 // ------------------------------------------------------------
 // ESIM API AXIOS WITH QUOTAGUARD STATIC PROXY
 // ------------------------------------------------------------
-const axios = require("axios");
+//const axios = require("axios");
 const { SocksProxyAgent } = require("socks-proxy-agent");
 const { HttpsProxyAgent } = require("https-proxy-agent");
 
@@ -150,7 +150,7 @@ async function esimRequest(method, path, options = {}) {
   }
 }
 
-const axios = require("axios");
+//const axios = require("axios");
 const { SocksProxyAgent } = require("socks-proxy-agent");
 
 
