@@ -672,11 +672,10 @@ app.post("/webhook/whatsapp", async (req, res) => {
       );
     }
 
-    // COUNTRY SEARCH
+// COUNTRY SEARCH
 if (session.step === "COUNTRY") {
   const destRes = await esimRequest("get", "/destinations");
 
-  // SAFELY EXTRACT ARRAY
   const list = Array.isArray(destRes?.data)
     ? destRes.data
     : Array.isArray(destRes)
@@ -687,14 +686,23 @@ if (session.step === "COUNTRY") {
     return res.send(twiml("❌ No destinations available. Try again."));
   }
 
-  const match = list.find((d) =>
-    (d.destinationName || "").toLowerCase().includes(text)
-  );
+  // CLEAN INPUT
+  const cleanedText = text
+    .replace(/\s+/g, " ")
+    .replace(/[^a-z ]/g, "")
+    .trim();
+
+  const match = list.find(d => {
+    const name = (d.destinationName || "")
+      .toLowerCase()
+      .replace(/[^a-z ]/g, "")
+      .trim();
+
+    return name.includes(cleanedText);
+  });
 
   if (!match) {
-    return res.send(
-      twiml("❌ No match. Try another country or type menu.")
-    );
+    return res.send(twiml("❌ No destinations available. Try again."));
   }
 
   session.country = match.destinationName;
@@ -716,23 +724,18 @@ if (session.step === "COUNTRY") {
 
   if (!products.length) {
     return res.send(
-      twiml(
-        `😕 No plans available for *${session.country}*.\nType *menu* to start over.`
-      )
+      twiml(`😕 No plans available for *${session.country}*. Type menu to start over.)`
     );
   }
 
   let msg = `📡 Plans for *${session.country}*:\n\n`;
   products.slice(0, 5).forEach((p, i) => {
-    msg += `${i + 1}) ${p.productName}\n💾 ${p.productDataAllowance}\n📅 ${
-      p.validity
-    } days\n💵 £${p.productPrice}\n\n`;
+    msg += `${i + 1}) ${p.productName}\n💾 ${p.productDataAllowance}\n📅 ${p.validity} days\n💵 £${p.productPrice}\n\n`;
   });
 
-  msg += "Reply with 1–5 to choose a plan.";
+  msg += "Reply with 1–4 to choose a plan.";
   return res.send(twiml(msg));
 }
-
     // PLAN SELECT
     if (session.step === "PLAN") {
       const index = parseInt(text);
