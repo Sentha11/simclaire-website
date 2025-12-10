@@ -724,7 +724,7 @@ if (session.step === "COUNTRY") {
 
   if (!products.length) {
     return res.send(
-      twiml(`😕 No plans available for *${session.country}*. Type menu to start over.)`
+      twiml(`😕 No plans available for *${session.country}*. Type menu to start over.`)
     );
   }
 
