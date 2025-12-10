@@ -17,9 +17,16 @@ const sgMail = require("@sendgrid/mail");
 
 const app = express();
 
-// ------------------------------------------------------------
-// QUOTAGUARD STATIC PROXY (for ESIM API)
-// ------------------------------------------------------------
+// =====================================================
+// APP BASE URL (used for Stripe success/cancel URLs)
+// =====================================================
+const APP_BASE_URL =
+  process.env.APP_BASE_URL ||
+  "https://simclaire-website-backend.onrender.com";
+
+// =====================================================
+// QUOTAGUARD STATIC / SOCKS PROXY
+// =====================================================
 let proxyAgent = null;
 
 if (process.env.QUOTAGUARD_URL) {
@@ -29,16 +36,12 @@ if (process.env.QUOTAGUARD_URL) {
   proxyAgent = new SocksProxyAgent(process.env.QUOTAGUARD_SOCKS_URL);
   console.log("🛡️ Using QuotaGuard SOCKS5 proxy");
 } else {
-  console.log("ℹ️ No QuotaGuard proxy configured – ESIM calls will use normal IP");
+  console.log("ℹ️ No QuotaGuard proxy configured");
 }
 
 // =====================================================
-// BASE URL FOR SELF (for internal axios calls to /api/...)
+// AXIOS GLOBAL BASE (for internal calls only)
 // =====================================================
-const APP_BASE_URL =
-  process.env.APP_BASE_URL ||
-  "https://simclaire-website-backend.onrender.com";
-
 axios.defaults.baseURL = APP_BASE_URL;
 
 // =====================================================
@@ -46,14 +49,13 @@ axios.defaults.baseURL = APP_BASE_URL;
 // =====================================================
 app.use(cors());
 
-// For Twilio / WhatsApp form-encoded webhooks
+// Twilio / WhatsApp send x-www-form-urlencoded
 app.use(express.urlencoded({ extended: false }));
 
 // =====================================================
 // TWILIO CLIENT INIT (GLOBAL)
 // =====================================================
 let twilioClient = null;
-
 if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
   twilioClient = twilio(
     process.env.TWILIO_ACCOUNT_SID,
@@ -93,27 +95,39 @@ const SENDGRID_FROM_NAME = process.env.SENDGRID_FROM_NAME || "SimClaire";
 const LOGO_PATH = path.join(__dirname, "assets", "simclaire-logo.png");
 
 // =====================================================
-// ESIM API AUTH + WRAPPER
+// ESIM API AUTH + HELPER
+//   ESIM_BASE_URL = https://uat.esim-api.com  (Option B)
+//   All calls go to /api/esim/... endpoints
 // =====================================================
-const ESIM_BASE_URL = process.env.ESIM_BASE_URL; // e.g. https://uat.esim-api.com/api/esim
+const ESIM_BASE_URL = process.env.ESIM_BASE_URL; // e.g. https://uat.esim-api.com
 const ESIM_USERNAME = process.env.ESIM_USERNAME;
 const ESIM_PASSWORD = process.env.ESIM_PASSWORD;
 
 let esimToken = null;
 let esimExpiresAt = 0;
 
+// Defensive helper to always get an array from provider responses
+function toArray(maybe) {
+  if (Array.isArray(maybe)) return maybe;
+  if (maybe && typeof maybe === "object") {
+    if (Array.isArray(maybe.data)) return maybe.data;
+    if (Array.isArray(maybe.products)) return maybe.products;
+    if (Array.isArray(maybe.items)) return maybe.items;
+  }
+  return [];
+}
+
 async function getEsimToken() {
   if (esimToken && Date.now() < esimExpiresAt) return esimToken;
 
   const res = await axios.post(
-    `${ESIM_BASE_URL}/authenticate`,
+    `${ESIM_BASE_URL}/api/esim/authenticate`,
     { userName: ESIM_USERNAME, password: ESIM_PASSWORD },
     { httpsAgent: proxyAgent, proxy: false }
   );
 
   esimToken = res.data.token;
   esimExpiresAt = Date.now() + (res.data.expirySeconds || 600) * 1000;
-
   return esimToken;
 }
 
@@ -123,7 +137,7 @@ async function esimRequest(method, path, options = {}) {
   try {
     const result = await axios({
       method,
-      url: `${ESIM_BASE_URL}${path}`,
+      url: `${ESIM_BASE_URL}${path}`, // path should start with /api/esim/...
       httpsAgent: proxyAgent,
       proxy: false,
       headers: {
@@ -135,22 +149,22 @@ async function esimRequest(method, path, options = {}) {
 
     return result.data;
   } catch (err) {
-    console.error("❌ ESIM request error:", err.response?.data || err);
+    console.error("❌ ESIM request error:", err.response?.data || err.message);
     throw err;
   }
 }
 
 // =====================================================
-// PURCHASE ESIM (FINAL CORRECT VERSION)
+// PURCHASE ESIM WRAPPER
 // =====================================================
 async function purchaseEsim({ sku, quantity, type, destinationId }) {
   const payload = {
     items: [
       {
-        sku: String(sku),
-        quantity: Number(quantity),
-        type: Number(type),
-        destinationId: Number(destinationId),
+        sku,
+        quantity,
+        type,
+        destinationId,
       },
     ],
   };
@@ -161,14 +175,13 @@ async function purchaseEsim({ sku, quantity, type, destinationId }) {
     data: payload,
   });
 
-  console.log("✅ Raw purchase result:", res);
+  console.log("✅ purchaseEsim raw response:", res);
 
   return {
     transactionId: res?.transactionId || res?.txnrefid || null,
     activationCode: res?.activationCode || null,
     status: res?.status || res?.statusdesc || null,
-    statusmsg: res?.statusmsg || res?.message || null,
-    raw: res,
+    statusmsg: res?.statusmsg || null,
   };
 }
 
@@ -204,7 +217,7 @@ function getSession(id) {
       quantity: 1,
       mobile: null,
       email: null,
-      tempEmail: null, // for double entry email
+      tempEmail: null, // for double-entry email
     };
   }
   return sessions[id];
@@ -215,7 +228,7 @@ function resetSession(id) {
 }
 
 // =====================================================
-// PDF GENERATION + EMAIL (SendGrid) – SIMPLE LAYOUT
+// PDF GENERATION + EMAIL (SendGrid)
 // =====================================================
 function generateEsimPdfBuffer({ meta, amount, currency, purchaseResult }) {
   return new Promise((resolve, reject) => {
@@ -232,9 +245,7 @@ function generateEsimPdfBuffer({ meta, amount, currency, purchaseResult }) {
         doc.image(LOGO_PATH, { width: 120, align: "left" });
         doc.moveDown();
       } else {
-        doc
-          .fontSize(22)
-          .text("SimClaire", { align: "left", underline: true });
+        doc.fontSize(22).text("SimClaire", { align: "left", underline: true });
         doc.moveDown();
       }
 
@@ -377,28 +388,23 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
 
         console.log("🎟 Stripe metadata:", meta);
 
-        // ---------------------------------------------
         // 1) PURCHASE ESIM
-        // ---------------------------------------------
         let purchaseResult = null;
         try {
-          const sku = meta.productSku;
           const qty = parseInt(meta.quantity || "1", 10) || 1;
-          const type = meta.productType;
-          const destinationId = meta.destinationId;
 
-          if (!sku) {
+          if (!meta.productSku) {
             console.error("❌ Missing productSku in metadata");
-          } else if (!type) {
+          } else if (!meta.productType) {
             console.error("❌ Missing productType in metadata");
-          } else if (!destinationId) {
+          } else if (!meta.destinationId) {
             console.error("❌ Missing destinationId in metadata");
           } else {
             purchaseResult = await purchaseEsim({
-              sku,
+              sku: meta.productSku,
               quantity: qty,
-              type: Number(type),
-              destinationId: Number(destinationId),
+              type: Number(meta.productType),
+              destinationId: Number(meta.destinationId),
             });
             console.log("✅ purchaseEsim response:", purchaseResult);
           }
@@ -408,9 +414,8 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
             err.response?.data || err.message
           );
         }
-// ---------------------------------------------
-// 2) SEND WHATSAPP CONFIRMATION
-// ---------------------------------------------
+
+        // 2) SEND WHATSAPP CONFIRMATION
         try {
           let msg = `
 🎉 Payment Successful!
@@ -426,11 +431,9 @@ ${meta.flagEmoji || "📶"} ${meta.country || ""} — ${meta.planName || ""}
           if (purchaseResult?.transactionId) {
             msg += `\n🆔 eSIM Transaction ID: ${purchaseResult.transactionId}`;
           }
-
           if (purchaseResult?.activationCode) {
             msg += `\n🔐 Activation Code: ${purchaseResult.activationCode}`;
           }
-
           if (purchaseResult?.statusmsg) {
             msg += `\n📣 Status: ${purchaseResult.statusmsg}`;
           }
@@ -457,9 +460,7 @@ ${meta.flagEmoji || "📶"} ${meta.country || ""} — ${meta.planName || ""}
           console.error("❌ Error sending WhatsApp:", err);
         }
 
-        // ---------------------------------------------
         // 3) SEND EMAIL WITH PDF (SendGrid)
-// ---------------------------------------------
         try {
           const customerEmail =
             sessionObj.customer_details?.email || meta.email;
@@ -569,16 +570,14 @@ app.get("/test-esim", async (req, res) => {
     const token = await getEsimToken();
     console.log("🔐 Token received:", token ? "YES" : "NO");
 
-    const data = await esimRequest("get", "/destinations");
-    console.log("🌍 Destinations:", data?.data?.length || "n/a");
+    const data = await esimRequest("get", "/api/esim/destinations");
+    const list = toArray(data);
 
     return res.json({
       ok: true,
       message: "Render → Proxy → eSIM API connection works!",
-      destinationsCount: Array.isArray(data?.data)
-        ? data.data.length
-        : "unknown",
-      sample: Array.isArray(data?.data) ? data.data.slice(0, 3) : data,
+      destinationsCount: list.length,
+      sample: list.slice(0, 3),
     });
   } catch (err) {
     console.error("❌ /test-esim ERROR:", err.response?.data || err.message);
@@ -590,8 +589,17 @@ app.get("/test-esim", async (req, res) => {
 });
 
 // =====================================================
-// DEBUG — GET PRODUCTS FOR A DESTINATION
+// DEBUG — RAW DESTINATIONS + PRODUCTS
 // =====================================================
+app.get("/destinations", async (req, res) => {
+  try {
+    const data = await esimRequest("get", "/api/esim/destinations");
+    res.json(data);
+  } catch (err) {
+    res.status(500).json(err.response?.data || { error: err.message });
+  }
+});
+
 app.get("/debug/products", async (req, res) => {
   try {
     const id = req.query.destinationid;
@@ -601,13 +609,16 @@ app.get("/debug/products", async (req, res) => {
 
     console.log("🔍 Fetching products for destination:", id);
 
-    const data = await esimRequest("get", `/products?destinationid=${id}`);
-    const products = Array.isArray(data?.data) ? data.data : data;
+    const data = await esimRequest(
+      "get",
+      `/api/esim/products?destinationid=${id}`
+    );
+    const products = toArray(data);
 
     return res.json({
       ok: true,
       destinationid: id,
-      count: Array.isArray(products) ? products.length : 0,
+      count: products.length,
       products,
     });
   } catch (err) {
@@ -643,7 +654,7 @@ app.post("/webhook/whatsapp", async (req, res) => {
       );
     }
 
-    // MENU OPTIONS
+    // MAIN MENU
     if (session.step === "MENU") {
       if (text === "1") {
         session.step = "COUNTRY";
@@ -672,75 +683,60 @@ app.post("/webhook/whatsapp", async (req, res) => {
       );
     }
 
-// COUNTRY SEARCH
-if (session.step === "COUNTRY") {
-  const destRes = await esimRequest("get", "/destinations");
+    // COUNTRY SEARCH
+    if (session.step === "COUNTRY") {
+      const destRes = await esimRequest("get", "/api/esim/destinations");
+      const list = toArray(destRes);
 
-  const list = Array.isArray(destRes?.data)
-    ? destRes.data
-    : Array.isArray(destRes)
-    ? destRes
-    : [];
+      const match = list.find((d) =>
+        (d.destinationName || "").toLowerCase().includes(text)
+      );
 
-  if (!list.length) {
-    return res.send(twiml("❌ No destinations available. Try again."));
-  }
+      if (!match) {
+        return res.send(
+          twiml("❌ No destinations available. Try again or type menu.")
+        );
+      }
 
-  // CLEAN INPUT
-  const cleanedText = text
-    .replace(/\s+/g, " ")
-    .replace(/[^a-z ]/g, "")
-    .trim();
+      session.country = match.destinationName;
+      session.destinationId = match.destinationID;
+      session.step = "PLAN";
 
-  const match = list.find(d => {
-    const name = (d.destinationName || "")
-      .toLowerCase()
-      .replace(/[^a-z ]/g, "")
-      .trim();
+      const prodRes = await esimRequest(
+        "get",
+        `/api/esim/products?destinationid=${match.destinationID}`
+      );
+      const products = toArray(prodRes);
+      session.products = products;
 
-    return name.includes(cleanedText);
-  });
+      if (!products || products.length === 0) {
+        return res.send(
+          twiml(
+            `😕 No plans available for *${session.country}*.\nType *menu* to start over.`
+          )
+        );
+      }
 
-  if (!match) {
-    return res.send(twiml("❌ No destinations available. Try again."));
-  }
+      let msg = `📡 Plans for *${session.country}*:\n\n`;
+      products.slice(0, 5).forEach((p, i) => {
+        msg += `${i + 1}) ${p.productName}\n💾 ${
+          p.productDataAllowance
+        }\n📅 ${p.productValidityDays} days\n💵 £${p.productPrice}\n\n`;
+      });
 
-  session.country = match.destinationName;
-  session.destinationId = match.destinationID;
-  session.step = "PLAN";
+      msg += "Reply with 1–5 to choose a plan.";
+      return res.send(twiml(msg));
+    }
 
-  const prodRes = await esimRequest(
-    "get",
-    `/products?destinationid=${match.destinationID}`
-  );
-
-  const products = Array.isArray(prodRes?.data)
-    ? prodRes.data
-    : Array.isArray(prodRes)
-    ? prodRes
-    : [];
-
-  session.products = products;
-
-  if (!products.length) {
-    return res.send(
-      twiml(`😕 No plans available for *${session.country}*. Type menu to start over.`)
-    );
-  }
-
-  let msg = `📡 Plans for *${session.country}*:\n\n`;
-  products.slice(0, 5).forEach((p, i) => {
-    msg += `${i + 1}) ${p.productName}\n💾 ${p.productDataAllowance}\n📅 ${p.validity} days\n💵 £${p.productPrice}\n\n`;
-  });
-
-  msg += "Reply with 1–4 to choose a plan.";
-  return res.send(twiml(msg));
-}
     // PLAN SELECT
     if (session.step === "PLAN") {
-      const index = parseInt(text);
+      const index = parseInt(text, 10);
 
-      if (isNaN(index) || index < 1 || index > session.products.length) {
+      if (
+        isNaN(index) ||
+        index < 1 ||
+        index > (session.products ? session.products.length : 0)
+      ) {
         return res.send(twiml("❌ Invalid option. Try again."));
       }
 
@@ -752,7 +748,7 @@ if (session.step === "COUNTRY") {
 
     // QUANTITY
     if (session.step === "QTY") {
-      const qty = parseInt(text);
+      const qty = parseInt(text, 10);
 
       if (isNaN(qty) || qty < 1 || qty > 10) {
         return res.send(twiml("❌ Enter a number 1–10."));
@@ -824,7 +820,7 @@ if (session.step === "COUNTRY") {
             productSku: p.productSku || p.productSKU,
             productType: p.productType,
             data: p.productDataAllowance,
-            validity: p.validity,
+            validity: p.productValidityDays,
             country: session.country,
             mobile: session.mobile,
             destinationId: session.destinationId,
@@ -856,6 +852,7 @@ if (session.step === "COUNTRY") {
       }
     }
 
+    // Fallback
     return res.send(twiml("😅 I got lost. Type menu to restart."));
   } catch (err) {
     console.error("❌ WhatsApp Webhook Error:", err);
@@ -867,4 +864,8 @@ if (session.step === "COUNTRY") {
 // START SERVER
 // =====================================================
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log(`🔥 Backend running on port ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`🔥 Backend running on port ${PORT}`);
+  console.log("=> Your service is live 🚀");
+  console.log(`=> Available at your primary URL ${APP_BASE_URL}`);
+});
