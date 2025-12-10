@@ -8,6 +8,7 @@ const express = require("express");
 const cors = require("cors");
 const axios = require("axios");
 const { HttpsProxyAgent } = require("https-proxy-agent");
+const { SocksProxyAgent } = require("socks-proxy-agent");
 const twilio = require("twilio");
 const PDFDocument = require("pdfkit");
 const fs = require("fs");
@@ -17,28 +18,22 @@ const sgMail = require("@sendgrid/mail");
 const app = express();
 
 // ------------------------------------------------------------
-// ESIM API AXIOS WITH QUOTAGUARD STATIC PROXY
+// QUOTAGUARD STATIC PROXY (for ESIM API)
 // ------------------------------------------------------------
-//const axios = require("axios");
-const { SocksProxyAgent } = require("socks-proxy-agent");
-//const { HttpsProxyAgent } = require("https-proxy-agent");
-
 let proxyAgent = null;
 
-// If using QuotaGuard STATIC (HTTP Proxy)
 if (process.env.QUOTAGUARD_URL) {
   proxyAgent = new HttpsProxyAgent(process.env.QUOTAGUARD_URL);
   console.log("🛡️ Using QuotaGuard STATIC HTTP proxy");
-} 
-// If using QuotaGuard SOCKS5
-else if (process.env.QUOTAGUARD_SOCKS_URL) {
+} else if (process.env.QUOTAGUARD_SOCKS_URL) {
   proxyAgent = new SocksProxyAgent(process.env.QUOTAGUARD_SOCKS_URL);
   console.log("🛡️ Using QuotaGuard SOCKS5 proxy");
+} else {
+  console.log("ℹ️ No QuotaGuard proxy configured – ESIM calls will use normal IP");
 }
 
-
 // =====================================================
-// BASE URL + AXIOS DEFAULTS
+// BASE URL FOR SELF (for internal axios calls to /api/...)
 // =====================================================
 const APP_BASE_URL =
   process.env.APP_BASE_URL ||
@@ -92,20 +87,15 @@ if (process.env.SENDGRID_API_KEY) {
 
 const SENDGRID_FROM_EMAIL =
   process.env.SENDGRID_FROM_EMAIL || "care@simclaire.com";
-const SENDGRID_FROM_NAME =
-  process.env.SENDGRID_FROM_NAME || "SimClaire";
+const SENDGRID_FROM_NAME = process.env.SENDGRID_FROM_NAME || "SimClaire";
 
 // Local logo file (put logo here: backend/assets/simclaire-logo.png)
 const LOGO_PATH = path.join(__dirname, "assets", "simclaire-logo.png");
 
 // =====================================================
-// QUOTAGUARD STATIC IP PROXY
-// =====================================================
-
-// =====================================================
 // ESIM API AUTH + WRAPPER
 // =====================================================
-const ESIM_BASE_URL = process.env.ESIM_BASE_URL;
+const ESIM_BASE_URL = process.env.ESIM_BASE_URL; // e.g. https://uat.esim-api.com/api/esim
 const ESIM_USERNAME = process.env.ESIM_USERNAME;
 const ESIM_PASSWORD = process.env.ESIM_PASSWORD;
 
@@ -151,47 +141,36 @@ async function esimRequest(method, path, options = {}) {
 }
 
 // =====================================================
-// PURCHASE ESIM WRAPPER
+// PURCHASE ESIM (FINAL CORRECT VERSION)
 // =====================================================
 async function purchaseEsim({ sku, quantity, type, destinationId }) {
   const payload = {
     items: [
       {
-        sku,
-        quantity,
-        type,
-        destinationId,
-      }
-    ]
+        sku: String(sku),
+        quantity: Number(quantity),
+        type: Number(type),
+        destinationId: Number(destinationId),
+      },
+    ],
   };
 
-  console.log("📦 FINAL PURCHASE PAYLOAD:",payload);
+  console.log("📦 FINAL PURCHASE PAYLOAD:", payload);
 
-  return await esimRequest("post", "/purchase", {
+  const res = await esimRequest("post", "/api/esim/purchase", {
     data: payload,
   });
 
-  console.log("✅ purchaseEsim raw response:", res);
+  console.log("✅ Raw purchase result:", res);
 
   return {
     transactionId: res?.transactionId || res?.txnrefid || null,
     activationCode: res?.activationCode || null,
     status: res?.status || res?.statusdesc || null,
-    statusmsg: res?.statusmsg || null,
+    statusmsg: res?.statusmsg || res?.message || null,
+    raw: res,
   };
 }
-//const axios = require("axios");
-//const { SocksProxyAgent } = require("socks-proxy-agent");
-
-
-const esimAxios = axios.create({
-  baseURL: process.env.ESIM_BASE_URL,
-  httpAgent: proxyAgent,
-  httpsAgent: proxyAgent,
-  timeout: 20000,
-});
-
-
 
 // =====================================================
 // Twilio XML SAFE RESPONSE
@@ -225,7 +204,7 @@ function getSession(id) {
       quantity: 1,
       mobile: null,
       email: null,
-      tempEmail: null, // NEW: for double entry email
+      tempEmail: null, // for double entry email
     };
   }
   return sessions[id];
@@ -236,7 +215,7 @@ function resetSession(id) {
 }
 
 // =====================================================
-// PDF GENERATION + EMAIL (SendGrid)
+// PDF GENERATION + EMAIL (SendGrid) – SIMPLE LAYOUT
 // =====================================================
 function generateEsimPdfBuffer({ meta, amount, currency, purchaseResult }) {
   return new Promise((resolve, reject) => {
@@ -416,10 +395,10 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
             console.error("❌ Missing destinationId in metadata");
           } else {
             purchaseResult = await purchaseEsim({
-              sku: meta.productSku,
+              sku,
               quantity: qty,
-              type: Number(meta.productType),
-              destinationId: Number(meta.destinationId),
+              type: Number(type),
+              destinationId: Number(destinationId),
             });
             console.log("✅ purchaseEsim response:", purchaseResult);
           }
@@ -429,10 +408,9 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
             err.response?.data || err.message
           );
         }
-
-        // ---------------------------------------------
-        // 2) SEND WHATSAPP CONFIRMATION
-        // ---------------------------------------------
+// ---------------------------------------------
+// 2) SEND WHATSAPP CONFIRMATION
+// ---------------------------------------------
         try {
           let msg = `
 🎉 Payment Successful!
@@ -633,7 +611,10 @@ app.get("/debug/products", async (req, res) => {
       products,
     });
   } catch (err) {
-    console.error("❌ /debug/products error:", err.response?.data || err.message);
+    console.error(
+      "❌ /debug/products error:",
+      err.response?.data || err.message
+    );
     return res.json({
       ok: false,
       error: err.response?.data || err.message,
