@@ -673,50 +673,65 @@ app.post("/webhook/whatsapp", async (req, res) => {
     }
 
     // COUNTRY SEARCH
-    if (session.step === "COUNTRY") {
-      const destRes = await esimRequest("get", "/destinations");
-      const list = destRes.data || destRes || [];
+if (session.step === "COUNTRY") {
+  const destRes = await esimRequest("get", "/destinations");
 
-      const match = list.find((d) =>
-        (d.destinationName || "").toLowerCase().includes(text)
-      );
+  // SAFELY EXTRACT ARRAY
+  const list = Array.isArray(destRes?.data)
+    ? destRes.data
+    : Array.isArray(destRes)
+    ? destRes
+    : [];
 
-      if (!match) {
-        return res.send(
-          twiml("❌ No match. Try another country or type menu.")
-        );
-      }
+  if (!list.length) {
+    return res.send(twiml("❌ No destinations available. Try again."));
+  }
 
-      session.country = match.destinationName;
-      session.destinationId = match.destinationID;
-      session.step = "PLAN";
+  const match = list.find((d) =>
+    (d.destinationName || "").toLowerCase().includes(text)
+  );
 
-      const prodRes = await esimRequest(
-        "get",
-        `/products?destinationid=${match.destinationID}`
-      );
+  if (!match) {
+    return res.send(
+      twiml("❌ No match. Try another country or type menu.")
+    );
+  }
 
-      const products = prodRes.data || prodRes || [];
-      session.products = products;
+  session.country = match.destinationName;
+  session.destinationId = match.destinationID;
+  session.step = "PLAN";
 
-      if (!products || products.length === 0) {
-        return res.send(
-          twiml(
-            `😕 No plans available for *${session.country}*.\nType *menu* to start over.`
-          )
-        );
-      }
+  const prodRes = await esimRequest(
+    "get",
+    `/products?destinationid=${match.destinationID}`
+  );
 
-      let msg = `📡 Plans for *${session.country}*:\n\n`;
-      products.slice(0, 5).forEach((p, i) => {
-        msg += `${i + 1}) ${p.productName}\n💾 ${p.productDataAllowance}\n📅 ${
-          p.validity
-        } days\n💵 £${p.productPrice}\n\n`;
-      });
+  const products = Array.isArray(prodRes?.data)
+    ? prodRes.data
+    : Array.isArray(prodRes)
+    ? prodRes
+    : [];
 
-      msg += "Reply with 1–5 to choose a plan.";
-      return res.send(twiml(msg));
-    }
+  session.products = products;
+
+  if (!products.length) {
+    return res.send(
+      twiml(
+        `😕 No plans available for *${session.country}*.\nType *menu* to start over.`
+      )
+    );
+  }
+
+  let msg = `📡 Plans for *${session.country}*:\n\n`;
+  products.slice(0, 5).forEach((p, i) => {
+    msg += `${i + 1}) ${p.productName}\n💾 ${p.productDataAllowance}\n📅 ${
+      p.validity
+    } days\n💵 £${p.productPrice}\n\n`;
+  });
+
+  msg += "Reply with 1–5 to choose a plan.";
+  return res.send(twiml(msg));
+}
 
     // PLAN SELECT
     if (session.step === "PLAN") {
