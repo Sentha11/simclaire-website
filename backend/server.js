@@ -732,7 +732,7 @@ app.post("/webhook/whatsapp", async (req, res) => {
 
       try {
         const response = await axios.post(
-          "/api/payments/create-checkout-session",
+          `${process.env.BACKEND_BASE_URL}/api/payments/create-checkout-session`,
           {
             email: session.email,
             quantity: session.quantity,
