@@ -495,6 +495,47 @@ app.get("/debug/products", async (req, res) => {
 });
 
 // =====================================================
+// TWILIO XML RESPONSE HELPER
+// =====================================================
+function escapeXml(unsafe) {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
+
+function twiml(message) {
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Message>${escapeXml(message)}</Message>
+</Response>`;
+}
+
+// =====================================================
+// SIMPLE IN-MEMORY SESSION STORE
+// =====================================================
+let sessions = {};
+
+function getSession(id) {
+  if (!sessions[id]) {
+    sessions[id] = {
+      step: "MENU",
+      products: [],
+    };
+  }
+  return sessions[id];
+}
+
+function resetSession(id) {
+  sessions[id] = {
+    step: "MENU",
+    products: [],
+  };
+}
+
+// =====================================================
 // WHATSAPP WEBHOOK — MAIN FLOW
 // =====================================================
 app.post("/webhook/whatsapp", async (req, res) => {
