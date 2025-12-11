@@ -1,6 +1,6 @@
 // =====================================================
-// server.js – SimClaire Backend (FINAL CLEAN BUILD)
-// Stripe + eSIM + SendGrid + WhatsApp + Proxy Support
+// server.js – SimClaire Backend (FINAL CLEAN VERSION)
+// Stripe + eSIM API + WhatsApp + SendGrid + Proxy Support
 // =====================================================
 
 require("dotenv").config();
@@ -10,28 +10,30 @@ const axios = require("axios");
 const { HttpsProxyAgent } = require("https-proxy-agent");
 const { SocksProxyAgent } = require("socks-proxy-agent");
 const twilio = require("twilio");
-const PDFDocument = require("pdfkit");
 const sgMail = require("@sendgrid/mail");
+const PDFDocument = require("pdfkit");
 const path = require("path");
+const fs = require("fs");
 
 const app = express();
 
 // =====================================================
-// 1) PROXY SETUP (QuotaGuard HTTPS or SOCKS)
+// 0) PROXY SETUP (QuotaGuard)
 // =====================================================
 let proxyAgent = null;
+
 if (process.env.QUOTAGUARD_URL) {
   proxyAgent = new HttpsProxyAgent(process.env.QUOTAGUARD_URL);
-  console.log("🛡 Using QuotaGuard STATIC IP (HTTPS)");
+  console.log("🛡 Using QuotaGuard STATIC proxy");
 } else if (process.env.QUOTAGUARD_SOCKS_URL) {
   proxyAgent = new SocksProxyAgent(process.env.QUOTAGUARD_SOCKS_URL);
-  console.log("🛡 Using QuotaGuard SOCKS5");
+  console.log("🛡 Using QuotaGuard SOCKS5 proxy");
 }
 
 // =====================================================
-// 2) ESIM CONFIG
+// 1) ESIM API CONFIG
 // =====================================================
-const ESIM_BASE_URL = process.env.ESIM_BASE_URL; 
+const ESIM_BASE_URL = process.env.ESIM_BASE_URL;
 const ESIM_USERNAME = process.env.ESIM_USERNAME;
 const ESIM_PASSWORD = process.env.ESIM_PASSWORD;
 
@@ -39,119 +41,137 @@ let esimToken = null;
 let esimExpiresAt = 0;
 
 // =====================================================
-// 3) ESIM AUTH TOKEN
+// AUTHENTICATE TO ESIM PROVIDER
 // =====================================================
 async function getEsimToken() {
   if (esimToken && Date.now() < esimExpiresAt) return esimToken;
 
   const res = await axios.post(
     `${ESIM_BASE_URL}/authenticate`,
-    { userName: ESIM_USERNAME, password: ESIM_PASSWORD },
+    {
+      userName: ESIM_USERNAME,
+      password: ESIM_PASSWORD,
+    },
     { httpsAgent: proxyAgent, proxy: false }
   );
 
   esimToken = res.data.token;
   esimExpiresAt = Date.now() + (res.data.expirySeconds || 600) * 1000;
+
+  console.log("🔐 New eSIM token issued");
   return esimToken;
 }
 
 // =====================================================
-// 4) ESIM API WRAPPER
+// UNIVERSAL ESIM REQUEST WRAPPER
 // =====================================================
 async function esimRequest(method, path, options = {}) {
   const token = await getEsimToken();
 
-  try {
-    const result = await axios({
-      method,
-      url: `${ESIM_BASE_URL}${path}`,
-      httpsAgent: proxyAgent,
-      proxy: false,
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      ...options,
-    });
+  const res = await axios({
+    method,
+    url: `${ESIM_BASE_URL}${path}`,
+    httpsAgent: proxyAgent,
+    proxy: false,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    ...options,
+  });
 
-    return result.data;
-  } catch (err) {
-    console.error("❌ ESIM API Error:", err.response?.data || err.message);
-    throw err;
-  }
+  return res.data;
 }
 
 // =====================================================
-// 5) PURCHASE ESIM
+// PURCHASE ESIM
 // =====================================================
 async function purchaseEsim({ sku, quantity, type, destinationId }) {
   const payload = {
     items: [
-      { sku, quantity, type, destinationId }
-    ]
+      {
+        sku,
+        quantity,
+        type,
+        destinationId,
+      },
+    ],
   };
 
-  console.log("📦 PURCHASE PAYLOAD:", payload);
+  console.log("📦 FINAL PURCHASE PAYLOAD:", payload);
 
-  return await esimRequest("post", "/purchase", { data: payload });
+  return await esimRequest("post", "/purchase", {
+    data: payload,
+  });
 }
 
 // =====================================================
-// 6) INIT EXPRESS + MIDDLEWARE
+// EXPRESS MIDDLEWARE
 // =====================================================
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 // =====================================================
-// 7) TWILIO INIT
+// TWILIO CLIENT (SAFE API KEY MODE)
 // =====================================================
 let twilioClient = null;
-if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
+
+if (
+  process.env.TWILIO_API_KEY &&
+  process.env.TWILIO_API_SECRET &&
+  process.env.TWILIO_ACCOUNT_SID
+) {
   twilioClient = twilio(
-    process.env.TWILIO_ACCOUNT_SID,
-    process.env.TWILIO_AUTH_TOKEN
+    process.env.TWILIO_API_KEY,
+    process.env.TWILIO_API_SECRET,
+    { accountSid: process.env.TWILIO_ACCOUNT_SID }
   );
-  console.log("📞 Twilio Enabled");
+
+  console.log("📞 Twilio initialized using API Key mode");
+} else {
+  console.warn("⚠️ Twilio disabled (missing TWILIO_API_KEY or SECRET)");
 }
 
 // =====================================================
-// 8) STRIPE INIT
+// STRIPE INIT
 // =====================================================
 let stripe = null;
 if (process.env.STRIPE_SECRET_KEY) {
   stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
-  console.log("💳 Stripe Enabled");
+  console.log("💳 Stripe enabled");
 }
 
 // =====================================================
-// 9) SENDGRID INIT
+// SENDGRID INIT
 // =====================================================
 if (process.env.SENDGRID_API_KEY) {
   sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-  console.log("📧 SendGrid Enabled");
+  console.log("📧 SendGrid enabled");
 }
 
-const SENDGRID_FROM_EMAIL = "care@simclaire.com";
+const SENDGRID_FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL;
+const SENDGRID_FROM_NAME = "SimClaire";
 
 // =====================================================
-// 10) PDF GENERATOR (Simple Receipt)
+// PDF GENERATION
 // =====================================================
-function generateEsimPdf(meta, purchaseResult, amount, currencySymbol) {
-  return new Promise((resolve) => {
-    const doc = new PDFDocument();
+function generateEsimPdfBuffer({ meta, amount, currency, purchaseResult }) {
+  return new Promise((resolve, reject) => {
+    const doc = new PDFDocument({ margin: 40 });
     const chunks = [];
 
-    doc.on("data", (d) => chunks.push(d));
+    doc.on("data", (c) => chunks.push(c));
     doc.on("end", () => resolve(Buffer.concat(chunks)));
+    doc.on("error", reject);
 
-    doc.fontSize(24).text("SimClaire – eSIM Order", { underline: true });
+    doc.fontSize(22).text("SimClaire — eSIM Order", { underline: true });
     doc.moveDown();
 
     doc.fontSize(14).text(`Destination: ${meta.country}`);
     doc.text(`Plan: ${meta.planName}`);
     doc.text(`Data: ${meta.data}`);
-    doc.text(`Amount Paid: ${currencySymbol}${amount}`);
+    doc.text(`Amount Paid: ${currency}${amount}`);
     doc.moveDown();
 
     if (purchaseResult) {
@@ -160,71 +180,100 @@ function generateEsimPdf(meta, purchaseResult, amount, currencySymbol) {
         doc.text(`Activation Code: ${purchaseResult.activationCode}`);
     }
 
-    doc.text("\nYour QR code will be sent in a separate email automatically by the provider.");
     doc.end();
   });
 }
 
 // =====================================================
-// 11) SEND EMAIL (SendGrid)
+// SEND EMAIL (SENDGRID)
 // =====================================================
 async function sendEsimEmail({ to, meta, amount, currency, purchaseResult }) {
-  const symbol = currency === "USD" ? "$" : currency === "EUR" ? "€" : "£";
+  const pdf = await generateEsimPdfBuffer({
+    meta,
+    amount,
+    currency,
+    purchaseResult,
+  });
 
-  const pdf = await generateEsimPdf(meta, purchaseResult, amount, symbol);
-
-  await sgMail.send({
+  const msg = {
     to,
-    from: SENDGRID_FROM_EMAIL,
+    from: { email: SENDGRID_FROM_EMAIL, name: SENDGRID_FROM_NAME },
     subject: `Your eSIM for ${meta.country}`,
-    text: "Your eSIM receipt is attached. The QR will arrive separately from the provider.",
+    text: "Your eSIM & instructions are attached",
     attachments: [
       {
         content: pdf.toString("base64"),
-        filename: "SimClaire-eSIM.pdf",
         type: "application/pdf",
-        disposition: "attachment",
+        filename: "SimClaire-eSIM.pdf",
       },
     ],
-  });
+  };
 
-  console.log("📧 SendGrid email sent to", to);
+  await sgMail.send(msg);
+  console.log("📧 Email sent to:", to);
 }
 
 // =====================================================
-// 12) STRIPE CHECKOUT SESSION
+// STRIPE CHECKOUT SESSION
 // =====================================================
 app.post("/api/payments/create-checkout-session", async (req, res) => {
   try {
-    const body = req.body;
+    const {
+      email,
+      quantity,
+      price,
+      planName,
+      productSku,
+      productType,
+      data,
+      validity,
+      country,
+      mobile,
+      destinationId,
+      metadata,
+    } = req.body;
 
     const checkout = await stripe.checkout.sessions.create({
       mode: "payment",
-      customer_email: body.email,
-      success_url: `${process.env.APP_BASE_URL}/success`,
-      cancel_url: `${process.env.APP_BASE_URL}/cancel`,
+      customer_email: email,
+      success_url: `${process.env.BACKEND_BASE_URL}/success`,
+      cancel_url: `${process.env.BACKEND_BASE_URL}/cancel`,
+      payment_method_types: ["card"],
       line_items: [
         {
-          quantity: body.quantity,
+          quantity,
           price_data: {
             currency: "gbp",
-            unit_amount: Math.round(body.price * 100),
-            product_data: { name: body.planName },
+            unit_amount: Math.round(price * 100),
+            product_data: { name: planName },
           },
         },
       ],
-      metadata: body.metadata,
+      metadata: {
+        planName,
+        productSku,
+        productType,
+        data,
+        validity,
+        quantity,
+        email,
+        mobile,
+        country,
+        destinationId,
+        whatsappTo: metadata?.whatsappTo,
+        flagEmoji: metadata?.flagEmoji,
+      },
     });
 
-    res.json({ url: checkout.url });
+    res.json({ id: checkout.id, url: checkout.url });
   } catch (err) {
-    console.error("❌ Stripe Checkout Error:", err);
+    console.error("❌ Stripe session error:", err);
     res.status(500).json({ error: "Stripe session failed" });
   }
 });
 
 // =====================================================
-// 13) STRIPE WEBHOOK
+// STRIPE WEBHOOK — PAYMENT SUCCESSFUL
 // =====================================================
 app.post(
   "/webhook/stripe",
@@ -239,15 +288,16 @@ app.post(
         process.env.STRIPE_WEBHOOK_SECRET
       );
     } catch (err) {
-      console.error("❌ Invalid Stripe Signature:", err.message);
-      return res.status(400).send("Webhook Error");
+      return res.status(400).send(`Webhook Error: ${err.message}`);
     }
 
+    // 🎉 PAYMENT COMPLETE
     if (event.type === "checkout.session.completed") {
-      const session = event.data.object;
-      const meta = session.metadata || {};
+      const sessionObj = event.data.object;
+      const meta = sessionObj.metadata;
+      const amount = (sessionObj.amount_total / 100).toFixed(2);
 
-      // 1️⃣ Purchase ESIM
+      // 1️⃣ Purchase eSIM
       let purchaseResult = null;
       try {
         purchaseResult = await purchaseEsim({
@@ -257,41 +307,26 @@ app.post(
           destinationId: Number(meta.destinationId),
         });
       } catch (err) {
-        console.error("❌ purchaseEsim failed:", err.response?.data || err);
+        console.error("❌ Purchase error:", err.response?.data || err);
       }
 
-      // 2️⃣ Email Customer
-      try {
-        await sendEsimEmail({
-          to: meta.email,
-          meta,
-          amount: (session.amount_total / 100).toFixed(2),
-          currency: session.currency,
-          purchaseResult,
-        });
-      } catch (err) {
-        console.error("❌ SendGrid Error:", err);
-      }
-
-      // 3️⃣ WhatsApp Confirmation
+      // 2️⃣ Send WhatsApp confirmation
       if (twilioClient && meta.whatsappTo) {
-        let msg = `
-🎉 Payment Successful!
-
-${meta.flagEmoji} ${meta.country}
-${meta.planName}
-${meta.data}
-
-Your eSIM receipt has been emailed.
-Your QR will arrive shortly from provider.
-        `;
-
         await twilioClient.messages.create({
           from: process.env.TWILIO_WHATSAPP_FROM,
           to: meta.whatsappTo,
-          body: msg.trim(),
+          body: `🎉 Payment received!\n${meta.flagEmoji} ${meta.country}\n${meta.planName}\nAmount: £${amount}`,
         });
       }
+
+      // 3️⃣ Send email
+      await sendEsimEmail({
+        to: meta.email,
+        meta,
+        amount,
+        currency: "£",
+        purchaseResult,
+      });
     }
 
     res.json({ received: true });
@@ -299,191 +334,37 @@ Your QR will arrive shortly from provider.
 );
 
 // =====================================================
-// 14) SIMPLE TWIML HELPER
+// BASIC ROUTES
 // =====================================================
-function twiml(msg) {
-  return `<?xml version="1.0"?>
-<Response><Message>${msg}</Message></Response>`;
-}
+app.get("/success", (req, res) => res.send("Payment Success ✔"));
+app.get("/cancel", (req, res) => res.send("Payment Cancelled ❌"));
 
 // =====================================================
-// 15) IN-MEMORY SESSION
-// =====================================================
-const sessions = {};
-function getSession(id) {
-  if (!sessions[id]) sessions[id] = { step: "MENU", products: [] };
-  return sessions[id];
-}
-function resetSession(id) {
-  sessions[id] = { step: "MENU", products: [] };
-}
-
-// =====================================================
-// 16) WHATSAPP WEBHOOK
+// WHATSAPP FLOW ENTRY POINT — RESPOND TO HI/HELLO
 // =====================================================
 app.post("/webhook/whatsapp", async (req, res) => {
   res.set("Content-Type", "text/xml");
 
-  const from = req.body.WaId || req.body.From?.replace("whatsapp:", "");
-  const text = (req.body.Body || "").trim().toLowerCase();
+  const body = req.body.Body?.trim().toLowerCase() || "";
 
-  // 👋 NEW FEATURE — Respond to "hi" or "hello"
-  if (["hi", "hello", "hey"].includes(text)) {
-    return res.send(twiml("👋 Hi! Welcome to SimClaire.\nType menu anytime to begin."));
+  if (["hi", "hello", "hey"].includes(body)) {
+    return res.send(`
+      <Response>
+        <Message>👋 Welcome to SimClaire!\nReply with:\n1) Browse Plans\n2) FAQ\n3) Support</Message>
+      </Response>
+    `);
   }
 
-  const session = getSession(from);
-
-  // Reset
-  if (text === "menu") {
-    resetSession(from);
-    return res.send(
-      twiml("👋 Welcome to SimClaire!\n\n1) Browse Plans\n2) FAQ\n3) Support")
-    );
-  }
-
-  // MENU
-  if (session.step === "MENU") {
-    if (text === "1") {
-      session.step = "COUNTRY";
-      return res.send(
-        twiml("🌍 Enter your travel destination (example: Italy, Japan, USA)")
-      );
-    }
-    if (text === "2") return res.send(twiml("FAQ coming soon"));
-    if (text === "3") return res.send(twiml("Support: care@simclaire.com"));
-    return res.send(
-      twiml("👋 Welcome to SimClaire!\n\n1) Browse Plans\n2) FAQ\n3) Support")
-    );
-  }
-
-  // COUNTRY SEARCH
-  if (session.step === "COUNTRY") {
-    const listRes = await esimRequest("get", "/destinations");
-    const list = listRes.data || listRes;
-
-    const match = list.find((d) =>
-      d.destinationName.toLowerCase().includes(text)
-    );
-
-    if (!match) {
-      return res.send(twiml("❌ No match. Try again or type menu."));
-    }
-
-    session.country = match.destinationName;
-    session.destinationId = match.destinationID;
-    session.step = "PLAN";
-
-    const prodRes = await esimRequest(
-      "get",
-      `/products?destinationid=${match.destinationID}`
-    );
-    const products = prodRes.data || prodRes;
-    session.products = products;
-
-    let msg = `📡 Plans for *${session.country}*:\n\n`;
-    products.slice(0, 5).forEach((p, i) => {
-      msg += `${i + 1}) ${p.productName}\n💾 ${p.productDataAllowance}\n📅 ${p.validity} days\n💵 £${p.productPrice}\n\n`;
-    });
-    msg += "Reply with 1–5 to choose.";
-
-    return res.send(twiml(msg));
-  }
-
-  // PLAN SELECT
-  if (session.step === "PLAN") {
-    const idx = parseInt(text);
-    if (!idx || idx < 1 || idx > session.products.length)
-      return res.send(twiml("Invalid option. Try again."));
-
-    session.selectedProduct = session.products[idx - 1];
-    session.step = "QTY";
-    return res.send(twiml("📦 How many eSIMs? (1–10)"));
-  }
-
-  // QUANTITY
-  if (session.step === "QTY") {
-    const qty = parseInt(text);
-    if (!qty || qty < 1 || qty > 10)
-      return res.send(twiml("Enter 1–10"));
-    session.quantity = qty;
-    session.step = "MOBILE";
-    return res.send(twiml("📱 Enter your mobile number (+447...)"));
-  }
-
-  // MOBILE
-  if (session.step === "MOBILE") {
-    const num = req.body.Body.trim();
-    if (!/^\+?\d{7,15}$/.test(num))
-      return res.send(twiml("Invalid number. Try again."));
-    session.mobile = num;
-    session.step = "EMAIL";
-    return res.send(twiml("📧 Enter your email:"));
-  }
-
-  // EMAIL CONFIRM
-  if (session.step === "EMAIL") {
-    const email = req.body.Body.trim();
-    if (!email.includes("@"))
-      return res.send(twiml("Invalid email. Try again."));
-    session.email = email;
-
-    const p = session.selectedProduct;
-
-    const checkoutRes = await axios.post(
-      `${process.env.APP_BASE_URL}/api/payments/create-checkout-session`,
-      {
-        email,
-        quantity: session.quantity,
-        price: p.productPrice,
-        currency: "gbp",
-        planName: p.productName,
-        productSku: p.productSku,
-        productType: p.productType,
-        data: p.productDataAllowance,
-        validity: p.validity,
-        country: session.country,
-        mobile: session.mobile,
-        destinationId: session.destinationId,
-        metadata: {
-          email,
-          country: session.country,
-          planName: p.productName,
-          data: p.productDataAllowance,
-          productSku: p.productSku,
-          productType: p.productType,
-          destinationId: session.destinationId,
-          flagEmoji: "📶",
-          whatsappTo: `whatsapp:${from}`,
-        },
-      }
-    );
-
-    resetSession(from);
-
-    return res.send(
-      twiml(`💳 Payment link:\n${checkoutRes.data.url}`)
-    );
-  }
-
-  return res.send(twiml("Type menu to start again."));
-});
-
-// =====================================================
-// SUCCESS / CANCEL PAGES (Fix for Cannot GET /success)
-// =====================================================
-app.get("/success", (req, res) => {
-  return res.send("<h1>Payment Successful ✔️</h1><p>You may now return to WhatsApp.</p>");
-});
-
-app.get("/cancel", (req, res) => {
-  return res.send("<h1>Payment Cancelled ❌</h1><p>Please return to WhatsApp and try again.</p>");
+  // (You can add full WhatsApp flow here if needed)
+  return res.send(`
+    <Response>
+      <Message>Type hi to begin.</Message>
+    </Response>
+  `);
 });
 
 // =====================================================
 // START SERVER
 // =====================================================
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () =>
-  console.log(`🔥 SimClaire backend running on port ${PORT}`)
-);
+app.listen(PORT, () => console.log(`🔥 Backend running on port ${PORT}`));
