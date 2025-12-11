@@ -125,8 +125,6 @@ async function purchaseEsim({ sku, quantity, type, destinationId }) {
 // EXPRESS + TWILIO + STRIPE INIT
 // =====================================================
 app.use(cors());
-app.use(express.urlencoded({ extended: false })); // For WhatsApp Webhook
-app.use(express.json());
 
 // Twilio
 let twilioClient = null;
@@ -243,6 +241,10 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
         return res.status(400).send("Webhook Error");
       }
 
+      app.use(express.urlencoded({ extended: false })); // For WhatsApp Webhook
+      app.use(express.json());
+
+
       // ✔ Payment Completed
       if (event.type === "checkout.session.completed") {
         const sessionObj = event.data.object;
@@ -255,6 +257,8 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
                      currencyCode === "EUR" ? "€" : "£";
 
         console.log("🎟 Stripe metadata:", meta);
+
+        
 
         // ------------------------------------------------------
         // 1️⃣ PURCHASE THE ESIM (CORRECTED ENDPOINT)
