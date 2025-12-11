@@ -470,6 +470,17 @@ app.post("/webhook/whatsapp", async (req, res) => {
 });
 
 // =====================================================
+// SUCCESS / CANCEL PAGES (Fix for Cannot GET /success)
+// =====================================================
+app.get("/success", (req, res) => {
+  return res.send("<h1>Payment Successful ✔️</h1><p>You may now return to WhatsApp.</p>");
+});
+
+app.get("/cancel", (req, res) => {
+  return res.send("<h1>Payment Cancelled ❌</h1><p>Please return to WhatsApp and try again.</p>");
+});
+
+// =====================================================
 // START SERVER
 // =====================================================
 const PORT = process.env.PORT || 10000;
