@@ -5,28 +5,28 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 function App() {
   const [step, setStep] = useState(1);
 
-  // Destination state
   const [destinations, setDestinations] = useState([]);
   const [filteredDestinations, setFilteredDestinations] = useState([]);
   const [search, setSearch] = useState("");
   const [loadingDest, setLoadingDest] = useState(false);
   const [destError, setDestError] = useState("");
 
-  // ---------------------------------------------
-  // LOAD DESTINATIONS FROM BACKEND
-  // ---------------------------------------------
+  // LOAD DESTINATIONS
   useEffect(() => {
     async function loadDestinations() {
       try {
         setLoadingDest(true);
         setDestError("");
 
-        // SAFE backtick usage:
-        const url = '${BACKEND_URL}/api/esim/destinations';
+        const res = await fetch(
+          ${BACKEND_URL}/api/esim/destinations
+        );
 
-        const res = await fetch(url);
+        if (!res.ok) {
+          throw new Error("Failed to fetch destinations");
+        }
+
         const data = await res.json();
-
         setDestinations(data);
         setFilteredDestinations(data);
       } catch (e) {
@@ -39,86 +39,91 @@ function App() {
     loadDestinations();
   }, []);
 
-  // ---------------------------------------------
   // SEARCH FILTER
-  // ---------------------------------------------
   function handleSearch(e) {
     const q = e.target.value.toLowerCase();
     setSearch(e.target.value);
 
-    const filtered = destinations.filter((d) =>
-      d.destinationName.toLowerCase().includes(q)
+    setFilteredDestinations(
+      destinations.filter((d) =>
+        d.destinationName.toLowerCase().includes(q)
+      )
     );
-
-    setFilteredDestinations(filtered);
   }
 
-  // ---------------------------------------------
-  // RENDER UI
-  // ---------------------------------------------
   return (
-    <div style={{ padding: "20px", fontFamily: "sans-serif" }}>
-      <h1>SimClaire – eSIM Portal</h1>
-      <p style={{ color: "#666" }}>Step {step} / 3</p>
+    <div className="min-h-screen bg-bg font-sans text-dark">
+      {/* HEADER */}
+      <header className="bg-dark text-white px-6 py-4">
+        <h1 className="text-xl font-semibold">
+          SimClaire – eSIM Portal
+        </h1>
+      </header>
 
-      {/* STEP 1: DESTINATION PICKER */}
-      {step === 1 && (
-        <div style={{ marginTop: "20px" }}>
-          <h2>Choose your destination</h2>
+      <main className="max-w-3xl mx-auto p-6">
+        <p className="text-sm text-muted mb-4">
+          Step {step} of 3
+        </p>
 
-          {loadingDest && <p>Loading destinations…</p>}
-          {destError && <p style={{ color: "red" }}>{destError}</p>}
+        {/* STEP 1 */}
+        {step === 1 && (
+          <div>
+            <h2 className="text-2xl font-bold mb-4">
+              Choose your destination
+            </h2>
 
-          <input
-            type="text"
-            placeholder="Search country…"
-            value={search}
-            onChange={handleSearch}
-            style={{
-              width: "100%",
-              padding: "10px",
-              marginTop: "10px",
-              marginBottom: "20px",
-              borderRadius: "5px",
-              border: "1px solid #ccc"
-            }}
-          />
+            {loadingDest && (
+              <p className="text-muted">Loading destinations…</p>
+            )}
 
-          <div
-            style={{
-              border: "1px solid #ddd",
-              borderRadius: "5px",
-              maxHeight: "300px",
-              overflowY: "auto"
-            }}
-          >
-            {filteredDestinations.map((d) => (
-              <button
-                key={d.destinationID}
-                onClick={() => setStep(2)}
-                style={{
-                  display: "block",
-                  width: "100%",
-                  textAlign: "left",
-                  padding: "10px",
-                  background: "white",
-                  borderBottom: "1px solid #eee"
-                }}
-              >
-                {d.destinationName}
-              </button>
-            ))}
+            {destError && (
+              <p className="text-red-600">{destError}</p>
+            )}
+
+            <input
+              type="text"
+              placeholder="Search country…"
+              value={search}
+              onChange={handleSearch}
+              className="w-full p-3 border rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+
+            <div className="border rounded-lg max-h-80 overflow-y-auto shadow-card">
+              {filteredDestinations.map((d) => (
+                <button
+                  key={d.destinationID}
+                  onClick={() => setStep(2)}
+                  className="w-full text-left px-4 py-3 border-b hover:bg-bg transition"
+                >
+                  {d.destinationName}
+                </button>
+              ))}
+
+              {filteredDestinations.length === 0 && (
+                <p className="p-4 text-muted">
+                  No destinations found.
+                </p>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* STEP 2 Placeholder */}
-      {step === 2 && (
-        <div style={{ marginTop: "20px" }}>
-          <h2>Plans (coming next)</h2>
-          <button onClick={() => setStep(1)}>Back</button>
-        </div>
-      )}
+        {/* STEP 2 */}
+        {step === 2 && (
+          <div>
+            <h2 className="text-2xl font-bold mb-4">
+              Plans (Coming next)
+            </h2>
+
+            <button
+              onClick={() => setStep(1)}
+              className="mt-4 text-primary hover:underline"
+            >
+              ← Back to destinations
+            </button>
+          </div>
+        )}
+      </main>
     </div>
   );
 }
