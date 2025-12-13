@@ -19,7 +19,7 @@ function App() {
         setDestError("");
 
         const res = await fetch(
-          ${BACKEND_URL}/api/esim/destinations
+          `${BACKEND_URL}/api/esim/destinations`
         );
 
         if (!res.ok) {

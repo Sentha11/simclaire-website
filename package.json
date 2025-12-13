@@ -1,7 +1,9 @@
 {
   "dependencies": {
+    "@tailwindcss/vite": "^4.1.18",
     "socks-proxy-agent": "^8.0.5",
     "stripe": "^20.0.0",
+    "tailwindcss": "^4.1.18",
     "twilio": "^5.10.7"
   }
 }
