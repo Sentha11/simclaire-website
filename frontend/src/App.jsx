@@ -51,81 +51,81 @@ function App() {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-bg font-sans text-dark">
-      {/* HEADER */}
-      <header className="bg-dark text-white px-6 py-4">
-        <h1 className="text-xl font-semibold">
-          SimClaire – eSIM Portal
-        </h1>
-      </header>
+ return (
+  <div className="min-h-screen bg-bg text-text">
+    {/* NAVBAR */}
+    <header className="bg-dark text-white">
+      <div className="max-w-6xl mx-auto flex items-center justify-between px-6 py-4">
+        <h1 className="text-xl font-semibold">SimClaire</h1>
+        <nav className="space-x-6 text-sm">
+          <a href="#how" className="hover:text-accent">How it works</a>
+          <a href="#faq" className="hover:text-accent">FAQ</a>
+          <a href="#support" className="hover:text-accent">Support</a>
+        </nav>
+      </div>
+    </header>
 
-      <main className="max-w-3xl mx-auto p-6">
-        <p className="text-sm text-muted mb-4">
-          Step {step} of 3
+    {/* HERO */}
+    <section className="bg-gradient-to-br from-primary to-blue-700 text-white">
+      <div className="max-w-6xl mx-auto px-6 py-20 text-center">
+        <h2 className="text-4xl md:text-5xl font-bold mb-4">
+          Your own dedicated travel number
+        </h2>
+        <p className="text-lg text-blue-100 max-w-2xl mx-auto mb-8">
+          Recharge monthly or yearly. Not a roaming number.
+          One number. Full control. Global coverage.
         </p>
+        <button
+          onClick={() => setStep(1)}
+          className="bg-white text-primary font-semibold px-8 py-3 rounded-lg shadow hover:scale-105 transition"
+        >
+          Browse Plans
+        </button>
+      </div>
+    </section>
 
-        {/* STEP 1 */}
-        {step === 1 && (
-          <div>
-            <h2 className="text-2xl font-bold mb-4">
-              Choose your destination
-            </h2>
+    {/* HOW IT WORKS */}
+    <section id="how" className="max-w-6xl mx-auto px-6 py-16">
+      <h3 className="text-3xl font-bold text-center mb-12">
+        How it works
+      </h3>
 
-            {loadingDest && (
-              <p className="text-muted">Loading destinations…</p>
-            )}
+      <div className="grid md:grid-cols-4 gap-6 text-center">
+        <div className="bg-card p-6 rounded-lg shadow">
+          <p className="text-primary font-bold mb-2">1</p>
+          <h4 className="font-semibold mb-1">Choose a plan</h4>
+          <p className="text-sm text-muted">
+            Select a monthly or yearly plan.
+          </p>
+        </div>
 
-            {destError && (
-              <p className="text-red-600">{destError}</p>
-            )}
+        <div className="bg-card p-6 rounded-lg shadow">
+          <p className="text-primary font-bold mb-2">2</p>
+          <h4 className="font-semibold mb-1">Get your number</h4>
+          <p className="text-sm text-muted">
+            Receive a real, dedicated phone number.
+          </p>
+        </div>
 
-            <input
-              type="text"
-              placeholder="Search country…"
-              value={search}
-              onChange={handleSearch}
-              className="w-full p-3 border rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-primary"
-            />
+        <div className="bg-card p-6 rounded-lg shadow">
+          <p className="text-primary font-bold mb-2">3</p>
+          <h4 className="font-semibold mb-1">Install eSIM</h4>
+          <p className="text-sm text-muted">
+            Scan the QR code and install in minutes.
+          </p>
+        </div>
 
-            <div className="border rounded-lg max-h-80 overflow-y-auto shadow-card">
-              {filteredDestinations.map((d) => (
-                <button
-                  key={d.destinationID}
-                  onClick={() => setStep(2)}
-                  className="w-full text-left px-4 py-3 border-b hover:bg-bg transition"
-                >
-                  {d.destinationName}
-                </button>
-              ))}
-
-              {filteredDestinations.length === 0 && (
-                <p className="p-4 text-muted">
-                  No destinations found.
-                </p>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* STEP 2 */}
-        {step === 2 && (
-          <div>
-            <h2 className="text-2xl font-bold mb-4">
-              Plans (Coming next)
-            </h2>
-
-            <button
-              onClick={() => setStep(1)}
-              className="mt-4 text-primary hover:underline"
-            >
-              ← Back to destinations
-            </button>
-          </div>
-        )}
-      </main>
-    </div>
-  );
+        <div className="bg-card p-6 rounded-lg shadow">
+          <p className="text-primary font-bold mb-2">4</p>
+          <h4 className="font-semibold mb-1">Manage & recharge</h4>
+          <p className="text-sm text-muted">
+            Track usage and top up anytime.
+          </p>
+        </div>
+      </div>
+    </section>
+  </div>
+);
 }
 
 export default App;
