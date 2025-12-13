@@ -1,3 +1,6 @@
+<h1 className="bg-red-500 text-white text-5xl">
+  NEW UI CONFIRMED
+</h1>
 import { useEffect, useState } from "react";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
