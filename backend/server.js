@@ -1,32 +1,17 @@
 // =====================================================
-// server.js – SimClaire Backend (FINAL – LOOP FIXED)
-// Stripe + eSIM API + WhatsApp + SendGrid + Proxy Support
+// server.js – SimClaire Backend (STABLE WHATSAPP FIX)
+// Destination → Plans Listing (No Loop)
 // =====================================================
 
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const axios = require("axios");
-const { HttpsProxyAgent } = require("https-proxy-agent");
-const { SocksProxyAgent } = require("socks-proxy-agent");
 const twilio = require("twilio");
-const sgMail = require("@sendgrid/mail");
-const PDFDocument = require("pdfkit");
+const { HttpsProxyAgent } = require("https-proxy-agent");
 
 const app = express();
-const whatsappState = {}; // 🔥 STATE STORAGE (FIXES LOOP)
-
-// =====================================================
-// PROXY (QuotaGuard)
-// =====================================================
-let proxyAgent = null;
-if (process.env.QUOTAGUARD_URL) {
-  proxyAgent = new HttpsProxyAgent(process.env.QUOTAGUARD_URL);
-  console.log("🛡 Using QuotaGuard STATIC proxy");
-} else if (process.env.QUOTAGUARD_SOCKS_URL) {
-  proxyAgent = new SocksProxyAgent(process.env.QUOTAGUARD_SOCKS_URL);
-  console.log("🛡 Using QuotaGuard SOCKS proxy");
-}
+const whatsappState = {};
 
 // =====================================================
 // MIDDLEWARE
@@ -36,47 +21,86 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 // =====================================================
-// TWILIO INIT (API KEY MODE)
+// PROXY (Render / QuotaGuard safe)
 // =====================================================
-let twilioClient = null;
-if (
-  process.env.TWILIO_API_KEY &&
-  process.env.TWILIO_API_SECRET &&
-  process.env.TWILIO_ACCOUNT_SID
-) {
-  twilioClient = twilio(
-    process.env.TWILIO_API_KEY,
-    process.env.TWILIO_API_SECRET,
-    { accountSid: process.env.TWILIO_ACCOUNT_SID }
+let proxyAgent = null;
+if (process.env.QUOTAGUARD_URL) {
+  proxyAgent = new HttpsProxyAgent(process.env.QUOTAGUARD_URL);
+  console.log("🛡 Using QuotaGuard proxy");
+}
+
+// =====================================================
+// ESIM CONFIG
+// =====================================================
+const ESIM_BASE_URL = process.env.ESIM_BASE_URL;
+const ESIM_USERNAME = process.env.ESIM_USERNAME;
+const ESIM_PASSWORD = process.env.ESIM_PASSWORD;
+
+let esimToken = null;
+let esimExpiresAt = 0;
+
+// =====================================================
+// ESIM AUTH
+// =====================================================
+async function getEsimToken() {
+  if (esimToken && Date.now() < esimExpiresAt) return esimToken;
+
+  const res = await axios.post(
+    `${ESIM_BASE_URL}/authenticate`,
+    {
+      userName: ESIM_USERNAME,
+      password: ESIM_PASSWORD,
+    },
+    { httpsAgent: proxyAgent, proxy: false }
   );
-  console.log("📞 Twilio initialized");
+
+  esimToken = res.data.token;
+  esimExpiresAt = Date.now() + 10 * 60 * 1000;
+  return esimToken;
 }
 
 // =====================================================
-// STRIPE
+// ESIM REQUEST WRAPPER
 // =====================================================
-let stripe = null;
-if (process.env.STRIPE_SECRET_KEY) {
-  stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
-  console.log("💳 Stripe enabled");
+async function esimRequest(method, path) {
+  const token = await getEsimToken();
+  const res = await axios({
+    method,
+    url: `${ESIM_BASE_URL}${path}`,
+    headers: { Authorization: `Bearer ${token}` },
+    httpsAgent: proxyAgent,
+    proxy: false,
+  });
+  return res.data;
 }
 
 // =====================================================
-// SENDGRID
+// DESTINATION ID RESOLVER
 // =====================================================
-if (process.env.SENDGRID_API_KEY) {
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-  console.log("📧 SendGrid enabled");
+async function getDestinationIdByName(countryName) {
+  const destinations = await esimRequest("get", "/destinations");
+  const match = destinations.find(
+    d => d.name.toLowerCase() === countryName.toLowerCase()
+  );
+  return match ? match.id : null;
 }
 
 // =====================================================
-// BASIC ROUTES
+// GET PLANS BY DESTINATION
 // =====================================================
-app.get("/success", (_, res) => res.send("Payment success"));
-app.get("/cancel", (_, res) => res.send("Payment cancelled"));
+async function getPlansForDestination(destinationId) {
+  const products = await esimRequest(
+    "get",
+    `/products?destinationId=${destinationId}`
+  );
+
+  return products
+    .filter(p => p.price && p.dataAmount)
+    .sort((a, b) => a.price - b.price);
+}
 
 // =====================================================
-// 🔥 WHATSAPP WEBHOOK (STATEFUL – LOOP FIXED)
+// WHATSAPP WEBHOOK — FIXED FLOW (NO LOOP)
 // =====================================================
 app.post("/webhook/whatsapp", async (req, res) => {
   res.set("Content-Type", "text/xml");
@@ -84,106 +108,97 @@ app.post("/webhook/whatsapp", async (req, res) => {
   const from = req.body.From;
   const body = req.body.Body?.trim().toLowerCase() || "";
 
-  // Init state
   if (!whatsappState[from]) {
     whatsappState[from] = { step: "start" };
   }
 
   const state = whatsappState[from];
 
-  // -------------------------
-  // STEP 1: GREETING
-  // -------------------------
-  if (state.step === "start" && ["hi", "hello", "hey"].includes(body)) {
+  // STEP 1 — GREETING
+  if (["hi", "hello", "hey"].includes(body)) {
     state.step = "menu";
     return res.send(`
-<Response>
-  <Message>
-👋 Welcome to SimClaire!
+      <Response>
+        <Message>👋 Welcome to SimClaire!
 Reply with:
-1️⃣ Browse Plans
-2️⃣ FAQ
-3️⃣ Support
-  </Message>
-</Response>
-`);
+1) Browse Plans
+2) FAQ
+3) Support</Message>
+      </Response>
+    `);
   }
 
-  // -------------------------
-  // STEP 2: MENU
-  // -------------------------
-  if (state.step === "menu") {
-    if (body === "1") {
-      state.step = "awaiting_destination";
-      return res.send(`
-<Response>
-  <Message>
-🌍 Please type your destination
-Example: United Kingdom
-  </Message>
-</Response>
-`);
-    }
-
-    if (body === "2") {
-      return res.send(`
-<Response>
-  <Message>
-❓ FAQ
-* Instant eSIM
-* No roaming fees
-* Global coverage
-  </Message>
-</Response>
-`);
-    }
-
-    if (body === "3") {
-      return res.send(`
-<Response>
-  <Message>
-📞 Support
-WhatsApp: +1 (437) 925-9578
-Email: support@simclaire.com
-  </Message>
-</Response>
-`);
-    }
+  // STEP 2 — MENU
+  if (state.step === "menu" && body === "1") {
+    state.step = "awaiting_destination";
+    return res.send(`
+      <Response>
+        <Message>🌍 Please type your destination
+Example: United Kingdom</Message>
+      </Response>
+    `);
   }
 
-  // -------------------------
-  // STEP 3: DESTINATION
-  // -------------------------
+  // STEP 3 — DESTINATION → PLANS
   if (state.step === "awaiting_destination") {
-    state.destination = body;
-    state.step = "done";
+    const destinationId = await getDestinationIdByName(body);
+
+    if (!destinationId) {
+      return res.send(`
+        <Response>
+          <Message>❌ Destination not found.
+Please try again.</Message>
+        </Response>
+      `);
+    }
+
+    const plans = await getPlansForDestination(destinationId);
+
+    if (!plans.length) {
+      return res.send(`
+        <Response>
+          <Message>⚠️ No plans available for this destination.</Message>
+        </Response>
+      `);
+    }
+
+    state.step = "awaiting_plan";
+    state.destinationId = destinationId;
+    state.plans = plans.slice(0, 5);
+
+    const list = state.plans
+      .map(
+        (p, i) =>
+          `${i + 1}) ${p.dataAmount}GB / ${p.validityDays} days – £${p.price}`
+      )
+      .join("\n");
 
     return res.send(`
-<Response>
-  <Message>
-📍 Destination saved: ${body}
-Plans will be listed next.
-  </Message>
-</Response>
-`);
+      <Response>
+        <Message>📱 Available Plans:
+${list}
+
+Reply with plan number</Message>
+      </Response>
+    `);
   }
 
-  // -------------------------
-  // SAFE FALLBACK (NO LOOP)
-  // -------------------------
+  // FALLBACK
   return res.send(`
-<Response>
-  <Message>
-❌ Invalid input.
-Type hi to start again.
-  </Message>
-</Response>
-`);
+    <Response>
+      <Message>Type hi to start again.</Message>
+    </Response>
+  `);
 });
 
 // =====================================================
+// HEALTH CHECK
+// =====================================================
+app.get("/", (_, res) => res.send("SimClaire backend running"));
+
+// =====================================================
 // START SERVER
-// =====================================================++
+// =====================================================
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () =>
   console.log(`🔥 SimClaire backend running on port ${PORT}`)
