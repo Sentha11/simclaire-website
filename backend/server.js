@@ -1,205 +1,176 @@
+// =====================================================
+// SimClaire Backend – WhatsApp + eSIM (Unified API) + QuotaGuard
+// =====================================================
+
 require("dotenv").config();
 const express = require("express");
-const axios = require("axios");
 const cors = require("cors");
-const twilio = require("twilio");
+const axios = require("axios");
 const { HttpsProxyAgent } = require("https-proxy-agent");
-const { SocksProxyAgent } = require("socks-proxy-agent");
+const twilio = require("twilio");
 
 const app = express();
+
+// -----------------------------------------------------
+// MIDDLEWARE
+// -----------------------------------------------------
 app.use(cors());
-app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+app.use(express.json());
 
-// =====================================================
-// QUOTAGUARD PROXY SETUP (CRITICAL)
-// =====================================================
-let proxyAgent = null;
-
-if (process.env.QUOTAGUARD_URL) {
-  proxyAgent = new HttpsProxyAgent(process.env.QUOTAGUARD_URL);
-  console.log("🛡 QuotaGuard HTTP proxy enabled");
-} else if (process.env.QUOTAGUARD_SOCKS_URL) {
-  proxyAgent = new SocksProxyAgent(process.env.QUOTAGUARD_SOCKS_URL);
-  console.log("🛡 QuotaGuard SOCKS proxy enabled");
-} else {
-  console.warn("⚠️ QuotaGuard NOT configured");
-}
-
-// =====================================================
-// AXIOS INSTANCE (FORCED THROUGH PROXY)
-// =====================================================
-const esimAxios = axios.create({
-  httpsAgent: proxyAgent,
-  proxy: false, // IMPORTANT: disables axios default proxy handling
-  timeout: 30000,
-});
-
-// =====================================================
+// -----------------------------------------------------
 // TWILIO
-// =====================================================
-const twilioClient = twilio(
-  process.env.TWILIO_API_KEY,
-  process.env.TWILIO_API_SECRET,
-  { accountSid: process.env.TWILIO_ACCOUNT_SID }
-);
+// -----------------------------------------------------
+const MessagingResponse = twilio.twiml.MessagingResponse;
 
-// =====================================================
-// ESIM AUTH (JWT)
-// =====================================================
-const ESIM_BASE = process.env.ESIM_BASE_URL;
+// -----------------------------------------------------
+// QUOTAGUARD PROXY (STATIC IP)
+// -----------------------------------------------------
+const proxyAgent = process.env.QUOTAGUARD_URL
+  ? new HttpsProxyAgent(process.env.QUOTAGUARD_URL)
+  : null;
+
+// -----------------------------------------------------
+// ESIM API CONFIG (Unified API)
+// -----------------------------------------------------
+const ESIM_BASE_URL = process.env.ESIM_BASE_URL; // MUST end with /api/esim
 let esimToken = null;
 let tokenExpiry = 0;
 
+// -----------------------------------------------------
+// AUTH – GET JWT TOKEN
+// -----------------------------------------------------
 async function getEsimToken() {
   if (esimToken && Date.now() < tokenExpiry) return esimToken;
 
-  const res = await esimAxios.post(`${ESIM_BASE}/api/esim/authenticate`, {
-    userName: process.env.ESIM_USERNAME,
-    password: process.env.ESIM_PASSWORD,
-  });
+  const response = await axios.post(
+    `${ESIM_BASE_URL}/authenticate`,
+    {
+      userName: process.env.ESIM_USERNAME,
+      password: process.env.ESIM_PASSWORD,
+    },
+    {
+      httpsAgent: proxyAgent,
+      timeout: 15000,
+    }
+  );
 
-  esimToken = res.data.token;
-  tokenExpiry = Date.now() + 55 * 60 * 1000;
+  esimToken = response.data?.data?.token;
+  tokenExpiry = Date.now() + 55 * 60 * 1000; // 55 mins
 
-  console.log("🔐 eSIM token refreshed");
   return esimToken;
 }
 
-async function esimGet(path) {
+// -----------------------------------------------------
+// GET DESTINATION ID BY NAME
+// -----------------------------------------------------
+async function getDestinationIdByName(destinationName) {
   const token = await getEsimToken();
-  const res = await esimAxios.get(`${ESIM_BASE}${path}`, {
-    headers: { Authorization: `Bearer ${token}` },
+
+  const res = await axios.get(`${ESIM_BASE_URL}/destinations`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    httpsAgent: proxyAgent,
   });
-  return res.data;
-}
 
-// =====================================================
-// DATA HELPERS (FIXED)
-// =====================================================
-async function getDestinations() {
-  const res = await esimGet("/api/esim/destinations");
-  return Array.isArray(res.data) ? res.data : [];
-}
+  const destinations = res.data?.data || [];
 
-async function getDestinationIdByName(name) {
-  const destinations = await getDestinations();
   const match = destinations.find(
-    d => d.destinationName.toLowerCase() === name.toLowerCase()
+    (d) =>
+      d.destinationName.toLowerCase() === destinationName.toLowerCase()
   );
-  return match ? match.destinationID : null;
+
+  return match || null;
 }
 
-async function getProductsByDestinationId(destinationId) {
-  const res = await esimGet(
-    `/api/esim/products?destinationId=${destinationId}`
-  );
-  return Array.isArray(res.data) ? res.data : [];
+// -----------------------------------------------------
+// GET PRODUCTS BY DESTINATION ID
+// -----------------------------------------------------
+async function getProductsByDestination(destinationID) {
+  const token = await getEsimToken();
+
+  const res = await axios.get(`${ESIM_BASE_URL}/products`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    params: { destinationID },
+    httpsAgent: proxyAgent,
+  });
+
+  return res.data?.data || [];
 }
 
-// =====================================================
-// WHATSAPP STATE
-// =====================================================
-const state = {};
-
-// =====================================================
+// -----------------------------------------------------
 // WHATSAPP WEBHOOK
-// =====================================================
+// -----------------------------------------------------
 app.post("/webhook/whatsapp", async (req, res) => {
-  res.set("Content-Type", "text/xml");
-
-  const from = req.body.From;
+  const twiml = new MessagingResponse();
   const msg = req.body.Body?.trim();
+  const from = req.body.From;
 
-  if (!state[from]) state[from] = { step: "menu" };
-
-  // HI
-  if (/^hi|hello$/i.test(msg)) {
-    state[from].step = "menu";
-    return res.send(`
-<Response>
-<Message>
-👋 Welcome to SimClaire!
-Reply:
-1️⃣ Browse Plans
-2️⃣ FAQ
-3️⃣ Support
-</Message>
-</Response>
-`);
-  }
-
-  // MENU
-  if (state[from].step === "menu" && msg === "1") {
-    state[from].step = "destination";
-    return res.send(`
-<Response>
-<Message>
-🌍 Please type your destination
-Example: United Kingdom
-</Message>
-</Response>
-`);
-  }
-
-  // DESTINATION → PLANS
-  if (state[from].step === "destination") {
-    const destinationId = await getDestinationIdByName(msg);
-
-    if (!destinationId) {
-      return res.send(`
-<Response>
-<Message>❌ Destination not found. Please try again.</Message>
-</Response>
-`);
+  try {
+    // ---- START FLOW ----
+    if (!msg || msg.toLowerCase() === "hi") {
+      twiml.message(
+        `👋 Welcome to SimClaire!\n\nReply with:\n1️⃣ Browse Plans\n2️⃣ FAQ\n3️⃣ Support`
+      );
+      return res.type("text/xml").send(twiml.toString());
     }
 
-    state[from].destinationId = destinationId;
-    state[from].step = "plans";
-
-    const products = await getProductsByDestinationId(destinationId);
-
-    if (!products.length) {
-      return res.send(`
-<Response>
-<Message>⚠️ No plans available for this destination.</Message>
-</Response>
-`);
+    // ---- MENU ----
+    if (msg === "1") {
+      twiml.message(
+        `🌍 Please type your destination country\nExample: United Kingdom`
+      );
+      return res.type("text/xml").send(twiml.toString());
     }
 
-    const list = products
-      .slice(0, 5)
-      .map(
-        (p, i) =>
-          `${i + 1}. ${p.productName}\n💾 ${p.productDataAllowance}\n⏳ ${p.productValidity} days\n💰 ${p.productCurrency}${p.productPrice}`
-      )
-      .join("\n\n");
+    // ---- DESTINATION INPUT ----
+    if (msg.length > 2 && !isNaN(msg) === false) {
+      const destination = await getDestinationIdByName(msg);
 
-    return res.send(`
-<Response>
-<Message>
-📱 Available Plans:
-${list}
-</Message>
-</Response>
-`);
+      if (!destination) {
+        twiml.message(`❌ Destination not found. Please try again.`);
+        return res.type("text/xml").send(twiml.toString());
+      }
+
+      const products = await getProductsByDestination(
+        destination.destinationID
+      );
+
+      if (!products.length) {
+        twiml.message(`⚠️ No plans available for ${destination.destinationName}`);
+        return res.type("text/xml").send(twiml.toString());
+      }
+
+      let reply = `📱 *Available eSIM Plans for ${destination.destinationName}*\n\n`;
+
+      products.forEach((p, i) => {
+        reply += `*${i + 1}.* ${p.productName}\n`;
+        reply += `💾 Data: ${p.productDataAllowance}\n`;
+        reply += `📅 Validity: ${p.productValidity} days\n`;
+        reply += `💰 Price: ${p.productPrice} ${p.productCurrency}\n\n`;
+      });
+
+      reply += `Reply *hi* to start again.`;
+      twiml.message(reply);
+      return res.type("text/xml").send(twiml.toString());
+    }
+
+    // ---- FALLBACK ----
+    twiml.message(`Type *hi* to start again.`);
+    return res.type("text/xml").send(twiml.toString());
+  } catch (err) {
+    console.error("WHATSAPP ERROR:", err.message);
+    twiml.message(`⚠️ Something went wrong. Please try again.`);
+    return res.type("text/xml").send(twiml.toString());
   }
-
-  return res.send(`
-<Response>
-<Message>Type "hi" to start again.</Message>
-</Response>
-`);
 });
 
-// =====================================================
-// HEALTH CHECK
-// =====================================================
-app.get("/", (_, res) => res.send("SimClaire Backend OK"));
-
-// =====================================================
+// -----------------------------------------------------
 // START SERVER
-// =====================================================
+// -----------------------------------------------------
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () =>
   console.log(`🔥 SimClaire backend running on port ${PORT}`)
