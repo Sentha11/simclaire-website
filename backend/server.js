@@ -342,25 +342,124 @@ app.get("/cancel", (req, res) => res.send("Payment Cancelled ❌"));
 // =====================================================
 // WHATSAPP FLOW ENTRY POINT — RESPOND TO HI/HELLO
 // =====================================================
+
 app.post("/webhook/whatsapp", async (req, res) => {
   res.set("Content-Type", "text/xml");
 
-  const body = req.body.Body?.trim().toLowerCase() || "";
+  const from = req.body.From;
+  const body = req.body.Body?.trim();
 
-  if (["hi", "hello", "hey"].includes(body)) {
-    return res.send(`
-      <Response>
-        <Message>👋 Welcome to SimClaire!\nReply with:\n1) Browse Plans\n2) FAQ\n3) Support</Message>
-      </Response>
-    `);
+  if (!whatsappState[from]) {
+    whatsappState[from] = { step: "idle" };
   }
 
-  // (You can add full WhatsApp flow here if needed)
+  const state = whatsappState[from];
+  const text = body.toLowerCase();
+
+  // ===== GREETING =====
+  if (["hi", "hello", "hey"].includes(text)) {
+    whatsappState[from] = { step: "menu" };
+
+    return res.send(`
+<Response>
+  <Message>
+👋 Welcome to SimClaire!
+Reply with:
+1️⃣ Browse Plans
+2️⃣ FAQ
+3️⃣ Support
+  </Message>
+</Response>
+`);
+  }
+
+  // ===== MENU =====
+  if (state.step === "menu" && text === "1") {
+    state.step = "awaiting_destination";
+
+    return res.send(`
+<Response>
+  <Message>
+🌍 Please type your destination country
+Example: United Kingdom
+  </Message>
+</Response>
+`);
+  }
+
+  // ===== DESTINATION =====
+  if (state.step === "awaiting_destination") {
+    try {
+      const destinations = await esimRequest("get", "/destinations");
+
+      const match = destinations.data.find(
+        d => d.destinationName.toLowerCase() === text
+      );
+
+      if (!match) {
+        return res.send(`
+<Response>
+  <Message>
+❌ Destination not found.
+Please try again.
+  </Message>
+</Response>
+`);
+      }
+
+      state.step = "showing_plans";
+      state.destinationId = match.destinationID;
+
+      const products = await esimRequest("get", "/products", {
+        params: { destinationID: match.destinationID },
+      });
+
+      if (!products.data || products.data.length === 0) {
+        return res.send(`
+<Response>
+  <Message>
+⚠️ No plans available for ${match.destinationName}.
+  </Message>
+</Response>
+`);
+      }
+
+      let reply = `📱 *Plans for ${match.destinationName}*\n\n`;
+
+      products.data.forEach((p, i) => {
+        reply += `${i + 1}. ${p.productName}\n`;
+        reply += `💰 ${p.productPrice} ${p.productCurrency}\n`;
+        reply += `📦 ${p.productDataAllowance}\n`;
+        reply += `⏳ ${p.productValidity} days\n\n`;
+      });
+
+      return res.send(`
+<Response>
+  <Message>${reply}</Message>
+</Response>
+`);
+    } catch (err) {
+      console.error("WhatsApp destination error:", err.response?.data || err);
+
+      return res.send(`
+<Response>
+  <Message>
+⚠️ Something went wrong.
+Reply "hi" to restart.
+  </Message>
+</Response>
+`);
+    }
+  }
+
+  // ===== FALLBACK =====
   return res.send(`
-    <Response>
-      <Message>Type hi to begin.</Message>
-    </Response>
-  `);
+<Response>
+  <Message>
+Reply "hi" to begin.
+  </Message>
+</Response>
+`);
 });
 
 // =====================================================
