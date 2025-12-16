@@ -1,203 +1,201 @@
-// =====================================================
-// server.js – SimClaire Backend (STABLE FIXED VERSION)
-// Stripe + eSIM API + WhatsApp + SendGrid + Proxy Support
-// =====================================================
-
 require("dotenv").config();
 const express = require("express");
-const cors = require("cors");
 const axios = require("axios");
+const cors = require("cors");
+const twilio = require("twilio");
 const { HttpsProxyAgent } = require("https-proxy-agent");
 const { SocksProxyAgent } = require("socks-proxy-agent");
-const twilio = require("twilio");
-const sgMail = require("@sendgrid/mail");
 
 const app = express();
-const whatsappState = {};
-
-// =====================================================
-// MIDDLEWARE
-// =====================================================
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 // =====================================================
-// PROXY (QuotaGuard)
+// QUOTAGUARD PROXY SETUP (CRITICAL)
 // =====================================================
 let proxyAgent = null;
 
 if (process.env.QUOTAGUARD_URL) {
   proxyAgent = new HttpsProxyAgent(process.env.QUOTAGUARD_URL);
-  console.log("🛡 Using QuotaGuard proxy");
+  console.log("🛡 QuotaGuard HTTP proxy enabled");
+} else if (process.env.QUOTAGUARD_SOCKS_URL) {
+  proxyAgent = new SocksProxyAgent(process.env.QUOTAGUARD_SOCKS_URL);
+  console.log("🛡 QuotaGuard SOCKS proxy enabled");
+} else {
+  console.warn("⚠️ QuotaGuard NOT configured");
 }
 
 // =====================================================
-// ESIM API CONFIG
+// AXIOS INSTANCE (FORCED THROUGH PROXY)
 // =====================================================
-const ESIM_BASE_URL = process.env.ESIM_BASE_URL;
-const ESIM_USERNAME = process.env.ESIM_USERNAME;
-const ESIM_PASSWORD = process.env.ESIM_PASSWORD;
+const esimAxios = axios.create({
+  httpsAgent: proxyAgent,
+  proxy: false, // IMPORTANT: disables axios default proxy handling
+  timeout: 30000,
+});
 
+// =====================================================
+// TWILIO
+// =====================================================
+const twilioClient = twilio(
+  process.env.TWILIO_API_KEY,
+  process.env.TWILIO_API_SECRET,
+  { accountSid: process.env.TWILIO_ACCOUNT_SID }
+);
+
+// =====================================================
+// ESIM AUTH (JWT)
+// =====================================================
+const ESIM_BASE = process.env.ESIM_BASE_URL;
 let esimToken = null;
-let esimExpiresAt = 0;
+let tokenExpiry = 0;
 
 async function getEsimToken() {
-  if (esimToken && Date.now() < esimExpiresAt) return esimToken;
+  if (esimToken && Date.now() < tokenExpiry) return esimToken;
 
-  const res = await axios.post(
-    `${ESIM_BASE_URL}/authenticate`,
-    {
-      userName: ESIM_USERNAME,
-      password: ESIM_PASSWORD,
-    },
-    { httpsAgent: proxyAgent, proxy: false }
-  );
+  const res = await esimAxios.post(`${ESIM_BASE}/api/esim/authenticate`, {
+    userName: process.env.ESIM_USERNAME,
+    password: process.env.ESIM_PASSWORD,
+  });
 
   esimToken = res.data.token;
-  esimExpiresAt = Date.now() + 10 * 60 * 1000;
+  tokenExpiry = Date.now() + 55 * 60 * 1000;
+
+  console.log("🔐 eSIM token refreshed");
   return esimToken;
 }
 
-async function esimRequest(method, path, options = {}) {
+async function esimGet(path) {
   const token = await getEsimToken();
-
-  const res = await axios({
-    method,
-    url: `${ESIM_BASE_URL}${path}`,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    httpsAgent: proxyAgent,
-    proxy: false,
-    ...options,
+  const res = await esimAxios.get(`${ESIM_BASE}${path}`, {
+    headers: { Authorization: `Bearer ${token}` },
   });
-
   return res.data;
 }
 
 // =====================================================
-// ✅ FIXED DESTINATION LOOKUP (THIS WAS THE BUG)
+// DATA HELPERS (FIXED)
 // =====================================================
-async function getDestinationIdByName(countryName) {
-  const res = await esimRequest("get", "/destinations");
+async function getDestinations() {
+  const res = await esimGet("/api/esim/destinations");
+  return Array.isArray(res.data) ? res.data : [];
+}
 
-  const destinations =
-    Array.isArray(res) ? res :
-    Array.isArray(res.data) ? res.data :
-    Array.isArray(res.destinations) ? res.destinations :
-    [];
-
+async function getDestinationIdByName(name) {
+  const destinations = await getDestinations();
   const match = destinations.find(
-    d => d.name?.toLowerCase() === countryName.toLowerCase()
+    d => d.destinationName.toLowerCase() === name.toLowerCase()
   );
-
-  return match ? match.id : null;
+  return match ? match.destinationID : null;
 }
 
-// =====================================================
-// TWILIO INIT (API KEY MODE)
-// =====================================================
-let twilioClient = null;
-
-if (
-  process.env.TWILIO_API_KEY &&
-  process.env.TWILIO_API_SECRET &&
-  process.env.TWILIO_ACCOUNT_SID
-) {
-  twilioClient = twilio(
-    process.env.TWILIO_API_KEY,
-    process.env.TWILIO_API_SECRET,
-    { accountSid: process.env.TWILIO_ACCOUNT_SID }
+async function getProductsByDestinationId(destinationId) {
+  const res = await esimGet(
+    `/api/esim/products?destinationId=${destinationId}`
   );
-  console.log("📞 Twilio ready");
+  return Array.isArray(res.data) ? res.data : [];
 }
 
 // =====================================================
-// SENDGRID
+// WHATSAPP STATE
 // =====================================================
-if (process.env.SENDGRID_API_KEY) {
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-  console.log("📧 SendGrid ready");
-}
+const state = {};
 
 // =====================================================
-// WHATSAPP WEBHOOK (REPLACED – NO LOOP)
+// WHATSAPP WEBHOOK
 // =====================================================
 app.post("/webhook/whatsapp", async (req, res) => {
   res.set("Content-Type", "text/xml");
 
   const from = req.body.From;
-  const body = req.body.Body?.trim().toLowerCase() || "";
+  const msg = req.body.Body?.trim();
 
-  if (!whatsappState[from]) {
-    whatsappState[from] = { step: "start" };
-  }
+  if (!state[from]) state[from] = { step: "menu" };
 
-  const state = whatsappState[from];
-
-  // STEP 0 – GREETING
-  if (["hi", "hello", "hey"].includes(body)) {
-    state.step = "menu";
+  // HI
+  if (/^hi|hello$/i.test(msg)) {
+    state[from].step = "menu";
     return res.send(`
-      <Response>
-        <Message>👋 Welcome to SimClaire!
-Reply with:
+<Response>
+<Message>
+👋 Welcome to SimClaire!
+Reply:
 1️⃣ Browse Plans
 2️⃣ FAQ
-3️⃣ Support</Message>
-      </Response>
-    `);
+3️⃣ Support
+</Message>
+</Response>
+`);
   }
 
-  // STEP 1 – MENU
-  if (state.step === "menu" && body === "1") {
-    state.step = "destination";
+  // MENU
+  if (state[from].step === "menu" && msg === "1") {
+    state[from].step = "destination";
     return res.send(`
-      <Response>
-        <Message>🌍 Please type your destination
-Example: United Kingdom</Message>
-      </Response>
-    `);
+<Response>
+<Message>
+🌍 Please type your destination
+Example: United Kingdom
+</Message>
+</Response>
+`);
   }
 
-  // STEP 2 – DESTINATION → PLANS
-  if (state.step === "destination") {
-    const destinationId = await getDestinationIdByName(body);
+  // DESTINATION → PLANS
+  if (state[from].step === "destination") {
+    const destinationId = await getDestinationIdByName(msg);
 
     if (!destinationId) {
       return res.send(`
-        <Response>
-          <Message>❌ Destination not found.
-Please try again.</Message>
-        </Response>
-      `);
+<Response>
+<Message>❌ Destination not found. Please try again.</Message>
+</Response>
+`);
     }
 
-    state.destinationId = destinationId;
-    state.step = "plans";
+    state[from].destinationId = destinationId;
+    state[from].step = "plans";
 
-    // (Plans API call would go here)
+    const products = await getProductsByDestinationId(destinationId);
+
+    if (!products.length) {
+      return res.send(`
+<Response>
+<Message>⚠️ No plans available for this destination.</Message>
+</Response>
+`);
+    }
+
+    const list = products
+      .slice(0, 5)
+      .map(
+        (p, i) =>
+          `${i + 1}. ${p.productName}\n💾 ${p.productDataAllowance}\n⏳ ${p.productValidity} days\n💰 ${p.productCurrency}${p.productPrice}`
+      )
+      .join("\n\n");
+
     return res.send(`
-      <Response>
-        <Message>📱 Destination saved: ${body}
-Plans will be listed next.</Message>
-      </Response>
-    `);
+<Response>
+<Message>
+📱 Available Plans:
+${list}
+</Message>
+</Response>
+`);
   }
 
   return res.send(`
-    <Response>
-      <Message>Type hi to start again.</Message>
-    </Response>
-  `);
+<Response>
+<Message>Type "hi" to start again.</Message>
+</Response>
+`);
 });
 
 // =====================================================
 // HEALTH CHECK
 // =====================================================
-app.get("/", (_, res) => res.send("SimClaire backend running"));
+app.get("/", (_, res) => res.send("SimClaire Backend OK"));
 
 // =====================================================
 // START SERVER
