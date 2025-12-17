@@ -350,7 +350,10 @@ app.post("/webhook/whatsapp", async (req, res) => {
   if (["hi", "hello", "hey"].includes(body)) {
     return res.send(`
       <Response>
-        <Message>👋 Welcome to SimClaire!\nReply with:\n1) Browse Plans\n2) FAQ\n3) Support</Message>
+        <Message>👋 Welcome to SimClaire
+        1️⃣ Browse Plans
+        2️⃣ FAQ 
+        3️⃣ Support
       </Response>
     `);
   }
