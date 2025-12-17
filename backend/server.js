@@ -173,7 +173,7 @@ app.post("/webhook/whatsapp", async (req, res) => {
 
     const prodRes = await esimRequest(
       "get",
-      `/products?destinationID=${match.destinationID}`
+      `/products?destinationId=${match.destinationID}`
     );
 
     session.products = prodRes.data || [];
