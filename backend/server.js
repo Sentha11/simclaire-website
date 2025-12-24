@@ -310,18 +310,17 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
         // =============================================
         console.log("📡 Purchasing eSIM...");
 
-       const esimRes = await esimRequest("post", "/api/esim/purchaseesim", {
-       data: {
-          items: [
-                    {
-                      sku: metadata.productSku,
-                      quantity: Number(metadata.quantity || 1),
-                      destinationID: metadata.destinationId,
-                    }
-                  ]
-            },
-      });
-
+        const esimRes = await esimRequest("post", "/api/esim/purchaseesim", {
+  data: {
+    items: [
+      {
+        sku: metadata.productSku,
+        quantity: Number(metadata.quantity || 1),
+        destinationID: metadata.destinationID
+      }
+    ]
+  }
+});
         const esim = esimRes;
 
         const transactionId = esim.transactionId;
