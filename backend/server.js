@@ -258,7 +258,7 @@ app.post("/api/payments/create-checkout-session", async (req, res) => {
   country: country || "",
 
   // ✅ FIX: use the variable that actually exists
-  destinationId: String(destinationId ?? ""),
+  destinationID: String(destinationId ?? ""),
 
   whatsappTo: metadata?.whatsappTo || "",
   flagEmoji: metadata?.flagEmoji || "",
@@ -297,7 +297,13 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
     // -------------------------------------------------
     if (event.type === "checkout.session.completed") {
       const session = event.data.object;
-
+      
+      console.log("🧪 eSIM payload debug:", {
+        sku: metadata.productSku,
+        quantity: metadata.quantity,
+        destinationID: metadata.destinationID,
+      });
+      
       console.log("✅ Stripe payment completed:", session.id);
 
       const customerEmail = session.customer_details?.email;
