@@ -397,7 +397,7 @@ If you need help, reply SUPPORT.
       `);
     }
 
-    // hi / hello
+    // ================= GREETING =================
     if (["hi", "hello", "hey"].includes(text)) {
       resetSession(from);
       return res.send(
@@ -405,7 +405,7 @@ If you need help, reply SUPPORT.
       );
     }
 
-    // menu reset
+    // ================= MENU RESET =================
     if (["menu", "main", "start"].includes(text)) {
       resetSession(from);
       return res.send(
@@ -413,7 +413,7 @@ If you need help, reply SUPPORT.
       );
     }
 
-    // MENU
+    // ================= MENU =================
     if (session.step === "MENU") {
       if (text === "1") {
         session.step = "COUNTRY";
@@ -431,20 +431,16 @@ If you need help, reply SUPPORT.
       );
     }
 
-    // COUNTRY
+    // ================= COUNTRY → PLANS =================
     if (session.step === "COUNTRY") {
       const destRes = await esimRequest("get", "/api/esim/destinations");
       const destinations = extractArray(destRes);
 
-      const match = destinations.find((d) => {
-        const name =
-          d.destinationName ||
-          d.name ||
-          d.countryName ||
-          d.destination ||
-          "";
-        return String(name).toLowerCase().includes(text);
-      });
+      const match = destinations.find((d) =>
+        String(d.destinationName || d.name || "")
+          .toLowerCase()
+          .includes(text)
+      );
 
       if (!match) {
         return res.send(
@@ -452,8 +448,7 @@ If you need help, reply SUPPORT.
         );
       }
 
-      session.country =
-        match.destinationName || match.name || match.countryName;
+      session.country = match.destinationName || match.name;
       session.destinationId =
         match.destinationID || match.destinationId || match.id;
       session.step = "PLAN";
@@ -466,30 +461,41 @@ If you need help, reply SUPPORT.
       const products = extractArray(prodRes);
       session.products = products;
 
+      if (!products.length) {
+        return res.send(
+          twiml(`😕 No plans available for *${session.country}*.\nType *menu* to restart.`)
+        );
+      }
+
       let msg = `📡 Plans for *${session.country}*:\n\n`;
       products.slice(0, 8).forEach((p, i) => {
-        msg += `${i + 1}) ${p.productName}\n💾 ${p.productDataAllowance}\n📅 ${p.validity} days\n💵 £${p.productPrice}\n\n`;
+        msg += `${i + 1}) ${p.productName || "Plan"}\n💾 ${p.productDataAllowance}\n📅 ${p.validity} days\n💵 £${p.productPrice}\n\n`;
       });
 
-      msg += "Reply with the plan number.";
+      msg += "Reply with the plan number to continue.";
       return res.send(twiml(msg));
     }
 
-    // PLAN
+    // ================= PLAN SELECT =================
     if (session.step === "PLAN") {
       const index = parseInt(textRaw, 10);
-      if (Number.isNaN(index)) {
-        return res.send(twiml("❌ Invalid plan number."));
+      if (!session.products[index - 1]) {
+        return res.send(twiml("❌ Invalid selection. Reply with a plan number."));
       }
 
       session.selectedProduct = session.products[index - 1];
       session.step = "EMAIL";
-      return res.send(twiml("📧 Enter your email for the Stripe receipt:"));
+
+      return res.send(twiml("📧 Enter your email address for the Stripe receipt:"));
     }
 
-    // EMAIL → STRIPE CHECKOUT (UNCHANGED)
+    // ================= EMAIL → STRIPE =================
     if (session.step === "EMAIL") {
       const email = textRaw;
+      if (!email.match(/^[^@\s]+@[^@\s]+\.[^@\s]+$/)) {
+        return res.send(twiml("❌ Invalid email. Please try again."));
+      }
+
       const p = session.selectedProduct;
 
       const response = await axios.post(
@@ -514,9 +520,7 @@ If you need help, reply SUPPORT.
       resetSession(from);
 
       return res.send(
-        twiml(
-          `💳 Secure payment link:\n${response.data.url}\n\nStripe receipt will be emailed automatically.`
-        )
+        twiml(`💳 *Secure Payment Link*\n\n${response.data.url}`)
       );
     }
 
