@@ -223,8 +223,10 @@ app.post("/api/payments/create-checkout-session", async (req, res) => {
       customer_email: email,
 
       // ✅ Use env success/cancel (your simclaire.com pages)
-      success_url: STRIPE_SUCCESS_URL,
-      cancel_url: STRIPE_CANCEL_URL,
+      //success_url: STRIPE_SUCCESS_URL,
+      //cancel_url: STRIPE_CANCEL_URL,
+      success_url: `${APP_BASE_URL}/success`,
+      cancel_url: `${APP_BASE_URL}/cancel`,
 
       line_items: [
         {
