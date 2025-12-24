@@ -274,54 +274,122 @@ app.post("/api/payments/create-checkout-session", async (req, res) => {
 // 8) STRIPE WEBHOOK (kept, but NO eSIM purchase / NO email)
 // =====================================================
 if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
-  app.post("/webhook/stripe", async (req, res) => {
-    const sig = req.headers["stripe-signature"];
-    let event;
+// ======================================================
+// STRIPE WEBHOOK — PAYMENT → eSIM → EMAIL + WHATSAPP
+// ======================================================
+
+app.post("/webhook/stripe", async (req, res) => {
+  const sig = req.headers["stripe-signature"];
+  let event;
+
+  try {
+    event = stripe.webhooks.constructEvent(
+      req.body,
+      sig,
+      process.env.STRIPE_WEBHOOK_SECRET
+    );
+  } catch (err) {
+    console.error("❌ Stripe signature verification failed:", err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  // ======================================================
+  // PAYMENT COMPLETED
+  // ======================================================
+  if (event.type === "checkout.session.completed") {
+    const session = event.data.object;
 
     try {
-      event = stripe.webhooks.constructEvent(
-        req.body, // raw Buffer (because of bodyParser.raw above)
-        sig,
-        process.env.STRIPE_WEBHOOK_SECRET
-      );
-    } catch (err) {
-      console.log("🔴 Invalid Stripe Signature:", err.message);
-      return res.status(400).send("Webhook Error");
-    }
+      console.log("✅ Stripe payment completed:", session.id);
 
-    if (event.type === "checkout.session.completed") {
-      const sessionObj = event.data.object;
+      const email = session.customer_details?.email;
+      const metadata = session.metadata || {};
 
-      const customerEmail = sessionObj.customer_details?.email || sessionObj.customer_email;
+      if (!email || !metadata.productSku || !metadata.destinationId) {
+        console.error("❌ Missing required metadata");
+        return res.status(200).send("Missing metadata");
+      }
 
-      console.log("✅ Stripe payment completed:", sessionObj.id);
-      console.log("   customer_email:", sessionObj.customer_details?.email || sessionObj.customer_email);
-      // Stripe sends receipt automatically if enabled in Stripe settings
+      // ======================================================
+      // 1️⃣ PURCHASE eSIM
+      // ======================================================
+      console.log("📲 Purchasing eSIM...");
 
-    if (process.env.SENDGRID_API_KEY && customerEmail) {
-      try {
+      const esimRes = await esimRequest("post", "/api/esim/purchase", {
+        productSku: metadata.productSku,
+        destinationId: metadata.destinationId,
+        email
+      });
+
+      const esim = esimRes.data;
+
+      if (!esim || (!esim.qrCodeBase64 && !esim.qrCodeUrl)) {
+        throw new Error("eSIM response missing QR data");
+      }
+
+      console.log("✅ eSIM purchased");
+
+      // ======================================================
+      // 2️⃣ EMAIL eSIM (SendGrid)
+      // ======================================================
+      console.log("📧 Sending eSIM email...");
+
       await sgMail.send({
-        to: customerEmail,
+        to: email,
         from: {
           email: process.env.SENDGRID_FROM_EMAIL,
-          name: process.env.SENDGRID_FROM_NAME || "SimClaire",
+          name: process.env.SENDGRID_FROM_NAME || "SimClaire"
         },
-        subject: "Payment received – SimClaire",
-        text: `Hi, We’ve received your payment successfully.
-               Your order is being processed and you’ll receive your eSIM details shortly.
-               Thank you for choosing SimClaire.`,});
+        subject: "Your SimClaire eSIM – Ready to Install",
+        html: `
+          <h2>📲 Your eSIM is ready</h2>
+          <p>Scan the attached QR code to install your eSIM.</p>
+          <p><strong>Activation Code:</strong> ${esim.activationCode || "N/A"}</p>
+          <p>If you need help, reply <strong>SUPPORT</strong> on WhatsApp.</p>
+        `,
+        attachments: esim.qrCodeBase64
+          ? [
+              {
+                content: esim.qrCodeBase64,
+                filename: "simclaire-esim-qr.png",
+                type: "image/png",
+                disposition: "attachment"
+              }
+            ]
+          : []
+      });
 
-        console.log("📧 SendGrid payment confirmation sent");
-        } catch (err) {
-        console.error(
-        "❌ SendGrid email failed:",
-        err.response?.body || err.message);
-        }
+      console.log("📧 SendGrid eSIM email sent");
+
+      // ======================================================
+      // 3️⃣ WHATSAPP eSIM (Twilio)
+      // ======================================================
+      if (metadata.whatsappTo && esim.qrCodeUrl) {
+        console.log("📲 Sending eSIM via WhatsApp...");
+
+        await twilioClient.messages.create({
+          from: process.env.TWILIO_WHATSAPP_FROM,
+          to: metadata.whatsappTo,
+          body: `📲 Your SimClaire eSIM is ready!
+
+Scan the QR code attached to install.
+Activation Code: ${esim.activationCode || "N/A"}
+
+Need help? Reply SUPPORT.`,
+          mediaUrl: [esim.qrCodeUrl]
+        });
+
+        console.log("📲 WhatsApp eSIM sent");
       }
+
+      console.log("🎉 Fulfillment complete");
+    } catch (err) {
+      console.error("❌ Fulfillment error:", err.message);
     }
-    
-    return res.json({ received: true });
-  });
+  }
+
+  res.status(200).json({ received: true });
+});
 } else {
   console.log("🟡 Stripe webhook disabled (missing STRIPE_WEBHOOK_SECRET)");
 }
