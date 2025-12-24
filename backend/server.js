@@ -17,6 +17,7 @@ const sgMail = require("@sendgrid/mail");
 
 if (process.env.SENDGRID_API_KEY) {
   sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+  console.log("📧 SendGrid enabled");
 }
 
 const app = express();
@@ -290,46 +291,35 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
 
     if (event.type === "checkout.session.completed") {
       const sessionObj = event.data.object;
+
+      const customerEmail = sessionObj.customer_details?.email || sessionObj.customer_email;
+
       console.log("✅ Stripe payment completed:", sessionObj.id);
       console.log("   customer_email:", sessionObj.customer_details?.email || sessionObj.customer_email);
       // Stripe sends receipt automatically if enabled in Stripe settings
 
-      if (event.type === "checkout.session.completed") {
-        const sessionObj = event.data.object;
-
-        const customerEmail =
-        sessionObj.customer_details?.email || sessionObj.customer_email;
-
-        console.log("✅ Stripe payment completed:", sessionObj.id);
-        console.log("📧 customer_email:", customerEmail);
-
-      if (customerEmail && process.env.SENDGRID_API_KEY) {
+    if (process.env.SENDGRID_API_KEY && customerEmail) {
       try {
       await sgMail.send({
         to: customerEmail,
         from: {
           email: process.env.SENDGRID_FROM_EMAIL,
-          name: process.env.SENDGRID_FROM_NAME,
+          name: process.env.SENDGRID_FROM_NAME || "SimClaire",
         },
-        subject: "✅ Payment Confirmed – SimClaire",
-        html: `
-          <h2>Thank you for your purchase!</h2>
-          <p>Your payment has been successfully processed.</p>
-          <p><strong>Order ID:</strong> ${sessionObj.id}</p>
-          <p>You will receive your eSIM details in a follow-up email.</p>
-          <br />
-          <p>– SimClaire Team</p>
-        `,
-      });
+        subject: "Payment received – SimClaire",
+        text: `Hi, We’ve received your payment successfully.
+               Your order is being processed and you’ll receive your eSIM details shortly.
+               Thank you for choosing SimClaire.`,});
 
-      console.log("📨 SendGrid payment confirmation sent");
-    } catch (err) {
-      console.error("❌ SendGrid email failed:", err.message);
+        console.log("📧 SendGrid payment confirmation sent");
+        } catch (err) {
+        console.error(
+        "❌ SendGrid email failed:",
+        err.response?.body || err.message);
+        }
+      }
     }
-  }
-}
-    }
-
+    
     return res.json({ received: true });
   });
 } else {
