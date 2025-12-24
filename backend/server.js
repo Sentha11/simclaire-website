@@ -322,15 +322,14 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
             },
       });
 
-        const esim = esimRes?.data || {};
-        const qrCode = esim.qrCode || esim.qr || esim.activationQr;
-        const activationCode = esim.activationCode || esim.iccid;
+        const esim = esimRes;
 
-        if (!qrCode) {
-          throw new Error("QR code missing from eSIM response");
-        }
+        const transactionId = esim.transactionId;
+        const activationCode = esim.activationCode;
 
-        console.log("📲 eSIM QR received");
+        console.log("✅ eSIM purchased");
+        console.log("Transaction ID:", transactionId);
+        console.log("Activation Code:", activationCode);
 
         // =============================================
         // 2️⃣ SEND EMAIL (SendGrid)
