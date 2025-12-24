@@ -13,6 +13,11 @@ const bodyParser = require("body-parser");
 const { HttpsProxyAgent } = require("https-proxy-agent");
 const { SocksProxyAgent } = require("socks-proxy-agent");
 const twilio = require("twilio");
+const sgMail = require("@sendgrid/mail");
+
+if (process.env.SENDGRID_API_KEY) {
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+}
 
 const app = express();
 
@@ -288,6 +293,41 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
       console.log("✅ Stripe payment completed:", sessionObj.id);
       console.log("   customer_email:", sessionObj.customer_details?.email || sessionObj.customer_email);
       // Stripe sends receipt automatically if enabled in Stripe settings
+
+      if (event.type === "checkout.session.completed") {
+        const sessionObj = event.data.object;
+
+        const customerEmail =
+        sessionObj.customer_details?.email || sessionObj.customer_email;
+
+        console.log("✅ Stripe payment completed:", sessionObj.id);
+        console.log("📧 customer_email:", customerEmail);
+
+      if (customerEmail && process.env.SENDGRID_API_KEY) {
+      try {
+      await sgMail.send({
+        to: customerEmail,
+        from: {
+          email: process.env.SENDGRID_FROM_EMAIL,
+          name: process.env.SENDGRID_FROM_NAME,
+        },
+        subject: "✅ Payment Confirmed – SimClaire",
+        html: `
+          <h2>Thank you for your purchase!</h2>
+          <p>Your payment has been successfully processed.</p>
+          <p><strong>Order ID:</strong> ${sessionObj.id}</p>
+          <p>You will receive your eSIM details in a follow-up email.</p>
+          <br />
+          <p>– SimClaire Team</p>
+        `,
+      });
+
+      console.log("📨 SendGrid payment confirmation sent");
+    } catch (err) {
+      console.error("❌ SendGrid email failed:", err.message);
+    }
+  }
+}
     }
 
     return res.json({ received: true });
