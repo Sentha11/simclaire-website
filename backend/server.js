@@ -246,20 +246,23 @@ app.post("/api/payments/create-checkout-session", async (req, res) => {
       ],
 
       // Keep metadata for later (when you add purchase + instructions)
-      metadata: {
-        planName: planName || "",
-        productSku: productSku || "",
-        productType: String(productType ?? ""),
-        data: data || "",
-        validity: String(validity ?? ""),
-        quantity: String(quantity ?? ""),
-        email: email || "",
-        mobile: mobile || "",
-        country: country || "",
-        destinationID: String(destinationID ?? ""),
-        whatsappTo: metadata?.whatsappTo || "",
-        flagEmoji: metadata?.flagEmoji || "",
-      },
+    metadata: {
+  planName: planName || "",
+  productSku: productSku || "",
+  productType: String(productType ?? ""),
+  data: data || "",
+  validity: String(validity ?? ""),
+  quantity: String(quantity ?? ""),
+  email: email || "",
+  mobile: mobile || "",
+  country: country || "",
+
+  // ✅ FIX: use the variable that actually exists
+  destinationId: String(destinationId ?? ""),
+
+  whatsappTo: metadata?.whatsappTo || "",
+  flagEmoji: metadata?.flagEmoji || "",
+},
     });
 
     console.log("✅ Stripe checkout created:", checkout.id);
@@ -308,10 +311,14 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
         console.log("📡 Purchasing eSIM...");
 
         const esimRes = await esimRequest("post", "/api/esim/purchaseesim", {
+        data: {
         sku: metadata.productSku,
-          quantity: Number(metadata.quantity || 1),
-          destinationId: metadata.destinationId,
-      });
+        quantity: Number(metadata.quantity || 1),
+
+        // ✅ send the exact value saved in metadata
+        destinationID: metadata.destinationId,
+        },
+    });
 
         const esim = esimRes?.data || {};
         const qrCode = esim.qrCode || esim.qr || esim.activationQr;
