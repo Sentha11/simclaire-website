@@ -614,6 +614,50 @@ app.get("/test-esim", async (req, res) => {
   }
 });
 
+app.get("/success", (req, res) => {
+  res.send(`
+    <html>
+      <head>
+        <title>Payment Successful</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            background: #f6f9fc;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+          }
+          .card {
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            max-width: 420px;
+            text-align: center;
+          }
+          h1 {
+            color: #16a34a;
+          }
+          p {
+            color: #555;
+            margin-top: 10px;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <h1>✅ Payment Successful</h1>
+          <p>Thank you for your purchase.</p>
+          <p>A confirmation email has been sent.</p>
+          <p>You may now close this window.</p>
+        </div>
+      </body>
+    </html>
+  `);
+});
+
 // =====================================================
 // 13) START SERVER
 // =====================================================
