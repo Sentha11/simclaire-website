@@ -271,129 +271,98 @@ app.post("/api/payments/create-checkout-session", async (req, res) => {
 });
 
 // =====================================================
-// 8) STRIPE WEBHOOK (kept, but NO eSIM purchase / NO email)
+// STRIPE WEBHOOK – FULL eSIM FULFILLMENT
 // =====================================================
 if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
-// ======================================================
-// STRIPE WEBHOOK — PAYMENT → eSIM → EMAIL + WHATSAPP
-// ======================================================
-
-app.post("/webhook/stripe", async (req, res) => {
-  const sig = req.headers["stripe-signature"];
-  let event;
-
-  try {
-    event = stripe.webhooks.constructEvent(
-      req.body,
-      sig,
-      process.env.STRIPE_WEBHOOK_SECRET
-    );
-  } catch (err) {
-    console.error("❌ Stripe signature verification failed:", err.message);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
-  }
-
-  // ======================================================
-  // PAYMENT COMPLETED
-  // ======================================================
-  if (event.type === "checkout.session.completed") {
-    const session = event.data.object;
+  app.post("/webhook/stripe", bodyParser.raw({ type: "application/json" }), async (req, res) => {
+    const sig = req.headers["stripe-signature"];
+    let event;
 
     try {
+      event = stripe.webhooks.constructEvent(
+        req.body,
+        sig,
+        process.env.STRIPE_WEBHOOK_SECRET
+      );
+    } catch (err) {
+      console.error("❌ Stripe signature verification failed:", err.message);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+
+    // -------------------------------------------------
+    // PAYMENT COMPLETED
+    // -------------------------------------------------
+    if (event.type === "checkout.session.completed") {
+      const session = event.data.object;
+
       console.log("✅ Stripe payment completed:", session.id);
 
-      const email = session.customer_details?.email;
+      const customerEmail = session.customer_details?.email;
       const metadata = session.metadata || {};
+      const whatsappTo = metadata.whatsappTo;
 
-      if (!email || !metadata.productSku || !metadata.destinationId) {
-        console.error("❌ Missing required metadata");
-        return res.status(200).send("Missing metadata");
-      }
+      try {
+        // =============================================
+        // 1️⃣ PURCHASE eSIM
+        // =============================================
+        console.log("📡 Purchasing eSIM...");
 
-      // ======================================================
-      // 1️⃣ PURCHASE eSIM
-      // ======================================================
-      console.log("📲 Purchasing eSIM...");
-
-      const esimRes = await esimRequest("post", "/api/esim/purchase", {
-        productSku: metadata.productSku,
-        destinationId: metadata.destinationId,
-        email
-      });
-
-      const esim = esimRes.data;
-
-      if (!esim || (!esim.qrCodeBase64 && !esim.qrCodeUrl)) {
-        throw new Error("eSIM response missing QR data");
-      }
-
-      console.log("✅ eSIM purchased");
-
-      // ======================================================
-      // 2️⃣ EMAIL eSIM (SendGrid)
-      // ======================================================
-      console.log("📧 Sending eSIM email...");
-
-      await sgMail.send({
-        to: email,
-        from: {
-          email: process.env.SENDGRID_FROM_EMAIL,
-          name: process.env.SENDGRID_FROM_NAME || "SimClaire"
-        },
-        subject: "Your SimClaire eSIM – Ready to Install",
-        html: `
-          <h2>📲 Your eSIM is ready</h2>
-          <p>Scan the attached QR code to install your eSIM.</p>
-          <p><strong>Activation Code:</strong> ${esim.activationCode || "N/A"}</p>
-          <p>If you need help, reply <strong>SUPPORT</strong> on WhatsApp.</p>
-        `,
-        attachments: esim.qrCodeBase64
-          ? [
-              {
-                content: esim.qrCodeBase64,
-                filename: "simclaire-esim-qr.png",
-                type: "image/png",
-                disposition: "attachment"
-              }
-            ]
-          : []
-      });
-
-      console.log("📧 SendGrid eSIM email sent");
-
-      // ======================================================
-      // 3️⃣ WHATSAPP eSIM (Twilio)
-      // ======================================================
-      if (metadata.whatsappTo && esim.qrCodeUrl) {
-        console.log("📲 Sending eSIM via WhatsApp...");
-
-        await twilioClient.messages.create({
-          from: process.env.TWILIO_WHATSAPP_FROM,
-          to: metadata.whatsappTo,
-          body: `📲 Your SimClaire eSIM is ready!
-
-Scan the QR code attached to install.
-Activation Code: ${esim.activationCode || "N/A"}
-
-Need help? Reply SUPPORT.`,
-          mediaUrl: [esim.qrCodeUrl]
+        const esimRes = await esimRequest("post", "/api/esim/purchase", {
+          productSku: metadata.productSku,
+          email: customerEmail,
         });
 
-        console.log("📲 WhatsApp eSIM sent");
+        const esim = esimRes?.data || {};
+        const qrCode = esim.qrCode || esim.qr || esim.activationQr;
+        const activationCode = esim.activationCode || esim.iccid;
+
+        if (!qrCode) {
+          throw new Error("QR code missing from eSIM response");
+        }
+
+        console.log("📲 eSIM QR received");
+
+        // =============================================
+        // 2️⃣ SEND EMAIL (SendGrid)
+        // =============================================
+        if (sgMail && customerEmail) {
+          await sgMail.send({
+            to: customerEmail,
+            from: "SimClaire <care@simclaire.com>",
+            subject: "Your SimClaire eSIM – QR Code Inside",
+            html: `
+              <h2>Your eSIM is Ready 📲</h2>
+              <p>Scan the QR code below to install your eSIM.</p>
+              <img src="${qrCode}" alt="eSIM QR Code" width="240" />
+              <p><strong>Activation Code:</strong> ${activationCode || "N/A"}</p>
+              <p>If you need help, reply SUPPORT on WhatsApp.</p>
+            `,
+          });
+
+          console.log("📧 eSIM email sent");
+        }
+
+        // =============================================
+        // 3️⃣ SEND WHATSAPP MESSAGE
+        // =============================================
+        if (twilioClient && whatsappTo) {
+          await twilioClient.messages.create({
+            from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
+            to: whatsappTo,
+            body: `📲 Your SimClaire eSIM is ready!\n\nScan the QR code below to install:\n${qrCode}\n\nIf you need help, reply SUPPORT.`,
+          });
+
+          console.log("💬 WhatsApp QR sent");
+        }
+
+      } catch (err) {
+        console.error("❌ Fulfillment error:", err.message);
       }
-
-      console.log("🎉 Fulfillment complete");
-    } catch (err) {
-      console.error("❌ Fulfillment error:", err.message);
     }
-  }
 
-  res.status(200).json({ received: true });
-});
-} else {
-  console.log("🟡 Stripe webhook disabled (missing STRIPE_WEBHOOK_SECRET)");
+    res.json({ received: true });
+  });
 }
-
 // =====================================================
 // 9) WHATSAPP XML HELPERS
 // =====================================================
