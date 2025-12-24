@@ -367,26 +367,6 @@ function resetSession(id) {
 app.post("/webhook/whatsapp", async (req, res) => {
   res.set("Content-Type", "text/xml");
 
-  // ================= INSTALL HANDLER =================
-  if (text === "install") {
-  const reply = `📲 eSIM Installation
-  Your eSIM installation instructions will be sent shortly.
-
-    If you’ve already completed payment:
-    * Check your email for the QR code
-    * Follow the on-screen steps to install
-    * Restart your phone after installation
-
-    If you need help, reply SUPPORT.
-      `.trim();
-
-  return res.send(`
-    <Response>
-      <Message>${reply}</Message>
-    </Response>
-  `);
-}
-
   try {
     const fromRaw = req.body.WaId || req.body.From || "";
     const from = String(fromRaw).replace("whatsapp:", "") || "unknown";
@@ -395,7 +375,29 @@ app.post("/webhook/whatsapp", async (req, res) => {
 
     const session = getSession(from);
 
-    // hi/hello handler
+    // ================= INSTALL HANDLER =================
+    if (text === "install") {
+      const reply = `
+📲 eSIM Installation
+
+Your eSIM installation instructions will be sent shortly.
+
+If you’ve already completed payment:
+* Check your email for the QR code
+* Follow the on-screen steps to install
+* Restart your phone after installation
+
+If you need help, reply SUPPORT.
+      `.trim();
+
+      return res.send(`
+<Response>
+  <Message>${reply}</Message>
+</Response>
+      `);
+    }
+
+    // hi / hello
     if (["hi", "hello", "hey"].includes(text)) {
       resetSession(from);
       return res.send(
@@ -429,22 +431,11 @@ app.post("/webhook/whatsapp", async (req, res) => {
       );
     }
 
-    // COUNTRY -> fetch destinations -> match -> fetch products
+    // COUNTRY
     if (session.step === "COUNTRY") {
-      console.log("🌍 Fetching destinations...");
       const destRes = await esimRequest("get", "/api/esim/destinations");
       const destinations = extractArray(destRes);
 
-      if (!destinations.length) {
-        console.log("🔴 No destinations array returned. Raw:", destRes);
-        return res.send(
-          twiml("❌ No destinations available right now. Type menu to restart.")
-        );
-      }
-
-      console.log(`🌍 Destinations fetched: ${destinations.length}`);
-
-      // Find match by name
       const match = destinations.find((d) => {
         const name =
           d.destinationName ||
@@ -457,127 +448,65 @@ app.post("/webhook/whatsapp", async (req, res) => {
 
       if (!match) {
         return res.send(
-          twiml("❌ No match found. Try another country name (e.g., Italy, USA) or type menu.")
+          twiml("❌ No match found. Try another country or type menu.")
         );
       }
 
-      const destinationName =
-        match.destinationName || match.name || match.countryName || "Selected Destination";
-
-      const destinationId =
-        match.destinationID || match.destinationId || match.destinationid || match.id;
-
-      if (!destinationId) {
-        console.log("🔴 Destination matched but no destinationID field. Match:", match);
-        return res.send(
-          twiml("❌ Destination found but missing destination ID. Type menu and try again.")
-        );
-      }
-
-      session.country = destinationName;
-      session.destinationId = String(destinationId);
+      session.country =
+        match.destinationName || match.name || match.countryName;
+      session.destinationId =
+        match.destinationID || match.destinationId || match.id;
       session.step = "PLAN";
 
-      console.log(`📡 Fetching products for destinationid=${destinationId} (${destinationName})`);
       const prodRes = await esimRequest(
         "get",
-        `/api/esim/products?destinationid=${encodeURIComponent(destinationId)}`
+        `/api/esim/products?destinationid=${session.destinationId}`
       );
 
       const products = extractArray(prodRes);
       session.products = products;
 
-      console.log(`📡 Products fetched: ${products.length}`);
-
-      if (!products.length) {
-        return res.send(
-          twiml(`😕 No plans available for *${session.country}*.\nType *menu* to try another country.`)
-        );
-      }
-
-      // Build message (top 8)
-      const show = products.slice(0, 8);
-
       let msg = `📡 Plans for *${session.country}*:\n\n`;
-      show.forEach((p, i) => {
-        const name = p.productName || p.name || "Plan";
-        const data = p.productDataAllowance || p.dataAllowance || p.data || "";
-        const days = p.validity || p.validDays || "";
-        const price = p.productPrice || p.price || "";
-        msg += `${i + 1}) ${name}\n💾 ${data}\n📅 ${days} days\n💵 £${price}\n\n`;
+      products.slice(0, 8).forEach((p, i) => {
+        msg += `${i + 1}) ${p.productName}\n💾 ${p.productDataAllowance}\n📅 ${p.validity} days\n💵 £${p.productPrice}\n\n`;
       });
 
-      msg += "Reply with the plan number to continue.";
+      msg += "Reply with the plan number.";
       return res.send(twiml(msg));
     }
 
-    // PLAN select -> generate payment link (Stripe)
+    // PLAN
     if (session.step === "PLAN") {
       const index = parseInt(textRaw, 10);
-
-      if (Number.isNaN(index) || index < 1 || index > session.products.length) {
-        return res.send(twiml("❌ Invalid plan number. Reply with the number shown, or type menu."));
+      if (Number.isNaN(index)) {
+        return res.send(twiml("❌ Invalid plan number."));
       }
 
-      const p = session.products[index - 1];
-      const planName = p.productName || p.name || "SimClaire eSIM";
-      const price = p.productPrice || p.price;
-      const productSku = p.productSku || p.productSKU || p.sku || "";
-      const productType = p.productType ?? p.type ?? "";
-      const data = p.productDataAllowance || p.dataAllowance || "";
-      const validity = p.validity || p.validDays || "";
-
-      if (!price) {
-        console.log("🔴 Selected product missing price:", p);
-        return res.send(twiml("❌ This plan is missing a price. Please pick another plan or type menu."));
-      }
-
-      // We still need email to create checkout session (Stripe)
-      session.selectedProduct = {
-        planName,
-        price,
-        productSku,
-        productType,
-        data,
-        validity,
-      };
+      session.selectedProduct = session.products[index - 1];
       session.step = "EMAIL";
-
-      return res.send(twiml("📧 Enter your email address for the Stripe receipt:"));
+      return res.send(twiml("📧 Enter your email for the Stripe receipt:"));
     }
 
-    // EMAIL -> create checkout link
+    // EMAIL → STRIPE CHECKOUT (UNCHANGED)
     if (session.step === "EMAIL") {
-      const email = textRaw.trim();
-
-      if (!email.match(/^[^@\s]+@[^@\s]+\.[^@\s]+$/)) {
-        return res.send(twiml("❌ Invalid email. Please enter a valid email address:"));
-      }
-
+      const email = textRaw;
       const p = session.selectedProduct;
-      if (!p) {
-        resetSession(from);
-        return res.send(twiml("⚠️ Session expired. Type menu to restart."));
-      }
 
-      // Create checkout session
       const response = await axios.post(
         `${BACKEND_BASE_URL}/api/payments/create-checkout-session`,
         {
           email,
           quantity: 1,
-          price: p.price,
+          price: p.productPrice,
           currency: "gbp",
-          planName: p.planName,
+          planName: p.productName,
           productSku: p.productSku,
-          productType: p.productType,
-          data: p.data,
+          data: p.productDataAllowance,
           validity: p.validity,
           country: session.country,
           destinationId: session.destinationId,
           metadata: {
             whatsappTo: `whatsapp:${from}`,
-            flagEmoji: "", // you can populate later if you want
           },
         }
       );
@@ -586,15 +515,14 @@ app.post("/webhook/whatsapp", async (req, res) => {
 
       return res.send(
         twiml(
-          `💳 *Secure Payment Link*\n\nComplete your purchase here:\n${response.data.url}\n\n(Stripe receipt will be emailed automatically)`
+          `💳 Secure payment link:\n${response.data.url}\n\nStripe receipt will be emailed automatically.`
         )
       );
     }
 
-    // fallback
     return res.send(twiml("😅 I got lost. Type menu to restart."));
   } catch (err) {
-    console.log("🔴 WhatsApp webhook error:", err.response?.data || err.message);
+    console.log("🔴 WhatsApp webhook error:", err.message);
     return res.send(twiml("⚠️ Something broke. Type menu to restart."));
   }
 });
