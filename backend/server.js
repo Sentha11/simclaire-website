@@ -258,7 +258,7 @@ app.post("/api/payments/create-checkout-session", async (req, res) => {
   country: country || "",
 
   // ✅ FIX: use the variable that actually exists
-  destinationID: String(destinationId ?? ""),
+  destinationId: String(destinationId ?? ""),
 
   whatsappTo: metadata?.whatsappTo || "",
   flagEmoji: metadata?.flagEmoji || "",
@@ -296,19 +296,34 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
     // PAYMENT COMPLETED
     // -------------------------------------------------
     if (event.type === "checkout.session.completed") {
-      const session = event.data.object;
-      
-      console.log("🧪 eSIM payload debug:", {
-        sku: metadata.productSku,
-        quantity: metadata.quantity,
-        destinationID: metadata.destinationID,
-      });
-      
-      console.log("✅ Stripe payment completed:", session.id);
+     const session = event.data.object;
+    const metadata = session.metadata || {};
 
-      const customerEmail = session.customer_details?.email;
-      const metadata = session.metadata || {};
-      const whatsappTo = metadata.whatsappTo;
+  console.log("✅ Stripe payment completed:", session.id);
+  console.log("🧾 Metadata received:", metadata);
+
+  try {
+    console.log("📡 Purchasing eSIM...");
+
+    const esimRes = await esimRequest("post", "/api/esim/purchaseesim", {
+      data: {
+        items: [
+          {
+            sku: metadata.productSku,
+            quantity: Number(metadata.quantity || 1),
+            destinationId: Number(metadata.destinationId),
+          },
+        ],
+      },
+    });
+
+    console.log("✅ eSIM purchase response:", esimRes);
+
+  } catch (err) {
+    console.error("❌ Fulfillment error:", err.response?.data || err.message);
+  }
+
+      console.log("✅ Stripe payment completed:", session.id);
 
       try {
         // =============================================
