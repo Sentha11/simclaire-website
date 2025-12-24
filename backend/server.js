@@ -256,7 +256,7 @@ app.post("/api/payments/create-checkout-session", async (req, res) => {
         email: email || "",
         mobile: mobile || "",
         country: country || "",
-        destinationId: String(destinationId ?? ""),
+        destinationID: String(destinationID ?? ""),
         whatsappTo: metadata?.whatsappTo || "",
         flagEmoji: metadata?.flagEmoji || "",
       },
@@ -307,10 +307,11 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
         // =============================================
         console.log("📡 Purchasing eSIM...");
 
-        const esimRes = await esimRequest("post", "/api/esim/purchase", {
-          productSku: metadata.productSku,
-          email: customerEmail,
-        });
+        const esimRes = await esimRequest("post", "/api/esim/purchaseesim", {
+        sku: metadata.productSku,
+          quantity: Number(metadata.quantity || 1),
+          destinationId: metadata.destinationId,
+      });
 
         const esim = esimRes?.data || {};
         const qrCode = esim.qrCode || esim.qr || esim.activationQr;
