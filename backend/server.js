@@ -367,6 +367,26 @@ function resetSession(id) {
 app.post("/webhook/whatsapp", async (req, res) => {
   res.set("Content-Type", "text/xml");
 
+  // ================= INSTALL HANDLER =================
+  if (text === "install") {
+  const reply = `📲 eSIM Installation
+  Your eSIM installation instructions will be sent shortly.
+
+    If you’ve already completed payment:
+    * Check your email for the QR code
+    * Follow the on-screen steps to install
+    * Restart your phone after installation
+
+    If you need help, reply SUPPORT.
+      `.trim();
+
+  return res.send(`
+    <Response>
+      <Message>${reply}</Message>
+    </Response>
+  `);
+}
+
   try {
     const fromRaw = req.body.WaId || req.body.From || "";
     const from = String(fromRaw).replace("whatsapp:", "") || "unknown";
