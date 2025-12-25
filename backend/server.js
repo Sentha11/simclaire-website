@@ -326,7 +326,7 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
               {
                 sku: metadata.productSku,
                 quantity: Number(metadata.quantity || 1),
-                destinationID: Number(metadata.destinationId),
+                destinationId: Number(metadata.destinationId),
               },
             ],
           };
