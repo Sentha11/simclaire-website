@@ -333,7 +333,7 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
 
           console.log("📤 purchaseesim payload:", payload);
 
-          const esimRes = await esimRequest("post", "/api/esim/purchaseesim", {
+          const esimRes = await esimRequest("post", "/api/esim/purchaseesimasync", {
             data: payload,
           });
 
