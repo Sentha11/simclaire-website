@@ -337,7 +337,7 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
             data: payload,
           });
 
-          console.log("✅ eSIM purchase response:", esimRes);
+          console.log("✅ eSIM queued:", esimRes);
 
           // Keep your original pattern (in case API nests data)
           const esim = esimRes?.data || esimRes || {};
