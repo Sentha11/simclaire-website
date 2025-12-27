@@ -326,14 +326,14 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
               {
                 sku: metadata.productSku,
                 quantity: Number(metadata.quantity || 1),
-                type: "holiday_esim",
+                type: "1",
               },
             ],
           };
 
           console.log("📤 purchaseesim payload:", payload);
 
-          const esimRes = await esimRequest("post", "/api/esim/purchaseesimasync", {
+          const esimRes = await esimRequest("post", "/api/esim/purchaseesim", {
             data: payload,
           });
 
