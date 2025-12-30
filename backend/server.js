@@ -327,11 +327,24 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
                 type: "1",
                 sku: metadata.productSku,
                 quantity: Number(metadata.quantity || 1),
-                mobileno: metadata.mobile || metadata.mobileno,
+                mobileno: metadata.mobile,
                 emailid: metadata.email,
               },
             ],
           };
+          // ===============================
+          // SAFE / BULLETPROOF MOBILE FIX
+          // ===============================
+          const mobileno =
+            metadata.mobile?.trim() ||
+            metadata.whatsappTo?.replace("whatsapp:", "").trim();
+
+          if (!mobileno) {
+            console.error("❌ Missing mobileno – cannot proceed with eSIM purchase");
+            throw new Error("mobileno is required for eSIM purchase");
+          }
+
+          console.log("📞 Normalized mobileno:", mobileno);
 
           console.log("📤 purchaseesim payload:", payload);
 
