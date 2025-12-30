@@ -315,24 +315,7 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
 
         console.log("🧾 Metadata received:", metadata);
 
-        try {
-          // =============================================
-          // ✅ FIX #2: PURCHASE eSIM - send items array with sku/quantity/destinationId
-          // =============================================
-          console.log("📡 Purchasing eSIM...");
-
-          const payload = {
-            items: [
-              {
-                type: "1",
-                sku: metadata.productSku,
-                quantity: Number(metadata.quantity || 1),
-                mobileno: metadata.mobile,
-                emailid: metadata.email,
-              },
-            ],
-          };
-          // ===============================
+         // ===============================
           // SAFE / BULLETPROOF MOBILE FIX
           // ===============================
           const mobileno =
@@ -345,6 +328,25 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
           }
 
           console.log("📞 Normalized mobileno:", mobileno);
+
+        try {
+          // =============================================
+          // ✅ FIX #2: PURCHASE eSIM - send items array with sku/quantity/destinationId
+          // =============================================
+          console.log("📡 Purchasing eSIM...");
+
+          const payload = {
+            items: [
+              {
+                type: "1",
+                sku: metadata.productSku,
+                quantity: Number(metadata.quantity || 1),
+                mobileno: mobileno,
+                emailid: metadata.email,
+              },
+            ],
+          };
+         
 
           console.log("📤 purchaseesim payload:", payload);
 
