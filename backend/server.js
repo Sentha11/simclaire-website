@@ -324,9 +324,11 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
           const payload = {
             items: [
               {
-                sku: "TEST28", //metadata.productSku,
-                quantity: 1,//Number(metadata.quantity || 1),
                 type: "1",
+                sku: metadata.productSku,
+                quantity: Number(metadata.quantity || 1),
+                mobileno: metadata.mobile,
+                emailid: metadata.email,
               },
             ],
           };
