@@ -327,7 +327,7 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
                 type: "1",
                 sku: metadata.productSku,
                 quantity: Number(metadata.quantity || 1),
-                mobileno: metadata.mobile,
+                mobileno: metadata.mobile || metadata.mobileno,
                 emailid: metadata.email,
               },
             ],
