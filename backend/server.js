@@ -6,6 +6,16 @@
 // =====================================================
 
 require("dotenv").config();
+
+const ESIM_BASE_URL = process.env.ESIM_BASE_URL;
+
+if (!ESIM_BASE_URL) {
+  throw new Error("❌ ESIM_BASE_URL is missing");
+}
+
+const isUAT = ESIM_BASE_URL.includes("uat");
+
+console.log("🌍 eSIM Environment:", isUAT ? "UAT" : "PRODUCTION");
 const express = require("express");
 const cors = require("cors");
 const axios = require("axios");
@@ -15,7 +25,6 @@ const { SocksProxyAgent } = require("socks-proxy-agent");
 const twilio = require("twilio");
 const sgMail = require("@sendgrid/mail");
 
-const isUAT = ESIM_BASE_URL.includes("uat");
 const USERNAME = isUAT
   ? process.env.ESIM_UAT_USERNAME
   : process.env.ESIM_USERNAME;
@@ -23,6 +32,10 @@ const USERNAME = isUAT
 const PASSWORD = isUAT
   ? process.env.ESIM_UAT_PASSWORD
   : process.env.ESIM_PASSWORD;
+
+if (!USERNAME || !PASSWORD) {
+  throw new Error("❌ eSIM USERNAME or PASSWORD is missing");
+}
 
 if (process.env.SENDGRID_API_KEY) {
   sgMail.setApiKey(process.env.SENDGRID_API_KEY);
@@ -62,7 +75,7 @@ app.use(express.json());
 // =====================================================
 // 3) CONFIG (DO NOT CHANGE ENV NAMES)
 // =====================================================
-const ESIM_BASE_URL = (process.env.ESIM_BASE_URL || "").replace(/\/+$/, ""); // your env: https://uat.esim-api.com
+//const ESIM_BASE_URL = (process.env.ESIM_BASE_URL || "").replace(/\/+$/, ""); // your env: https://uat.esim-api.com
 const ESIM_USERNAME = process.env.ESIM_USERNAME;
 const ESIM_PASSWORD = process.env.ESIM_PASSWORD;
 
