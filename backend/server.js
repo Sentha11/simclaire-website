@@ -25,13 +25,8 @@ const { SocksProxyAgent } = require("socks-proxy-agent");
 const twilio = require("twilio");
 const sgMail = require("@sendgrid/mail");
 
-const USERNAME = isUAT
-  ? process.env.ESIM_UAT_USERNAME
-  : process.env.ESIM_USERNAME;
-
-const PASSWORD = isUAT
-  ? process.env.ESIM_UAT_PASSWORD
-  : process.env.ESIM_PASSWORD;
+const USERNAME = process.env.ESIM_USERNAME;
+const PASSWORD = process.env.ESIM_PASSWORD;
 
 if (!USERNAME || !PASSWORD) {
   throw new Error("❌ eSIM USERNAME or PASSWORD is missing");
