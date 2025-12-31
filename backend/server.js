@@ -14,6 +14,8 @@ const { HttpsProxyAgent } = require("https-proxy-agent");
 const { SocksProxyAgent } = require("socks-proxy-agent");
 const twilio = require("twilio");
 const sgMail = require("@sendgrid/mail");
+
+const isUAT = ESIM_BASE_URL.includes("uat");
 const USERNAME = isUAT
   ? process.env.ESIM_UAT_USERNAME
   : process.env.ESIM_USERNAME;
@@ -126,8 +128,6 @@ if (process.env.STRIPE_SECRET_KEY) {
 // =====================================================
 let esimToken = null;
 let esimExpiresAt = 0;
-
-const isUAT = ESIM_BASE_URL.includes("uat");
 
 async function getEsimToken() {
   if (esimToken && Date.now() < esimExpiresAt) return esimToken;
