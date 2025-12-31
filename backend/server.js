@@ -14,6 +14,13 @@ const { HttpsProxyAgent } = require("https-proxy-agent");
 const { SocksProxyAgent } = require("socks-proxy-agent");
 const twilio = require("twilio");
 const sgMail = require("@sendgrid/mail");
+const USERNAME = isUAT
+  ? process.env.ESIM_UAT_USERNAME
+  : process.env.ESIM_USERNAME;
+
+const PASSWORD = isUAT
+  ? process.env.ESIM_UAT_PASSWORD
+  : process.env.ESIM_PASSWORD;
 
 if (process.env.SENDGRID_API_KEY) {
   sgMail.setApiKey(process.env.SENDGRID_API_KEY);
@@ -120,6 +127,8 @@ if (process.env.STRIPE_SECRET_KEY) {
 let esimToken = null;
 let esimExpiresAt = 0;
 
+const isUAT = ESIM_BASE_URL.includes("uat");
+
 async function getEsimToken() {
   if (esimToken && Date.now() < esimExpiresAt) return esimToken;
 
@@ -129,9 +138,13 @@ async function getEsimToken() {
 
   const url = `${ESIM_BASE_URL}/api/esim/authenticate`;
 
+  console.log("🔌 ESIM BASE URL:", ESIM_BASE_URL);
+  console.log("🔐 ESIM MODE:", isUAT ? "UAT" : "PROD");
+  console.log("👤 ESIM USER PREFIX:", USERNAME?.slice(0, 4));
+
   const res = await axios.post(
     url,
-    { userName: ESIM_USERNAME, password: ESIM_PASSWORD },
+    { userName: USERNAME, password: PASSWORD },
     {
       httpsAgent: proxyAgent,
       proxy: false,
