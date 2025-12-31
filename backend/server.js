@@ -54,8 +54,8 @@ app.use(express.json());
 // 3) CONFIG (DO NOT CHANGE ENV NAMES)
 // =====================================================
 const ESIM_BASE_URL = (process.env.ESIM_BASE_URL || "").replace(/\/+$/, ""); // your env: https://uat.esim-api.com
-const ESIM_UAT_USERNAME = process.env.ESIM_UAT_USERNAME;
-const ESIM_UAT_PASSWORD = process.env.ESIM_UAT_PASSWORD;
+const ESIM_USERNAME = process.env.ESIM_USERNAME;
+const ESIM_PASSWORD = process.env.ESIM_PASSWORD;
 
 const APP_BASE_URL =
   process.env.APP_BASE_URL || "https://simclaire-website-backend.onrender.com";
@@ -123,15 +123,15 @@ let esimExpiresAt = 0;
 async function getEsimToken() {
   if (esimToken && Date.now() < esimExpiresAt) return esimToken;
 
-  if (!ESIM_BASE_URL || !ESIM_UAT_USERNAME || !ESIM_UAT_PASSWORD) {
-    throw new Error("Missing ESIM_BASE_URL / ESIM_UAT_USERNAME / ESIM_UAT_PASSWORD");
+  if (!ESIM_BASE_URL || !ESIM_USERNAME || !ESIM_PASSWORD) {
+    throw new Error("Missing ESIM_BASE_URL / ESIM_USERNAME / ESIM_PASSWORD");
   }
 
   const url = `${ESIM_BASE_URL}/api/esim/authenticate`;
 
   const res = await axios.post(
     url,
-    { userName: ESIM_UAT_USERNAME, password: ESIM_UAT_PASSWORD },
+    { userName: ESIM_USERNAME, password: ESIM_PASSWORD },
     {
       httpsAgent: proxyAgent,
       proxy: false,
