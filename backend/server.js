@@ -254,6 +254,16 @@ app.post("/api/payments/create-checkout-session", async (req, res) => {
       metadata,
     } = req.body;
 
+          // 🔒 HARD BLOCK IF MOBILE IS MISSING
+      if (!mobile) {
+        console.error("❌ Missing mobile in create-checkout-session");
+        return res.status(400).json({
+          error: "Destination mobile number is required",
+        });
+      }
+
+      console.log("📞 Checkout mobile received:", mobile);
+
     const checkout = await stripe.checkout.sessions.create({
       mode: "payment",
       payment_method_types: ["card"],
