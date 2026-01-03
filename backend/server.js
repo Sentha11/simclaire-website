@@ -284,7 +284,7 @@ app.post("/api/payments/create-checkout-session", async (req, res) => {
         validity: String(validity ?? ""),
         quantity: String(quantity ?? ""),
         email: email || "",
-        mobile: mobile || "",
+        mobileno: mobile || "",
         country: country || "",
         destinationId: String(destinationId ?? ""), // ✅ FIX #1
         whatsappTo: metadata?.whatsappTo || "",
