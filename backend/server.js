@@ -574,7 +574,7 @@ app.post("/webhook/whatsapp", async (req, res) => {
           validity: p.validity,
           country: session.country,
           destinationId: session.destinationId,
-          metadata: {
+          mobile: from,
             whatsappTo: `whatsapp:${from}`,
           },
         }
