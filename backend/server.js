@@ -575,11 +575,10 @@ app.post("/webhook/whatsapp", async (req, res) => {
           country: session.country,
           destinationId: session.destinationId,
           mobile: from,
-            whatsappTo: `whatsapp:${from}`,
-          },
-        }
-      );
-
+          whatsappTo: `whatsapp:${from}`,
+          
+        });
+    
       resetSession(from);
 
       return res.send(
