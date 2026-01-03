@@ -339,16 +339,15 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
          // ===============================
           // SAFE / BULLETPROOF MOBILE FIX
           // ===============================
-          const mobileno =
-            metadata.mobile?.trim() ||
-            metadata.whatsappTo?.replace("whatsapp:", "").trim();
+          // ✅ MOBILE NUMBER (DO NOT NORMALIZE)
+          const mobileno = String(metadata.mobileno || "").trim();
 
           if (!mobileno) {
-            console.error("❌ Missing mobileno – cannot proceed with eSIM purchase");
+            console.error("❌ Missing mobileno - cannot proceed with eSIM purchase");
             throw new Error("mobileno is required for eSIM purchase");
           }
 
-          console.log("📞 Normalized mobileno:", mobileno);
+          console.log("📞 Using mobileno (exact):", mobileno);
 
         try {
           // =============================================
@@ -385,27 +384,6 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
           console.log("✅ eSIM purchased");
           console.log("Transaction ID:", transactionId);
           console.log("Activation Code:", activationCode);
-
-          // =============================================
-          // 2️⃣ SEND EMAIL (SendGrid)
-          // =============================================
-          // NOTE: you currently reference qrCode below; leaving untouched per your request.
-          if (sgMail && customerEmail) {
-            await sgMail.send({
-              to: customerEmail,
-              from: "SimClaire <care@simclaire.com>",
-              subject: "Your SimClaire eSIM – QR Code Inside",
-              html: `
-              <h2>Your eSIM is Ready 📲</h2>
-              <p>Scan the QR code below to install your eSIM.</p>
-              <img src="${qrCode}" alt="eSIM QR Code" width="240" />
-              <p><strong>Activation Code:</strong> ${activationCode || "N/A"}</p>
-              <p>If you need help, reply SUPPORT on WhatsApp.</p>
-            `,
-            });
-
-            console.log("📧 eSIM email sent");
-          }
 
           // =============================================
           // 3️⃣ SEND WHATSAPP MESSAGE
