@@ -408,34 +408,40 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
           // FIX 4️⃣ – POST-PURCHASE THANK YOU WHATSAPP
           // ===============================
 
-          // Build WhatsApp destination safely
-          let whatsappToFinal =
-            metadata.whatsappTo && metadata.whatsappTo.trim()
-              ? metadata.whatsappTo
-              : `whatsapp:+${mobileno}`;
+         // ✅ Build WhatsApp destination safely
+          let whatsappToFinal = null;
 
-          const thankYouMessage =
-            "✅ Thank you for your purchase!\n\n" +
-            "📧 Your eSIM setup instructions have been sent to your email.\n\n" +
-            "📱 Need help? Reply support anytime.\n\n" +
-            "✈️ Safe travels!\n— SimClaire";
-
-          if (
-            twilioClient &&
-            process.env.TWILIO_WHATSAPP_FROM &&
-            whatsappToFinal.startsWith("whatsapp:")
-          ) {
-            await twilioClient.messages.create({
-              from: process.env.TWILIO_WHATSAPP_FROM, // MUST be whatsapp:+number
-              to: whatsappToFinal,
-              body: thankYouMessage,
-            });
-          } else {
-            console.log("📵 WhatsApp skipped (invalid config)", {
-              from: process.env.TWILIO_WHATSAPP_FROM,
-              to: whatsappToFinal,
-            });
+          if (metadata.whatsappTo && metadata.whatsappTo.trim()) {
+            whatsappToFinal = metadata.whatsappTo.trim();
+          } else if (mobileno) {
+            whatsappToFinal = `whatsapp:+${mobileno}`;
           }
+
+          console.log("📱 Final WhatsApp To:", whatsappToFinal);
+
+         const thankYouMessage =
+          "✅ Thank you for your purchase!\n\n" +
+          "📧 Your eSIM setup instructions have been sent to your email.\n\n" +
+          "📱 Need help? Reply support anytime.\n\n" +
+          "✈️ Safe travels!\n— SimClaire";
+
+        if (
+          twilioClient &&
+          process.env.TWILIO_WHATSAPP_FROM &&
+          whatsappToFinal &&
+          whatsappToFinal.startsWith("whatsapp:")
+        ) {
+          await twilioClient.messages.create({
+            from:  `whatsapp:${process.env.TWILIO_WHATSAPP_FROM}`,
+            to: whatsappToFinal,
+            body: thankYouMessage,
+          });
+        } else {
+          console.log("📵 WhatsApp skipped", {
+            from: process.env.TWILIO_WHATSAPP_FROM,
+            to: whatsappToFinal,
+          });
+        }
         
         } catch (err) {
           console.error("❌ Fulfillment error:", err.response?.data || err.message);
