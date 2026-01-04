@@ -647,27 +647,27 @@ app.post("/webhook/whatsapp", async (req, res) => {
       }));
 
       await twilioClient.messages.create({
-        from: process.env.TWILIO_WHATSAPP_FROM,
+        from: `whatsapp:${process.env.TWILIO_WHATSAPP_FROM}`,
         to: `whatsapp:${from}`,
         interactive: {
           type: "list",
           body: {
-            text: `📡 Plans for ${session.country}\nSelect a plan to continue,`,
-          },
-          footer: {
-            text: "SimClaire eSIM",
-          },
-          action: {
-            button: "View Plans",
-            sections: [
-              {
-                title: "Available Plans",
-                rows: listItems,
-              },
-            ],
-          },
+            text: `🌍 Plans for ${session.country}\nSelect a plan to continue,`
         },
-      });
+        footer: {
+          text: "SimClaire eSIM",
+        },
+        action: {
+          button: "View plans",
+          sections: [
+            {
+              title: "Available Plans",
+              rows: listItems, // 👈 THIS MUST EXIST
+            },
+          ],
+        },
+      },
+});
 
       return res.send(""); // IMPORTANT: no twiml here
     }
