@@ -387,7 +387,7 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
           console.log("✅ eSIM queued:", esimRes);
 
           // Keep your original pattern (in case API nests data)
-          const esim = esimRes?.data || esimRes || {};
+          //const esim = esimRes?.data || esimRes || {};
           const transactionId = esim.uniqueRefno;
           const activationCode = esim.esims?.[0]?.activationcode;
 
