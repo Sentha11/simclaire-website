@@ -252,6 +252,7 @@ app.post("/api/payments/create-checkout-session", async (req, res) => {
       country,
       mobile,
       destinationId,
+      whatsappTo,
       metadata,
     } = req.body;
 
@@ -298,7 +299,7 @@ app.post("/api/payments/create-checkout-session", async (req, res) => {
         mobileno: mobile || "",
         country: country || "",
         destinationId: String(destinationId ?? ""), // ✅ FIX #1
-        whatsappTo: metadata?.whatsappTo || "",
+        whatsappTo: whatsappTo || "",
         flagEmoji: metadata?.flagEmoji || "",
       },
     });
