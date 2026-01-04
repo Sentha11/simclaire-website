@@ -252,7 +252,7 @@ app.post("/api/payments/create-checkout-session", async (req, res) => {
       country,
       mobile,
       destinationId,
-      whatsappTo,
+      //whatsappTo,
       metadata,
     } = req.body;
 
@@ -299,7 +299,7 @@ app.post("/api/payments/create-checkout-session", async (req, res) => {
         mobileno: mobile || "",
         country: country || "",
         destinationId: String(destinationId ?? ""), // ✅ FIX #1
-        whatsappTo: whatsappTo || "",
+        //whatsappTo: whatsappTo || "",
         flagEmoji: metadata?.flagEmoji || "",
       },
     });
@@ -344,9 +344,9 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
 
         const customerEmail = session.customer_details?.email;
         const metadata = session.metadata || {};
-        const whatsappTo =
-        metadata.whatsappTo ||
-        (metadata.mobileno ? `whatsapp:+${metadata.mobileno}` : null);
+       // const whatsappTo =
+      // metadata.whatsappTo ||
+       // (metadata.mobileno ? `whatsapp:+${metadata.mobileno}` : null);
 
         console.log("🧾 Metadata received:", metadata);
 
@@ -409,14 +409,14 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
           // ===============================
 
           // Build WhatsApp destination safely (if not already built)
-          let whatsappToFinal =
-            metadata.whatsappTo && metadata.whatsappTo.trim()
-              ? metadata.whatsappTo
-              : null;
+         // let whatsappToFinal =
+          //  metadata.whatsappTo && metadata.whatsappTo.trim()
+           //   ? metadata.whatsappTo
+           //     : null;
 
-          if (!whatsappToFinal && mobileno) {
-            whatsappToFinal = `whatsapp:+${mobileno}`;
-          }
+         // if (!whatsappToFinal && mobileno) {
+          //  whatsappToFinal = `whatsapp:+${mobileno}`;
+         // }
 
           // Thank-you message
           const thankYouMessage =
@@ -426,23 +426,18 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
             "✈️ Safe travels!\n— SimClaire";
 
           // Send WhatsApp once
-          if (
-            twilioClient &&
-            process.env.TWILIO_WHATSAPP_FROM &&
-            whatsappToFinal &&
-            whatsappToFinal.startsWith("whatsapp:")
-          ) {
-            await twilioClient.messages.create({
-              from: `whatsapp:${process.env.TWILIO_WHATSAPP_FROM}`,
-              to: whatsappToFinal,
-              body: thankYouMessage,
-            });
-          } else {
-            console.log("📵 WhatsApp skipped (missing or invalid number)", {
-              from: process.env.TWILIO_WHATSAPP_FROM,
-              to: whatsappToFinal,
-            });
-          }
+          if (twilioClient && process.env.TWILIO_WHATSAPP_FROM) {
+          await twilioClient.messages.create({
+            from: process.env.TWILIO_WHATSAPP_FROM,
+            to: whatsappToFinal,
+            body: thankYouMessage,
+          });
+        } else {
+          console.log("📵 WhatsApp skipped", {
+            from: process.env.TWILIO_WHATSAPP_FROM,
+            to: whatsappToFinal,
+          });
+        }
         } catch (err) {
           console.error("❌ Fulfillment error:", err.response?.data || err.message);
         }
