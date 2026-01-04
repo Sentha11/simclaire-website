@@ -505,14 +505,26 @@ app.post("/webhook/whatsapp", async (req, res) => {
     if (["hi", "hello", "hey"].includes(text)) {
       resetSession(from);
       return res.send(
-        twiml("👋 Welcome to SimClaire!\n\n1) Browse plans\n2) Support\n\nReply 1 or 2.")
+        twiml(
+        "👋 Welcome to SimClaire!\n\n" +
+        "1) Browse plans\n" +
+        "2) Support\n" +
+        "3) FAQ\n\n" +
+        "Reply with 1, 2, or 3."
+      )
       );
     }
 
     if (["menu", "main", "start"].includes(text)) {
       resetSession(from);
       return res.send(
-        twiml("👋 Welcome to SimClaire!\n\n1) Browse plans\n2) Support\n\nReply 1 or 2.")
+              twiml(
+        "👋 Welcome to SimClaire!\n\n" +
+        "1) Browse plans\n" +
+        "2) Support\n" +
+        "3) FAQ\n\n" +
+        "Reply with 1, 2, or 3."
+      )
       );
     }
 
