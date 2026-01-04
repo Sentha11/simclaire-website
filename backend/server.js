@@ -24,7 +24,7 @@ const { HttpsProxyAgent } = require("https-proxy-agent");
 const { SocksProxyAgent } = require("socks-proxy-agent");
 const twilio = require("twilio");
 const sgMail = require("@sendgrid/mail");
-const WHATSAPP_FROM = process.env.TWILIO_WHATSAPP_FROM;
+const WHATSAPP_FROM = `whatsapp:${process.env.TWILIO_WHATSAPP_FROM}`;
 
 const USERNAME = process.env.ESIM_USERNAME;
 const PASSWORD = process.env.ESIM_PASSWORD;
@@ -407,16 +407,21 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
           // =============================================
           // 3️⃣ SEND WHATSAPP MESSAGE
           // =============================================
-          if ( twilioClient && process.env.TWILIO_WHATSAPP_NUMBER && whatsappTo && whatsappTo.startsWith("whatsapp:")) {
+          if (
+            twilioClient &&
+            process.env.TWILIO_WHATSAPP_NUMBER &&
+            whatsappToFinal &&
+            whatsappToFinal.startsWith("whatsapp:")
+          ) {
             await twilioClient.messages.create({
               from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
-              to: whatsappTo,
-              body: message
+              to: whatsappToFinal,
+              body: message,
             });
           } else {
             console.log("📵 WhatsApp skipped (missing or invalid number)", {
               from: process.env.TWILIO_WHATSAPP_NUMBER,
-              to: whatsappTo
+              to: whatsappToFinal,
             });
           }
         } catch (err) {
