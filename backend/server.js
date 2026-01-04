@@ -297,7 +297,7 @@ app.post("/api/payments/create-checkout-session", async (req, res) => {
         mobileno: mobile || "",
         country: country || "",
         destinationId: String(destinationId ?? ""), // ✅ FIX #1
-        whatsappToFinal: metadata?.whatsappTo || "",
+        whatsappTo: metadata?.whatsappTo || "",
         flagEmoji: metadata?.flagEmoji || "",
       },
     });
@@ -342,7 +342,9 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
 
         const customerEmail = session.customer_details?.email;
         const metadata = session.metadata || {};
-        const whatsappTo = metadata.whatsappTo;
+        const whatsappTo =
+        metadata.whatsappTo ||
+        (metadata.mobileno ? `whatsapp:+${metadata.mobileno.replace(/\D/g, "")}` : null);
 
         console.log("🧾 Metadata received:", metadata);
 
@@ -404,20 +406,20 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
           // =============================================
           // 3️⃣ SEND WHATSAPP MESSAGE
           // =============================================
-          if (twilioClient && whatsappToFinal) {
+          if (twilioClient && whatsappTo && whatsappTo.startsWith("whatsapp:+")) {
               await twilioClient.messages.create({
                 from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
-                to: whatsappToFinal,
-                body: `✅ Your SimClaire eSIM is ready!
+                to: whatsappTo,
+                body: `📲 Your SimClaire eSIM is ready!
 
-              Transaction ID: ${transactionId}
-              Activation Code: ${activationCode}
+            Transaction ID: ${transactionId}
+            Activation Code: ${activationCode}
 
-              Check your email for the QR code.`
+            Scan the QR code in your email to install.`,
               });
-
-            console.log("💬 WhatsApp QR sent");
-          }
+            } else {
+              console.log("ℹ️ WhatsApp skipped (no valid whatsappTo)");
+            }
         } catch (err) {
           console.error("❌ Fulfillment error:", err.response?.data || err.message);
         }
