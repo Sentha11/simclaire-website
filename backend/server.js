@@ -398,34 +398,51 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
           console.log("✅ eSIM purchased");
           console.log("📄 Transaction ID:", transactionId);
           console.log("🔑 Activation Code:", activationCode);
-          
-          // ✅ Build WhatsApp destination safely
-          let whatsappToFinal = metadata.whatsappTo && (metadata.whatsappTo).trim()
-          ? metadata.whatsappTo : null;
+
+          if (!metadata?.acceptedTerms) {
+            return res.status(400).json({
+              error: "Terms and Conditions must be accepted",
+            });
+          }
+          // ===============================
+          // FIX 4️⃣ – POST-PURCHASE THANK YOU WHATSAPP
+          // ===============================
+
+          // Build WhatsApp destination safely (if not already built)
+          let whatsappToFinal =
+            metadata.whatsappTo && metadata.whatsappTo.trim()
+              ? metadata.whatsappTo
+              : null;
 
           if (!whatsappToFinal && mobileno) {
             whatsappToFinal = `whatsapp:+${mobileno}`;
           }
-          // =============================================
-          // 3️⃣ SEND WHATSAPP MESSAGE
-          // =============================================
-         if (
-          twilioClient &&
-          process.env.TWILIO_WHATSAPP_FROM &&
-          whatsappToFinal &&
-          whatsappToFinal.startsWith("whatsapp:")
-        ) {
-          await twilioClient.messages.create({
-            from: process.env.TWILIO_WHATSAPP_FROM, // ✅ FIX
-            to: whatsappToFinal,                    // ✅ FIX
-            body: message,
-          });
-        } else {
-          console.log("📵 WhatsApp skipped (missing or invalid number)", {
-            from: process.env.TWILIO_WHATSAPP_FROM,
-            to: whatsappToFinal,
-          });
-        }
+
+          // Thank-you message
+          const thankYouMessage =
+            "✅ Thank you for your purchase!\n\n" +
+            "📧 Your eSIM setup instructions have been sent to your email.\n\n" +
+            "📱 Need help? Reply support anytime.\n\n" +
+            "✈️ Safe travels!\n— SimClaire";
+
+          // Send WhatsApp once
+          if (
+            twilioClient &&
+            process.env.TWILIO_WHATSAPP_FROM &&
+            whatsappToFinal &&
+            whatsappToFinal.startsWith("whatsapp:")
+          ) {
+            await twilioClient.messages.create({
+              from: `whatsapp:${process.env.TWILIO_WHATSAPP_FROM}`,
+              to: whatsappToFinal,
+              body: thankYouMessage,
+            });
+          } else {
+            console.log("📵 WhatsApp skipped (missing or invalid number)", {
+              from: process.env.TWILIO_WHATSAPP_FROM,
+              to: whatsappToFinal,
+            });
+          }
         } catch (err) {
           console.error("❌ Fulfillment error:", err.response?.data || err.message);
         }
@@ -499,6 +516,13 @@ app.post("/webhook/whatsapp", async (req, res) => {
       );
     }
 
+    if (["exit", "cancel", "stop"].includes(text)) {
+    resetSession(from);
+    return res.send(
+      twiml("✅ Session cancelled.\nType menu to start again.")
+    );
+    }
+
     if (session.step === "MENU") {
       if (text === "1") {
         session.step = "COUNTRY";
@@ -508,11 +532,41 @@ app.post("/webhook/whatsapp", async (req, res) => {
       }
 
       if (text === "2") {
-        return res.send(twiml("📞 Support: care@simclaire.com"));
+        return res.send(
+            twiml(
+              "🆘 Customer Support\n\n" +
+              "📧 Email: care@simclaire.com\n" +
+              "💬 WhatsApp: wa.me/+14379259578\n\n" +
+              "Type menu to return."
+            )
+          );
       }
 
+      if (text === "3") {
       return res.send(
-        twiml("👋 Welcome to SimClaire!\n\n1) Browse plans\n2) Support\n\nReply 1 or 2.")
+        twiml(
+          "❓ Frequently Asked Questions\n\n" +
+          "📶 When does my eSIM activate?\n" +
+          "→ On arrival or when enabled.\n\n" +
+          "📱 Is my phone compatible?\n" +
+          "→ Your device must support eSIM.\n\n" +
+          "🔄 Can I top up or change plans?\n" +
+          "→ Not currently. Purchase a new plan.\n\n" +
+          "🆘 Need help?\n" +
+          "→ Type 2 for support\n\n" +
+          "🔁 Type menu to return."
+        )
+      );
+    }
+
+      return res.send(
+        twiml(
+  "👋 Welcome to SimClaire!\n\n" +
+  "1️⃣ Browse plans\n" +
+  "2️⃣ Support\n" +
+  "3️⃣ FAQ\n\n" +
+  "Reply 1, 2, or 3."
+)
       );
     }
 
@@ -551,13 +605,44 @@ app.post("/webhook/whatsapp", async (req, res) => {
         );
       }
 
-      let msg = `📡 Plans for *${session.country}*:\n\n`;
-      products.slice(0, 8).forEach((p, i) => {
-        msg += `${i + 1}) ${p.productName || "Plan"}\n💾 ${p.productDataAllowance}\n📅 ${p.validity} days\n💵 £${p.productPrice}\n\n`;
-      });
+      if (text === "faq") {
+        return res.send(
+          twiml(
+            "❓ Frequently Asked Questions\n\n" +
+            "📶 eSIM activates on arrival or when enabled.\n" +
+            "📱 Device must support eSIM.\n" +
+            "🆘 Type support for help.\n\n" +
+            "Type menu to return."
+          )
+        );
+      }
 
-      msg += "Reply with the plan number to continue.";
-      return res.send(twiml(msg));
+      if (text === "support" || text === "help") {
+        return res.send(
+          twiml(
+            "👩‍💻 Connecting you to customer care\n\n" +
+            "👉 wa.me/14379259578\n\n" +
+            "Our team will assist you shortly.\n\n" +
+            "Type menu to return."
+          )
+        );
+      }
+      let msg = `📡 *Plans for ${session.country}*\n\n`;
+
+        products.slice(0, 5).forEach((p, i) => {
+          msg +=
+            `*${i + 1}. ${p.productName}*\n` +
+            `💾 Data: ${p.productDataAllowance}\n` +
+            `📅 Validity: ${p.validity} days\n` +
+            `💷 Price: £${p.productPrice}\n\n`;
+        });
+
+        msg +=
+          "Reply with the plan number to continue.\n\n" +
+          "🔁 Type menu to restart\n" +
+          "❌ Type exit to cancel";
+
+        return res.send(twiml(msg));
     }
 
     if (session.step === "PLAN") {
