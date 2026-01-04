@@ -666,9 +666,11 @@ app.post("/webhook/whatsapp", async (req, res) => {
 
       return res.send(""); // IMPORTANT: no twiml here
     }
-    
+
     if (session.step === "PLAN") {
-      const index = parseInt(textRaw, 10);
+      const selectedId = req.body.ListResponse?.Id || textRaw;
+
+      const index = parseInt(selectedId, 10);
       if (!session.products[index - 1]) {
         return res.send(twiml("❌ Invalid selection. Reply with a plan number."));
       }
