@@ -634,24 +634,39 @@ app.post("/webhook/whatsapp", async (req, res) => {
           )
         );
       }
-      let msg = `📡 *Plans for ${session.country}*\n\n`;
+     
+      const listItems = products.slice(0, 5).map((p, i) => ({
+        id: String(i + 1), // user clicks this
+        title: `${p.productName}`,
+        description: `${p.productDataAllowance} • ${p.validity} days • £${p.productPrice}`,
+      }));
 
-        products.slice(0, 5).forEach((p, i) => {
-          msg +=
-            `*${i + 1}. ${p.productName}*\n` +
-            `💾 Data: ${p.productDataAllowance}\n` +
-            `📅 Validity: ${p.validity} days\n` +
-            `💷 Price: £${p.productPrice}\n\n`;
-        });
+      await twilioClient.messages.create({
+        from: process.env.TWILIO_WHATSAPP_FROM,
+        to: `whatsapp:${from}`,
+        interactive: {
+          type: "list",
+          body: {
+            text: `📡 Plans for ${session.country}\nSelect a plan to continue,`,
+          },
+          footer: {
+            text: "SimClaire eSIM",
+          },
+          action: {
+            button: "View Plans",
+            sections: [
+              {
+                title: "Available Plans",
+                rows: listItems,
+              },
+            ],
+          },
+        },
+      });
 
-        msg +=
-          "Reply with the plan number to continue.\n\n" +
-          "🔁 Type menu to restart\n" +
-          "❌ Type exit to cancel";
-
-        return res.send(twiml(msg));
+      return res.send(""); // IMPORTANT: no twiml here
     }
-
+    
     if (session.step === "PLAN") {
       const index = parseInt(textRaw, 10);
       if (!session.products[index - 1]) {
