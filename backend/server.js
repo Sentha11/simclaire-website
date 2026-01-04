@@ -400,7 +400,8 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
           console.log("🔑 Activation Code:", activationCode);
           
           // ✅ Build WhatsApp destination safely
-          let whatsappToFinal = whatsappTo;
+          let whatsappToFinal = metadata.whatsappTo && (metadata.whatsappTo).trim()
+          ? metadata.whatsappTo : null;
 
           if (!whatsappToFinal && mobileno) {
             whatsappToFinal = `whatsapp:+${mobileno}`;
@@ -408,21 +409,21 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
           // =============================================
           // 3️⃣ SEND WHATSAPP MESSAGE
           // =============================================
-          if (
+         if (
           twilioClient &&
-          process.env.TWILIO_WHATSAPP_NUMBER &&
+          process.env.TWILIO_WHATSAPP_FROM &&
           whatsappToFinal &&
           whatsappToFinal.startsWith("whatsapp:")
         ) {
           await twilioClient.messages.create({
-            from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
-            to: whatsappToFinal,
-            body: message
+            from: process.env.TWILIO_WHATSAPP_FROM, // ✅ FIX
+            to: whatsappToFinal,                    // ✅ FIX
+            body: message,
           });
         } else {
           console.log("📵 WhatsApp skipped (missing or invalid number)", {
-            from: process.env.TWILIO_WHATSAPP_NUMBER,
-            to: whatsappToFinal
+            from: process.env.TWILIO_WHATSAPP_FROM,
+            to: whatsappToFinal,
           });
         }
         } catch (err) {
