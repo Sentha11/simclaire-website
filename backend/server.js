@@ -409,22 +409,22 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
           // 3️⃣ SEND WHATSAPP MESSAGE
           // =============================================
           if (
-            twilioClient &&
-            process.env.TWILIO_WHATSAPP_NUMBER &&
-            whatsappToFinal &&
-            whatsappToFinal.startsWith("whatsapp:")
-          ) {
-            await twilioClient.messages.create({
-              from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
-              to: whatsappToFinal,
-              body: message,
-            });
-          } else {
-            console.log("📵 WhatsApp skipped (missing or invalid number)", {
-              from: process.env.TWILIO_WHATSAPP_NUMBER,
-              to: whatsappToFinal,
-            });
-          }
+          twilioClient &&
+          process.env.TWILIO_WHATSAPP_NUMBER &&
+          whatsappToFinal &&
+          whatsappToFinal.startsWith("whatsapp:")
+        ) {
+          await twilioClient.messages.create({
+            from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
+            to: whatsappToFinal,
+            body: message
+          });
+        } else {
+          console.log("📵 WhatsApp skipped (missing or invalid number)", {
+            from: process.env.TWILIO_WHATSAPP_NUMBER,
+            to: whatsappToFinal
+          });
+        }
         } catch (err) {
           console.error("❌ Fulfillment error:", err.response?.data || err.message);
         }
