@@ -408,36 +408,35 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
           // FIX 4️⃣ – POST-PURCHASE THANK YOU WHATSAPP
           // ===============================
 
-          // Build WhatsApp destination safely (if not already built)
-         // let whatsappToFinal =
-          //  metadata.whatsappTo && metadata.whatsappTo.trim()
-           //   ? metadata.whatsappTo
-           //     : null;
+          // Build WhatsApp destination safely
+          let whatsappToFinal =
+            metadata.whatsappTo && metadata.whatsappTo.trim()
+              ? metadata.whatsappTo
+              : `whatsapp:+${mobileno}`;
 
-         // if (!whatsappToFinal && mobileno) {
-          //  whatsappToFinal = `whatsapp:+${mobileno}`;
-         // }
-
-          // Thank-you message
           const thankYouMessage =
             "✅ Thank you for your purchase!\n\n" +
             "📧 Your eSIM setup instructions have been sent to your email.\n\n" +
             "📱 Need help? Reply support anytime.\n\n" +
             "✈️ Safe travels!\n— SimClaire";
 
-          // Send WhatsApp once
-          if (twilioClient && process.env.TWILIO_WHATSAPP_FROM) {
-          await twilioClient.messages.create({
-            from: process.env.TWILIO_WHATSAPP_FROM,
-            to: whatsappToFinal,
-            body: thankYouMessage,
-          });
-        } else {
-          console.log("📵 WhatsApp skipped", {
-            from: process.env.TWILIO_WHATSAPP_FROM,
-            to: whatsappToFinal,
-          });
-        }
+          if (
+            twilioClient &&
+            process.env.TWILIO_WHATSAPP_FROM &&
+            whatsappToFinal.startsWith("whatsapp:")
+          ) {
+            await twilioClient.messages.create({
+              from: process.env.TWILIO_WHATSAPP_FROM, // MUST be whatsapp:+number
+              to: whatsappToFinal,
+              body: thankYouMessage,
+            });
+          } else {
+            console.log("📵 WhatsApp skipped (invalid config)", {
+              from: process.env.TWILIO_WHATSAPP_FROM,
+              to: whatsappToFinal,
+            });
+          }
+        
         } catch (err) {
           console.error("❌ Fulfillment error:", err.response?.data || err.message);
         }
