@@ -344,7 +344,7 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
         const metadata = session.metadata || {};
         const whatsappTo =
         metadata.whatsappTo ||
-        (metadata.mobileno ? `whatsapp:+${metadata.mobileno.replace(/\D/g, "")}` : null);
+        (metadata.mobileno ? `whatsapp:+${metadata.mobileno}` : null);
 
         console.log("🧾 Metadata received:", metadata);
 
@@ -406,20 +406,18 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
           // =============================================
           // 3️⃣ SEND WHATSAPP MESSAGE
           // =============================================
-          if (twilioClient && whatsappTo && whatsappTo.startsWith("whatsapp:+")) {
-              await twilioClient.messages.create({
-                from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
-                to: whatsappTo,
-                body: `📲 Your SimClaire eSIM is ready!
-
-            Transaction ID: ${transactionId}
-            Activation Code: ${activationCode}
-
-            Scan the QR code in your email to install.`,
-              });
-            } else {
-              console.log("ℹ️ WhatsApp skipped (no valid whatsappTo)");
-            }
+          if ( twilioClient && process.env.TWILIO_WHATSAPP_NUMBER && whatsappTo && whatsappTo.startsWith("whatsapp:")) {
+            await twilioClient.messages.create({
+              from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
+              to: whatsappTo,
+              body: message
+            });
+          } else {
+            console.log("📵 WhatsApp skipped (missing or invalid number)", {
+              from: process.env.TWILIO_WHATSAPP_NUMBER,
+              to: whatsappTo
+            });
+          }
         } catch (err) {
           console.error("❌ Fulfillment error:", err.response?.data || err.message);
         }
