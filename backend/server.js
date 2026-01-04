@@ -24,6 +24,7 @@ const { HttpsProxyAgent } = require("https-proxy-agent");
 const { SocksProxyAgent } = require("socks-proxy-agent");
 const twilio = require("twilio");
 const sgMail = require("@sendgrid/mail");
+const WHATSAPP_FROM = process.env.TWILIO_WHATSAPP_FROM;
 
 const USERNAME = process.env.ESIM_USERNAME;
 const PASSWORD = process.env.ESIM_PASSWORD;
@@ -394,8 +395,8 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
           const activationCode = esimRes.esims?.[0]?.activationcode;
 
           console.log("✅ eSIM purchased");
-          console.log("Transaction ID:", transactionId);
-          console.log("Activation Code:", activationCode);
+          console.log("📄 Transaction ID:", transactionId);
+          console.log("🔑 Activation Code:", activationCode);
           
           // ✅ Build WhatsApp destination safely
           let whatsappToFinal = whatsappTo;
