@@ -394,16 +394,27 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
           console.log("✅ eSIM purchased");
           console.log("Transaction ID:", transactionId);
           console.log("Activation Code:", activationCode);
+          
+          // ✅ Build WhatsApp destination safely
+          let whatsappToFinal = whatsappTo;
 
+          if (!whatsappToFinal && mobileno) {
+            whatsappToFinal = `whatsapp:+${mobileno}`;
+          }
           // =============================================
           // 3️⃣ SEND WHATSAPP MESSAGE
           // =============================================
-          if (twilioClient && whatsappTo) {
-            await twilioClient.messages.create({
-              from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
-              to: whatsappTo,
-              body: `📲 Your SimClaire eSIM is ready!\n\nScan the QR code below to install:\n${qrCode}\n\nIf you need help, reply SUPPORT.`,
-            });
+          if (twilioClient && whatsappToFinal) {
+              await twilioClient.messages.create({
+                from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
+                to: whatsappToFinal,
+                body: `✅ Your SimClaire eSIM is ready!
+
+              Transaction ID: ${transactionId}
+              Activation Code: ${activationCode}
+
+              Check your email for the QR code.`
+              });
 
             console.log("💬 WhatsApp QR sent");
           }
