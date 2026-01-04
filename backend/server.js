@@ -646,34 +646,30 @@ app.post("/webhook/whatsapp", async (req, res) => {
         description: `${p.productDataAllowance} • ${p.validity} days • £${p.productPrice}`,
       }));
 
-      await twilioClient.messages.create({
-        from: `whatsapp:${process.env.TWILIO_WHATSAPP_FROM}`,
-        to: `whatsapp:${from}`,
-        interactive: {
-          type: "list",
-          body: {
-            text: `🌍 Plans for ${session.country}\nSelect a plan to continue,`
-        },
-        footer: {
-          text: "SimClaire eSIM",
-        },
-        action: {
-          button: "View plans",
-          sections: [
-            {
-              title: "Available Plans",
-              rows: listItems, // 👈 THIS MUST EXIST
-            },
-          ],
-        },
-      },
+      let msg = `📡 *Plans for ${session.country}*\n\n`;
+
+products.slice(0, 5).forEach((p, i) => {
+  msg +=
+    `*${i + 1}) ${p.productName}*\n` +
+    `💾 Data: ${p.productDataAllowance}\n` +
+    `📅 Validity: ${p.validity} days\n` +
+    `💷 Price: £${p.productPrice}\n\n`;
 });
 
-      return res.send(""); // IMPORTANT: no twiml here
+msg +=
+  "Reply with the plan number to continue.\n\n" +
+  "🔁 Type menu to restart\n" +
+  "❌ Type exit to cancel";
+
+return res.send(twiml(msg));
     }
 
     if (session.step === "PLAN") {
-      const selectedId = req.body.ListResponse?.Id || textRaw;
+      const selectedId =
+      req.body.ButtonPayload ||          // (Twilio uses this for interactive replies)
+      req.body.ListResponse?.id ||        // if present
+      req.body.ListResponse?.Id ||        // if present
+      textRaw;
 
       const index = parseInt(selectedId, 10);
       if (!session.products[index - 1]) {
@@ -708,7 +704,7 @@ app.post("/webhook/whatsapp", async (req, res) => {
           country: session.country,
           destinationId: session.destinationId,
           mobile: from,
-          whatsappTo: `whatsapp:${from}`,
+          //whatsappTo: `whatsapp:${from}`,
           
         });
     
