@@ -388,8 +388,8 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
 
           // Keep your original pattern (in case API nests data)
           //const esim = esimRes?.data || esimRes || {};
-          const transactionId = esim.uniqueRefno;
-          const activationCode = esim.esims?.[0]?.activationcode;
+          const transactionId = esimRes.uniqueRefno;
+          const activationCode = esimRes.esims?.[0]?.activationcode;
 
           console.log("✅ eSIM purchased");
           console.log("Transaction ID:", transactionId);
