@@ -431,6 +431,11 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
             whatsappToFinal &&
             whatsappToFinal.startsWith("whatsapp:")
           ) {
+            console.log("📤 WhatsApp send attempt", {
+            from: WHATSAPP_FROM,
+            to: whatsappToFinal,
+            });
+
             await twilioClient.messages.create({
               from: WHATSAPP_FROM,   // ✅ FIXED
               to: whatsappToFinal,
