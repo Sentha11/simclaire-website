@@ -448,6 +448,12 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
               to: whatsappToFinal,
             });
           }
+          console.log("✅ Order completed end-to-end", {
+          transactionId,
+          activationCode,
+          email: metadata.email,
+          whatsappTo: whatsappToFinal,
+        });
         
         } catch (err) {
           console.error("❌ Fulfillment error:", err.response?.data || err.message);
@@ -526,6 +532,7 @@ app.post("/webhook/whatsapp", async (req, res) => {
       return res.send(
               twiml(
         "👋 Welcome to SimClaire!\n\n" +
+        "🛍️ Shop Holiday eSIM\n"+
         "1) Browse plans\n" +
         "2) Support\n" +
         "3) FAQ\n\n" +
@@ -580,6 +587,7 @@ app.post("/webhook/whatsapp", async (req, res) => {
       return res.send(
         twiml(
   "👋 Welcome to SimClaire!\n\n" +
+  "🛍️ Shop Holiday eSIM\n"+
   "1️⃣ Browse plans\n" +
   "2️⃣ Support\n" +
   "3️⃣ FAQ\n\n" +
