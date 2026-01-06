@@ -519,6 +519,7 @@ app.post("/webhook/whatsapp", async (req, res) => {
       return res.send(
         twiml(
         "👋 Welcome to SimClaire!\n\n" +
+        "🛍️ Shop Holiday eSIM\n"+
         "1) Browse plans\n" +
         "2) Support\n" +
         "3) FAQ\n\n" +
