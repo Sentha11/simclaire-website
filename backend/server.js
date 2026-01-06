@@ -419,29 +419,29 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
 
           console.log("📱 Final WhatsApp To:", whatsappToFinal);
 
-         const thankYouMessage =
-          "✅ Thank you for your purchase!\n\n" +
-          "📧 Your eSIM setup instructions have been sent to your email.\n\n" +
-          "📱 Need help? Reply support anytime.\n\n" +
-          "✈️ Safe travels!\n— SimClaire";
+          const thankYouMessage =
+            "✅ Thank you for your purchase!\n\n" +
+            "📧 Your eSIM setup instructions have been sent to your email.\n\n" +
+            "📱 Need help? Reply support anytime.\n\n" +
+            "✈️ Safe travels!\n— SimClaire";
 
-        if (
-          twilioClient &&
-          process.env.TWILIO_WHATSAPP_FROM &&
-          whatsappToFinal &&
-          whatsappToFinal.startsWith("whatsapp:")
-        ) {
-          await twilioClient.messages.create({
-            from:  `whatsapp:${process.env.TWILIO_WHATSAPP_FROM}`,
-            to: whatsappToFinal,
-            body: thankYouMessage,
-          });
-        } else {
-          console.log("📵 WhatsApp skipped", {
-            from: process.env.TWILIO_WHATSAPP_FROM,
-            to: whatsappToFinal,
-          });
-        }
+          if (
+            twilioClient &&
+            WHATSAPP_FROM &&
+            whatsappToFinal &&
+            whatsappToFinal.startsWith("whatsapp:")
+          ) {
+            await twilioClient.messages.create({
+              from: WHATSAPP_FROM,   // ✅ FIXED
+              to: whatsappToFinal,
+              body: thankYouMessage,
+            });
+          } else {
+            console.log("📵 WhatsApp skipped", {
+              from: WHATSAPP_FROM,
+              to: whatsappToFinal,
+            });
+          }
         
         } catch (err) {
           console.error("❌ Fulfillment error:", err.response?.data || err.message);
