@@ -338,6 +338,7 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
       // PAYMENT COMPLETED
       // -------------------------------------------------
       if (event.type === "checkout.session.completed") {
+        console.log("🚀 Stripe webhook reached checkout.session.completed");
         const session = event.data.object;
 
         console.log("✅ Stripe payment completed:", session.id);
@@ -399,11 +400,11 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
           console.log("📄 Transaction ID:", transactionId);
           console.log("🔑 Activation Code:", activationCode);
 
-          if (!metadata?.acceptedTerms) {
-            return res.status(400).json({
-              error: "Terms and Conditions must be accepted",
-            });
-          }
+          //if (!metadata?.acceptedTerms) {
+           // return res.status(400).json({
+            //  error: "Terms and Conditions must be accepted",
+            //});
+         // }
           // ===============================
           // FIX 4️⃣ – POST-PURCHASE THANK YOU WHATSAPP
           // ===============================
@@ -553,7 +554,7 @@ app.post("/webhook/whatsapp", async (req, res) => {
             twiml(
               "🆘 Customer Support\n\n" +
               "📧 Email: care@simclaire.com\n" +
-              "💬 WhatsApp: wa.me/+14379259578\n\n" +
+              "💬 WhatsApp: wa.me/+14376056560\n\n" +
               "Type menu to return."
             )
           );
