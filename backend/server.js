@@ -578,13 +578,17 @@ app.post("/webhook/whatsapp", async (req, res) => {
     const from = String(fromRaw).replace("whatsapp:", "") || "unknown";
     const textRaw = (req.body.Body || "").trim();
     const text = textRaw.toLowerCase();
+  
+
+    const session = getSession(from);
+
+    if (!session.step) { session.step = "MENU";}
+    // 🔢 Pagination (safe default)
+    session.page = session.page ?? 0;
+
     const PAGE_SIZE = 5;
     const start = session.page * PAGE_SIZE;
     const end = start + PAGE_SIZE;
-
-    const session = getSession(from);
-    // 🔢 Pagination (safe default)
-    session.page = session.page ?? 0;
 
     if (["hi", "hello", "hey"].includes(text)) {
       resetSession(from);
