@@ -562,7 +562,7 @@ app.post("/webhook/whatsapp", async (req, res) => {
       return res.send(
         twiml(
         "👋 Welcome to SimClaire!\n\n" +
-        "🛍️ Shop Holiday eSIM\n"+
+        "🛍️ Shop Holiday eSIM\n\n"+
         "1) Browse plans\n" +
         "2) Support\n" +
         "3) FAQ\n\n" +
@@ -576,7 +576,7 @@ app.post("/webhook/whatsapp", async (req, res) => {
       return res.send(
               twiml(
         "👋 Welcome to SimClaire!\n\n" +
-        "🛍️ Shop Holiday eSIM\n"+
+        "🛍️ Shop Holiday eSIM\n\n"+
         "1) Browse plans\n" +
         "2) Support\n" +
         "3) FAQ\n\n" +
@@ -699,8 +699,8 @@ app.post("/webhook/whatsapp", async (req, res) => {
       }
      
       const listItems = products.slice(0, 5).map((p, i) => {
-      const csvPrice = pricingMap.get(p.productSku);
-      const finalPrice = csvPrice ?? p.productPrice;
+      const csvEntry = pricingMap.get(p.productSku);
+      const finalPrice = csvEntry?.price ?? p.productPrice;
 
       return {
         id: String(i + 1),
@@ -712,8 +712,16 @@ app.post("/webhook/whatsapp", async (req, res) => {
       let msg = `📡 *Plans for ${session.country}*\n\n`;
 
 products.slice(0, 5).forEach((p, i) => {
-const csvPrice = pricingMap.get(p.productSku);
-const finalPrice = csvPrice ?? p.productPrice;
+  const csvEntry = pricingMap.get(p.productSku);
+
+  // 🧪 OPTIONAL DEBUG (SAFE)
+  console.log("🧪 PRICE LOOKUP", {
+    sku: p.productSku,
+    csvPrice: csvEntry?.price,
+    fallbackApiPrice: p.productPrice,
+  });
+
+  const finalPrice = csvEntry?.price ?? p.productPrice;
 
   msg +=
     `*${i + 1}) ${p.productName}*\n` +
