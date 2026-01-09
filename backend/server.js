@@ -789,40 +789,76 @@ return res.send(twiml(msg));
     }
 
     if (session.step === "EMAIL") {
-      const email = textRaw;
+      const email = textRaw.trim().toLowerCase();
+
       if (!email.match(/^[^@\s]+@[^@\s]+\.[^@\s]+$/)) {
-        return res.send(twiml("❌ Invalid email. Please try again."));
+        return res.send(twiml("❌ Invalid email format.\nPlease enter a valid email address."));
       }
 
-      const p = session.selectedProduct;
-      const csvEntry = pricingMap.get(p.productSku);
-      const finalPrice = csvEntry?.finalPrice ?? csvEntry?.price ?? p.productPrice;
-
-      const response = await axios.post(
-        `${BACKEND_BASE_URL}/api/payments/create-checkout-session`,
-        {
-          email,
-          quantity: 1,
-          price: finalPrice,
-          currency: "gbp",
-          planName: p.productName,
-          productSku: p.productSku,
-          data: p.productDataAllowance,
-          validity: p.validity,
-          country: session.country,
-          destinationId: session.destinationId,
-          mobile: from,
-          //whatsappTo: `whatsapp:${from}`,
-          
-        });
-    
-      resetSession(from);
+      session.emailDraft = email;
+      session.step = "EMAIL_CONFIRM";
 
       return res.send(
-        twiml(`💳 *Secure Payment Link*\n\n${response.data.url}`)
+        twiml(
+          "🔁 Please re-enter your email to confirm:\n\n" +
+          "📧 " + email
+        )
       );
     }
 
+    if (session.step === "EMAIL_CONFIRM") {
+  const confirmEmail = textRaw.trim().toLowerCase();
+
+  if (confirmEmail !== session.emailDraft) {
+    session.emailDraft = "";
+    session.step = "EMAIL";
+
+    return res.send(
+      twiml(
+        "❌ Emails do not match.\n\n" +
+        "Please enter your email again carefully:"
+      )
+    );
+  }
+
+    // ✅ Emails match — safe to proceed
+    const email = confirmEmail;
+
+    const p = session.selectedProduct;
+    const csvEntry = pricingMap.get(p.productSku);
+
+    if (!csvEntry?.finalPrice) {
+      throw new Error(`Missing finalPrice for SKU ${p.productSku}`);
+    }
+
+    const finalPrice = csvEntry.finalPrice;
+
+    const response = await axios.post(
+      ${BACKEND_BASE_URL}/api/payments/create-checkout-session,
+      {
+        email,
+        quantity: 1,
+        price: finalPrice,
+        currency: "gbp",
+        planName: p.productName,
+        productSku: p.productSku,
+        data: p.productDataAllowance,
+        validity: p.validity,
+        country: session.country,
+        destinationId: session.destinationId,
+        mobile: from,
+      }
+    );
+
+    resetSession(from);
+
+    return res.send(
+      twiml(
+        "💳 Secure Payment Link\n\n" +
+        response.data.url
+      )
+    );
+  }
     return res.send(twiml("😅 I got lost. Type menu to restart."));
   } catch (err) {
     console.log("🔴 WhatsApp webhook error:", err.message);
