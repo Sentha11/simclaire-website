@@ -299,6 +299,27 @@ app.post("/api/payments/create-checkout-session", async (req, res) => {
       metadata,
     } = req.body;
 
+    // =====================================
+    // 💰 PRICE NORMALIZATION (CRITICAL FIX)
+    // =====================================
+    const rawPrice = price;
+
+    const numericPrice = Number(
+      String(rawPrice).replace(/[^\d.]/g, "")
+    );
+
+    if (isNaN(numericPrice)) {
+      console.error("❌ Invalid price received:", rawPrice);
+      return res.status(400).json({
+        error: `Invalid price for SKU ${productSku}`,
+      });
+    }
+
+    // Stripe expects smallest currency unit (pence)
+    const unitAmount = Math.round(numericPrice * 100);
+
+    console.log("💷 Stripe unitAmount:", unitAmount);
+
           // 🔒 HARD BLOCK IF MOBILE IS MISSING
       if (!mobile) {
         console.error("❌ Missing mobile in create-checkout-session");
@@ -322,7 +343,7 @@ app.post("/api/payments/create-checkout-session", async (req, res) => {
           quantity: Number(quantity || 1),
           price_data: {
             currency: currency || "gbp",
-            unit_amount: Math.round(Number(price) * 100),
+            unit_amount: unitAmount,
             product_data: { name: planName || "SimClaire eSIM" },
           },
         },
