@@ -786,65 +786,6 @@ app.post("/webhook/whatsapp", async (req, res) => {
         );
       }
      
-      const listItems = products.slice(start, end).map((p, i) => {
-      const csvEntry = pricingMap.get(p.productSku);
-      const displayPrice = csvEntry?.price ?? p.productPrice;
-      const displayValidity = csvEntry?.validityDays ?? csvEntry?.validity ?? p.validity ?? 'See plan details';
-      console.log('🧪 VALIDITY CHECK', {
-          sku: p.productSku,
-          csvValidity: csvEntry?.validityDays || csvEntry?.validity,
-          apiValidity: p.validity,
-          used: displayValidity,
-        });
-
-      return {
-        id: String(start + i + 1),
-        title: `${p.productName}`,
-        description: `${p.productDataAllowance} • ${displayValidity} days • £${finalPrice}`,
-      };
-    });
-
-      let msg = `📡 *Plans for ${session.country}*\n\n`;
-
-products.slice(start, end).forEach((p, i) => {
-  const csvEntry = pricingMap.get(p.productSku);
-
-  // 🧪 OPTIONAL DEBUG (SAFE)
-  console.log("🧪 PRICE LOOKUP", {
-    sku: p.productSku,
-    csvPrice: csvEntry?.price,
-    fallbackApiPrice: p.productPrice,
-  });
-
-  const displayPrice =
-  typeof csvEntry?.baseCost === "number"
-    ? csvEntry.baseCost
-    : p.productPrice;
-
-  console.log("🧪 PRICE SANITY CHECK", {
-  sku: p.productSku,
-  baseCost: csvEntry?.baseCost,
-  finalPrice: csvEntry?.finalPrice,
-  apiPrice: p.productPrice,
-});
-
-  msg +=
-    `*${i + 1}) ${p.productName}*\n` +
-    `💾 Data: ${p.productDataAllowance}\n` +
-    `📅 Validity: ${p.validity} days\n` +
-    `💷 Price: £${displayPrice}\n\n`;
-});
-
-if (end < products.length) {
-  msg += `\n➡️ Type *more* to see more plans;`
-}
-
-msg +=
-  "Reply with the plan number to continue.\n\n" +
-  "ℹ️ Introductory pricing • Final prices confirmed at checkout\n\n" +
-  "🔁 Type menu to restart\n" +
-  "❌ Type exit to cancel"
-
 //return res.send(twiml(msg));
 session.page = 0;
 session.step = "PLAN";
@@ -901,11 +842,15 @@ return res.send(twiml(renderPlans(session)));
         maxPage: Math.ceil((session.products?.length || 0) / 5),
       });
 
-      if (!session.products[index - 1]) {
+      const PAGE_SIZE = 5;
+      const absoluteIndex = (session.page * PAGE_SIZE) + (index - 1);
+
+      if (!session.products[absoluteIndex]) {
         return res.send(twiml("❌ Invalid selection. Reply with a plan number."));
       }
 
-      session.selectedProduct = session.products[index - 1];
+      session.selectedProduct = session.products[absoluteIndex];
+
       session.step = "EMAIL";
 
       return res.send(twiml("📧 Enter your email address for the Stripe receipt:"));
