@@ -243,30 +243,35 @@ function extractArray(payload) {
 // =====================================================
 // LOAD PRICING CSV ON STARTUP
 // =====================================================
-function loadPricingCSV() {
+async function loadPricingCSV() {
   return new Promise((resolve, reject) => {
     const csvPath = path.join(__dirname, "data", "pricing_prod.csv");
 
-    console.log("📂 Loading pricing CSV:", csvPath);
+    console.log("📄 Loading pricing CSV:", csvPath);
 
     fs.createReadStream(csvPath)
       .pipe(csv())
       .on("data", (row) => {
-        if (row["Product SKU"] && row["Final Price"]) {
-          pricingMap.set(
-            row["Product SKU"].trim(),
-            Number(row["Final Price"])
-          );
-        }
+        const sku = String(row["Product SKU"] || "").trim();
+        const price = Number(row["finalPrice"]);
+
+        if (!sku || isNaN(price)) return;
+
+        pricingMap.set(sku, {
+          price,
+          currency: row["currency"] || "GBP",
+          destinationId: row["Destination ID"] || "",
+          country: row["Country"] || "",
+          validity: row["Validity Days"] || "",
+          data: row["Data Allowanance"] || "",
+          status: row["status"] || "active",
+        });
       })
       .on("end", () => {
         console.log(`💰 Pricing loaded: ${pricingMap.size} SKUs`);
         resolve();
       })
-      .on("error", (err) => {
-        console.error("❌ Failed to load pricing CSV", err);
-        reject(err);
-      });
+      .on("error", reject);
   });
 }
 
@@ -707,8 +712,8 @@ app.post("/webhook/whatsapp", async (req, res) => {
       let msg = `📡 *Plans for ${session.country}*\n\n`;
 
 products.slice(0, 5).forEach((p, i) => {
-  const csvPrice = pricingMap.get(p.productSku);
-  const finalPrice = csvPrice ?? p.productPrice;
+const csvPrice = pricingMap.get(p.productSku);
+const finalPrice = csvPrice ?? p.productPrice;
 
   msg +=
     `*${i + 1}) ${p.productName}*\n` +
