@@ -572,30 +572,27 @@ function renderPlans(session) {
   const start = session.page * PAGE_SIZE;
   const end = start + PAGE_SIZE;
 
-  const pageProducts = session.products.slice(start, end);
+  let msg = `📡 *Plans for ${session.country}*\n\n`;
 
-  if (!pageProducts.length) {
-    session.page -= 1; // rollback
-    return "⚠️ No more plans available.\n\nType a plan number or menu.";
-  }
-
-  let msg = `📡 *Plans for ${session.country}* (Page ${session.page + 1})\n\n`;
-
-  pageProducts.forEach((p, i) => {
+  session.products.slice(start, end).forEach((p, i) => {
     const csvEntry = pricingMap.get(p.productSku);
-    const price = csvEntry?.price ?? p.productPrice;
-    const validity = csvEntry?.validityDays ?? p.validity ?? "See plan details";
+
+    const displayPrice = csvEntry?.baseCost ?? p.productPrice;
 
     msg +=
       `*${start + i + 1}) ${p.productName}*\n` +
       `💾 Data: ${p.productDataAllowance}\n` +
-      `📅 Validity: ${validity} days\n` +
-      `💷 Price: £${price}\n\n`;
+      `📅 Validity: ${p.validity} days\n` +
+      `💷 Price: £${displayPrice}\n\n`;
   });
 
+  if (end < session.products.length) {
+    msg += `➡️ Type *more* to see more plans\n\n`;
+  }
+
   msg +=
-    "➡️ Type more to see more plans\n" +
-    "🔢 Reply with the plan number to continue\n\n" +
+    "Reply with the plan number to continue.\n\n" +
+    "ℹ️ Introductory pricing • Final prices confirmed at checkout\n" +
     "🔁 Type menu to restart\n" +
     "❌ Type exit to cancel";
 
@@ -787,7 +784,7 @@ app.post("/webhook/whatsapp", async (req, res) => {
      
       const listItems = products.slice(start, end).map((p, i) => {
       const csvEntry = pricingMap.get(p.productSku);
-      const finalPrice = csvEntry?.price ?? p.productPrice;
+      const displayPrice = csvEntry?.price ?? p.productPrice;
       const displayValidity = csvEntry?.validityDays ?? csvEntry?.validity ?? p.validity ?? 'See plan details';
       console.log('🧪 VALIDITY CHECK', {
           sku: p.productSku,
