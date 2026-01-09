@@ -577,7 +577,11 @@ function renderPlans(session) {
   session.products.slice(start, end).forEach((p, i) => {
     const csvEntry = pricingMap.get(p.productSku);
 
-    const displayPrice = csvEntry?.baseCost ?? p.productPrice;
+    const displayPrice =
+      csvEntry?.baseCost ??
+      csvEntry?.price ??
+      p.productPrice ??
+      "N/A";
 
     msg +=
       `*${start + i + 1}) ${p.productName}*\n` +
@@ -947,8 +951,18 @@ return res.send(twiml(renderPlans(session)));
     const csvEntry = pricingMap.get(p.productSku);
 
     if (!csvEntry?.finalPrice) {
-      throw new Error(`Missing finalPrice for SKU ${p.productSku}`);
-    }
+  console.warn("⚠️ MISSING FINAL PRICE", {
+    sku: p.productSku,
+    csvEntry,
+  });
+
+  return res.send(
+    twiml(
+      "⚠️ This plan is temporarily unavailable.\n" +
+      "Please select another plan or type menu."
+    )
+  );
+}
 
     const finalPrice = csvEntry.finalPrice;
 
