@@ -567,6 +567,41 @@ function resetSession(id) {
   sessions[id] = { step: "MENU", products: [], country: "", destinationId: "" };
 }
 
+function renderPlans(session) {
+  const PAGE_SIZE = 5;
+  const start = session.page * PAGE_SIZE;
+  const end = start + PAGE_SIZE;
+
+  const pageProducts = session.products.slice(start, end);
+
+  if (!pageProducts.length) {
+    session.page -= 1; // rollback
+    return "⚠️ No more plans available.\n\nType a plan number or menu.";
+  }
+
+  let msg = `📡 *Plans for ${session.country}* (Page ${session.page + 1})\n\n`;
+
+  pageProducts.forEach((p, i) => {
+    const csvEntry = pricingMap.get(p.productSku);
+    const price = csvEntry?.price ?? p.productPrice;
+    const validity = csvEntry?.validityDays ?? p.validity ?? "See plan details";
+
+    msg +=
+      `*${start + i + 1}) ${p.productName}*\n` +
+      `💾 Data: ${p.productDataAllowance}\n` +
+      `📅 Validity: ${validity} days\n` +
+      `💷 Price: £${price}\n\n`;
+  });
+
+  msg +=
+    "➡️ Type more to see more plans\n" +
+    "🔢 Reply with the plan number to continue\n\n" +
+    "🔁 Type menu to restart\n" +
+    "❌ Type exit to cancel";
+
+  return msg;
+}
+
 // =====================================================
 // 11) WHATSAPP WEBHOOK – DESTINATIONS + PRODUCTS (OPTION C)
 // =====================================================
@@ -806,15 +841,49 @@ msg +=
   "🔁 Type menu to restart\n" +
   "❌ Type exit to cancel"
 
-return res.send(twiml(msg));
+//return res.send(twiml(msg));
+session.page = 0;
+session.step = "PLAN";
+return res.send(twiml(renderPlans(session)));
     }
 
     if (session.step === "PLAN") {
+
+      if (text === "more" || text === "next") {
+        session.page += 1;
+
+        // ⛔ ADD GUARD HERE ⬅️
+        const PAGE_SIZE = 5;
+        const maxPage = Math.ceil(session.products.length / PAGE_SIZE) - 1;
+
+        if (session.page > maxPage) {
+          session.page = maxPage;
+          return res.send(
+            twiml(
+              "⚠️ No more plans available.\n\n" +
+              "Reply with a plan number or type menu."
+            )
+          );
+        }
+
+        console.log("📄 PAGINATION NEXT", {
+          page: session.page,
+          totalProducts: session.products.length,
+        });
+
+        return res.send(twiml(renderPlans(session)));
+      }
+
       const selectedId =
       req.body.ButtonPayload ||          // (Twilio uses this for interactive replies)
       req.body.ListResponse?.id ||        // if present
       req.body.ListResponse?.Id ||        // if present
       textRaw;
+
+      if (text === "more" || text === "next") {
+        // pagination already handled above
+        return;
+      }
 
       const index = parseInt(selectedId, 10);
 
