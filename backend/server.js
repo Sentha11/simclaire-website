@@ -578,8 +578,13 @@ app.post("/webhook/whatsapp", async (req, res) => {
     const from = String(fromRaw).replace("whatsapp:", "") || "unknown";
     const textRaw = (req.body.Body || "").trim();
     const text = textRaw.toLowerCase();
+    const PAGE_SIZE = 5;
+    const start = session.page * PAGE_SIZE;
+    const end = start + PAGE_SIZE;
 
     const session = getSession(from);
+    // 🔢 Pagination (safe default)
+    session.page = session.page ?? 0;
 
     if (["hi", "hello", "hey"].includes(text)) {
       resetSession(from);
@@ -665,6 +670,9 @@ app.post("/webhook/whatsapp", async (req, res) => {
     }
 
     if (session.step === "COUNTRY") {
+      // 👉 Handle "see more plans"
+    if (text === "more") { session.page += 1; }
+
       const destRes = await esimRequest("get", "/api/esim/destinations");
       const destinations = extractArray(destRes);
 
@@ -683,6 +691,7 @@ app.post("/webhook/whatsapp", async (req, res) => {
       session.country = match.destinationName || match.name;
       session.destinationId =
         match.destinationID || match.destinationId || match.id;
+      session.page = 0; // reset pagination for new destination
       session.step = "PLAN";
 
       const prodRes = await esimRequest(
@@ -737,20 +746,27 @@ app.post("/webhook/whatsapp", async (req, res) => {
         );
       }
      
-      const listItems = products.slice(0, 5).map((p, i) => {
+      const listItems = products.slice(start, end).map((p, i) => {
       const csvEntry = pricingMap.get(p.productSku);
       const finalPrice = csvEntry?.price ?? p.productPrice;
+      const displayValidity = csvEntry?.validityDays ?? csvEntry?.validity ?? p.validity ?? 'See plan details';
+      console.log('🧪 VALIDITY CHECK', {
+          sku: p.productSku,
+          csvValidity: csvEntry?.validityDays || csvEntry?.validity,
+          apiValidity: p.validity,
+          used: displayValidity,
+        });
 
       return {
-        id: String(i + 1),
+        id: String(start + i + 1),
         title: `${p.productName}`,
-        description: `${p.productDataAllowance} • ${csvEntry?.validityDays ?? p.validity ?? "N/A"} days • £${finalPrice}`,
+        description: `${p.productDataAllowance} • ${displayValidity} days • £${finalPrice}`,
       };
     });
 
       let msg = `📡 *Plans for ${session.country}*\n\n`;
 
-products.slice(0, 5).forEach((p, i) => {
+products.slice(start, end).forEach((p, i) => {
   const csvEntry = pricingMap.get(p.productSku);
 
   // 🧪 OPTIONAL DEBUG (SAFE)
@@ -776,6 +792,10 @@ products.slice(0, 5).forEach((p, i) => {
     `💷 Price: £${displayPrice}\n\n`;
 });
 
+if (end < products.length) {
+  msg += `\n➡️ Type *more* to see more plans;`
+}
+
 msg +=
   "Reply with the plan number to continue.\n\n" +
   "ℹ️ Introductory pricing • Final prices confirmed at checkout\n\n" +
@@ -793,6 +813,17 @@ return res.send(twiml(msg));
       textRaw;
 
       const index = parseInt(selectedId, 10);
+
+      // 🔐 OPTIONAL PAGINATION SAFETY LOG (SAFE IN PROD)
+      console.log("📄 PAGINATION CHECK", {
+        userInput: selectedId,
+        parsedIndex: index,
+        currentPage: session.page || 1,
+        pageSize: 5,
+        totalProducts: session.products?.length || 0,
+        maxPage: Math.ceil((session.products?.length || 0) / 5),
+      });
+
       if (!session.products[index - 1]) {
         return res.send(twiml("❌ Invalid selection. Reply with a plan number."));
       }
