@@ -588,7 +588,7 @@ app.post("/webhook/whatsapp", async (req, res) => {
       return res.send(
         twiml(
   "👋 Welcome to SimClaire!\n\n" +
-  "🛍️ Shop Holiday eSIM\n"+
+  "🛍️ Shop Holiday eSIM\n\n"+
   "1️⃣ Browse plans\n" +
   "2️⃣ Support\n" +
   "3️⃣ FAQ\n\n" +
@@ -673,8 +673,9 @@ products.slice(0, 5).forEach((p, i) => {
 
 msg +=
   "Reply with the plan number to continue.\n\n" +
+  "ℹ️ Introductory pricing • Final prices confirmed at checkout\n\n" +
   "🔁 Type menu to restart\n" +
-  "❌ Type exit to cancel";
+  "❌ Type exit to cancel"
 
 return res.send(twiml(msg));
     }
