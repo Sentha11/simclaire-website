@@ -299,26 +299,26 @@ app.post("/api/payments/create-checkout-session", async (req, res) => {
       metadata,
     } = req.body;
 
-    // =====================================
-    // 💰 PRICE NORMALIZATION (CRITICAL FIX)
-    // =====================================
-    const rawPrice = price;
+    // ===============================
+// 💰 FINAL PRICE ENFORCEMENT (CSV)
+// ===============================
+const rawPrice = price; // ← this IS finalPrice from CSV
 
-    const numericPrice = Number(
-      String(rawPrice).replace(/[^\d.]/g, "")
-    );
+const numericPrice = Number(
+  String(rawPrice).replace(/[^\d.]/g, "")
+);
 
-    if (isNaN(numericPrice)) {
-      console.error("❌ Invalid price received:", rawPrice);
-      return res.status(400).json({
-        error: `Invalid price for SKU ${productSku}`,
-      });
-    }
+if (isNaN(numericPrice) || numericPrice <= 0) {
+  console.error("❌ Invalid finalPrice:", rawPrice);
+  return res.status(400).json({
+    error: "Pricing not available for this plan",
+  });
+}
 
-    // Stripe expects smallest currency unit (pence)
-    const unitAmount = Math.round(numericPrice * 100);
+const unitAmount = Math.round(numericPrice * 100);
 
-    console.log("💷 Stripe unitAmount:", unitAmount);
+console.log("💷 Stripe unitAmount (pence):", unitAmount);
+console.log("💷 Stripe unitAmount:", unitAmount);
 
           // 🔒 HARD BLOCK IF MOBILE IS MISSING
       if (!mobile) {
