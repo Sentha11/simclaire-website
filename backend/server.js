@@ -258,14 +258,15 @@ async function loadPricingCSV() {
         if (!sku || isNaN(price)) return;
 
         pricingMap.set(sku, {
-          price,
-          currency: row["currency"] || "GBP",
-          destinationId: row["Destination ID"] || "",
-          country: row["Country"] || "",
-          validity: row["Validity Days"] || "",
-          data: row["Data Allowanance"] || "",
-          status: row["status"] || "active",
-        });
+        finalPrice: Number(row["finalPrice"]),
+        baseCost: Number(row["BaseCost"]),
+        currency: row["currency"] || "GBP",
+        destinationId: row["Destination ID"] || "",
+        country: row["Country"] || "",
+        validity: row["Validity Days"] || "",
+        data: row["Data Allowanance"] || "",
+        status: row["status"] || "active",
+      });
       })
       .on("end", () => {
         console.log(`💰 Pricing loaded: ${pricingMap.size} SKUs`);
@@ -744,13 +745,20 @@ products.slice(0, 5).forEach((p, i) => {
     fallbackApiPrice: p.productPrice,
   });
 
-  const finalPrice = csvEntry?.price ?? p.productPrice;
+  const displayPrice = csvEntry?.baseCost ?? p.productPrice;
+
+  console.log("🧪 PRICE SANITY CHECK", {
+  sku: p.productSku,
+  baseCost: csvEntry?.baseCost,
+  finalPrice: csvEntry?.finalPrice,
+  apiPrice: p.productPrice,
+});
 
   msg +=
     `*${i + 1}) ${p.productName}*\n` +
     `💾 Data: ${p.productDataAllowance}\n` +
     `📅 Validity: ${p.validity} days\n` +
-    `💷 Price: £${finalPrice}\n\n`;
+    `💷 Price: £${displayPrice}\n\n`;
 });
 
 msg +=
