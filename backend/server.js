@@ -843,19 +843,23 @@ return res.send(twiml(renderPlans(session)));
       const inputNumber = parseInt(selectedId, 10);
 
       const PAGE_SIZE = 5;
-      const realIndex = (session.page * PAGE_SIZE) + (inputNumber - 1);
+      const page = session.page ?? 0;
 
-      console.log("🧮 SELECTION RESOLVE", {
+      // ✅ FIX: calculate real index WITH pagination offset
+      const realIndex = page * PAGE_SIZE + (inputNumber - 1);
+
+      // 🔐 SAFETY LOG (keep this)
+      console.log("✅ SELECTION RESOLVE", {
         inputNumber,
-        page: session.page,
+        page,
         pageSize: PAGE_SIZE,
         realIndex,
-        sku: session.products[realIndex]?.productSku,
+        sku: session.products?.[realIndex]?.productSku,
       });
 
       if (!session.products[realIndex]) {
         return res.send(
-          twiml("❌ Invalid selection. Please choose a listed plan.")
+          twiml("❌ Invalid selection. Reply with a valid plan number.")
         );
       }
 
