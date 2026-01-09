@@ -299,7 +299,19 @@ app.post("/api/payments/create-checkout-session", async (req, res) => {
       metadata,
     } = req.body;
 
-    // ===============================
+
+
+          // 🔒 HARD BLOCK IF MOBILE IS MISSING
+      if (!mobile) {
+        console.error("❌ Missing mobile in create-checkout-session");
+        return res.status(400).json({
+          error: "Destination mobile number is required",
+        });
+      }
+
+      console.log("📞 Checkout mobile received:", mobile);
+
+      // ===============================
 // 💰 FINAL PRICE ENFORCEMENT (CSV)
 // ===============================
 const rawPrice = price; // ← this IS finalPrice from CSV
@@ -319,16 +331,6 @@ const unitAmount = Math.round(numericPrice * 100);
 
 console.log("💷 Stripe unitAmount (pence):", unitAmount);
 console.log("💷 Stripe unitAmount:", unitAmount);
-
-          // 🔒 HARD BLOCK IF MOBILE IS MISSING
-      if (!mobile) {
-        console.error("❌ Missing mobile in create-checkout-session");
-        return res.status(400).json({
-          error: "Destination mobile number is required",
-        });
-      }
-
-      console.log("📞 Checkout mobile received:", mobile);
 
     const checkout = await stripe.checkout.sessions.create({
       mode: "payment",
@@ -785,8 +787,8 @@ return res.send(twiml(msg));
       }
 
       const p = session.selectedProduct;
-      const csvPrice = pricingMap.get(p.productSku);
-      const finalPrice = csvPrice ?? p.productPrice;
+      const csvEntry = pricingMap.get(p.productSku);
+      const finalPrice = csvEntry?.price ?? p.productPrice;
 
       const response = await axios.post(
         `${BACKEND_BASE_URL}/api/payments/create-checkout-session`,
