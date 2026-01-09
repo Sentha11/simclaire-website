@@ -710,7 +710,7 @@ app.post("/webhook/whatsapp", async (req, res) => {
 
     if (session.step === "COUNTRY") {
       // 👉 Handle "see more plans"
-    if (text === "more") { session.page += 1; }
+    //if (text === "more") { session.page += 1; }
 
       const destRes = await esimRequest("get", "/api/esim/destinations");
       const destinations = extractArray(destRes);
