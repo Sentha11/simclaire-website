@@ -577,15 +577,26 @@ function renderPlans(session) {
   session.products.slice(start, end).forEach((p, i) => {
     const csvEntry = pricingMap.get(p.productSku);
 
+    // ✅ WhatsApp should show FINAL (customer) price
     const displayPrice =
-    typeof csvEntry?.finalPrice === "number"
-    ? csvEntry.finalPrice
-    : "N/A";
+        csvEntry?.finalPrice != null
+        ? Number(csvEntry.finalPrice)
+        : (p.productPrice ?? "N/A");
+    
+    console.log("💰 PRICE DEBUG", {
+      sku: p.productSku,
+      finalPrice: csvEntry?.finalPrice,
+      parsed: Number(csvEntry?.finalPrice),
+      displayPrice,
+    });
+
+    const displayValidity =
+      csvEntry?.validityDays ?? csvEntry?.validity ?? p.validity ?? "See plan details";
 
     msg +=
       `*${start + i + 1}) ${p.productName}*\n` +
       `💾 Data: ${p.productDataAllowance}\n` +
-      `📅 Validity: ${p.validity} days\n` +
+      `📅 Validity: ${displayValidity} days\n` +
       `💷 Price: £${displayPrice}\n\n`;
   });
 
@@ -594,7 +605,7 @@ function renderPlans(session) {
   }
 
   msg +=
-    "Reply with the plan number to continue.\n\n" +
+    `Reply with the plan number to continue.\n\n` +
     "ℹ️ Introductory pricing • Final prices confirmed at checkout\n" +
     "🔁 Type menu to restart\n" +
     "❌ Type exit to cancel";
