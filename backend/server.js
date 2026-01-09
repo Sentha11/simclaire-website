@@ -796,7 +796,7 @@ return res.send(twiml(msg));
 
       const p = session.selectedProduct;
       const csvEntry = pricingMap.get(p.productSku);
-      const finalPrice = csvEntry?.price ?? p.productPrice;
+      const finalPrice = csvEntry?.finalPrice ?? csvEntry?.price ?? p.productPrice;
 
       const response = await axios.post(
         `${BACKEND_BASE_URL}/api/payments/create-checkout-session`,
