@@ -19,6 +19,9 @@ console.log("🌍 eSIM Environment:", isUAT ? "UAT" : "PRODUCTION");
 const express = require("express");
 const cors = require("cors");
 const axios = require("axios");
+const fs = require("fs");
+const path = require("path");
+const csv = require("csv-parser");
 const bodyParser = require("body-parser");
 const { HttpsProxyAgent } = require("https-proxy-agent");
 const { SocksProxyAgent } = require("socks-proxy-agent");
@@ -39,6 +42,11 @@ if (process.env.SENDGRID_API_KEY) {
 }
 
 const app = express();
+
+// =====================================================
+// CSV PRICING (PROD FINAL PRICES)
+// =====================================================
+const pricingMap = new Map();
 
 // =====================================================
 // 1) QUOTAGUARD PROXY (eSIM API only)
@@ -230,6 +238,36 @@ function extractArray(payload) {
   if (Array.isArray(payload?.result)) return payload.result;
   if (Array.isArray(payload?.items)) return payload.items;
   return [];
+}
+
+// =====================================================
+// LOAD PRICING CSV ON STARTUP
+// =====================================================
+function loadPricingCSV() {
+  return new Promise((resolve, reject) => {
+    const csvPath = path.join(__dirname, "data", "pricing_prod.csv");
+
+    console.log("📂 Loading pricing CSV:", csvPath);
+
+    fs.createReadStream(csvPath)
+      .pipe(csv())
+      .on("data", (row) => {
+        if (row["Product SKU"] && row["Final Price"]) {
+          pricingMap.set(
+            row["Product SKU"].trim(),
+            Number(row["Final Price"])
+          );
+        }
+      })
+      .on("end", () => {
+        console.log(`💰 Pricing loaded: ${pricingMap.size} SKUs`);
+        resolve();
+      })
+      .on("error", (err) => {
+        console.error("❌ Failed to load pricing CSV", err);
+        reject(err);
+      });
+  });
 }
 
 // =====================================================
@@ -655,20 +693,28 @@ app.post("/webhook/whatsapp", async (req, res) => {
         );
       }
      
-      const listItems = products.slice(0, 5).map((p, i) => ({
-        id: String(i + 1), // user clicks this
+      const listItems = products.slice(0, 5).map((p, i) => {
+      const csvPrice = pricingMap.get(p.productSku);
+      const finalPrice = csvPrice ?? p.productPrice;
+
+      return {
+        id: String(i + 1),
         title: `${p.productName}`,
-        description: `${p.productDataAllowance} • ${p.validity} days • £${p.productPrice}`,
-      }));
+        description: `${p.productDataAllowance} • ${p.validity} days • £${finalPrice}`,
+      };
+    });
 
       let msg = `📡 *Plans for ${session.country}*\n\n`;
 
 products.slice(0, 5).forEach((p, i) => {
+  const csvPrice = pricingMap.get(p.productSku);
+  const finalPrice = csvPrice ?? p.productPrice;
+
   msg +=
     `*${i + 1}) ${p.productName}*\n` +
     `💾 Data: ${p.productDataAllowance}\n` +
     `📅 Validity: ${p.validity} days\n` +
-    `💷 Price: £${p.productPrice}\n\n`;
+    `💷 Price: £${finalPrice}\n\n`;
 });
 
 msg +=
@@ -705,13 +751,15 @@ return res.send(twiml(msg));
       }
 
       const p = session.selectedProduct;
+      const csvPrice = pricingMap.get(p.productSku);
+      const finalPrice = csvPrice ?? p.productPrice;
 
       const response = await axios.post(
         `${BACKEND_BASE_URL}/api/payments/create-checkout-session`,
         {
           email,
           quantity: 1,
-          price: p.productPrice,
+          price: finalPrice,
           currency: "gbp",
           planName: p.productName,
           productSku: p.productSku,
@@ -821,10 +869,13 @@ app.get("/success", (req, res) => {
 // 13) START SERVER
 // =====================================================
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => {
-  console.log(`🔥 Backend running on port ${PORT} (SimClaire OPTION C)`);
-  console.log(`➡️ APP_BASE_URL: ${APP_BASE_URL}`);
-  console.log(`➡️ BACKEND_BASE_URL: ${BACKEND_BASE_URL}`);
-  console.log(`➡️ STRIPE_SUCCESS_URL: ${STRIPE_SUCCESS_URL}`);
-  console.log(`➡️ STRIPE_CANCEL_URL: ${STRIPE_CANCEL_URL}`);
+
+loadPricingCSV().then(() => {
+  app.listen(PORT, () => {
+    console.log(`🔥 Backend running on port ${PORT} (SimClaire OPTION C)`);
+    console.log(`➡️ APP_BASE_URL: ${APP_BASE_URL}`);
+    console.log(`➡️ BACKEND_BASE_URL: ${BACKEND_BASE_URL}`);
+    console.log(`➡️ STRIPE_SUCCESS_URL: ${STRIPE_SUCCESS_URL}`);
+    console.log(`➡️ STRIPE_CANCEL_URL: ${STRIPE_CANCEL_URL}`);
+  });
 });
