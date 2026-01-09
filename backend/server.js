@@ -843,10 +843,10 @@ return res.send(twiml(renderPlans(session)));
       const inputNumber = parseInt(selectedId, 10);
 
       const PAGE_SIZE = 5;
-      const page = session.page ?? 0;
+      //const page = session.page ?? 0;
 
       // ✅ FIX: calculate real index WITH pagination offset
-      const realIndex = page * PAGE_SIZE + (inputNumber - 1);
+      const realIndex = (session.page * PAGE_SIZE + (inputNumber - 1));
 
       // 🔐 SAFETY LOG (keep this)
       console.log("✅ SELECTION RESOLVE", {
