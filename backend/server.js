@@ -812,7 +812,10 @@ products.slice(start, end).forEach((p, i) => {
     fallbackApiPrice: p.productPrice,
   });
 
-  const displayPrice = csvEntry?.baseCost ?? p.productPrice;
+  const displayPrice =
+  typeof csvEntry?.baseCost === "number"
+    ? csvEntry.baseCost
+    : p.productPrice;
 
   console.log("🧪 PRICE SANITY CHECK", {
   sku: p.productSku,
