@@ -834,7 +834,7 @@ return res.send(twiml(msg));
     const finalPrice = csvEntry.finalPrice;
 
     const response = await axios.post(
-      ${BACKEND_BASE_URL}/api/payments/create-checkout-session,
+      `${BACKEND_BASE_URL}/api/payments/create-checkout-session`,
       {
         email,
         quantity: 1,
