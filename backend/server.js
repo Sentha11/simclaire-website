@@ -691,7 +691,22 @@ app.post("/webhook/whatsapp", async (req, res) => {
       );
 
       const products = extractArray(prodRes);
-      session.products = products;
+
+      // ✅ ADD THIS FILTER
+      const destinationProducts = products.filter(p =>
+        p.productSku &&
+        pricingMap.has(p.productSku)
+      );
+
+      session.products = destinationProducts;
+
+      // 🔐 OPTIONAL SAFETY LOG (SAFE TO KEEP IN PROD)
+      console.log("📦 DESTINATION PRODUCT CHECK", {
+        country: session.country,
+        destinationId: session.destinationId,
+        productCount: destinationProducts.length,
+        skus: destinationProducts.map(p => p.productSku),
+      });
 
       if (!products.length) {
         return res.send(
@@ -729,7 +744,7 @@ app.post("/webhook/whatsapp", async (req, res) => {
       return {
         id: String(i + 1),
         title: `${p.productName}`,
-        description: `${p.productDataAllowance} • ${p.validity} days • £${finalPrice}`,
+        description: `${p.productDataAllowance} • ${csvEntry?.validityDays ?? p.validity ?? "N/A"} days • £${finalPrice}`,
       };
     });
 
