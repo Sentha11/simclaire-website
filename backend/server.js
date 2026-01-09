@@ -578,10 +578,9 @@ function renderPlans(session) {
     const csvEntry = pricingMap.get(p.productSku);
 
     const displayPrice =
-      csvEntry?.baseCost ??
-      csvEntry?.price ??
-      p.productPrice ??
-      "N/A";
+    typeof csvEntry?.finalPrice === "number"
+    ? csvEntry.finalPrice
+    : "N/A";
 
     msg +=
       `*${start + i + 1}) ${p.productName}*\n` +
