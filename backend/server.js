@@ -829,30 +829,32 @@ return res.send(twiml(renderPlans(session)));
         return;
       }
 
-      const index = parseInt(selectedId, 10);
-
-      // 🔐 OPTIONAL PAGINATION SAFETY LOG (SAFE IN PROD)
-      console.log("📄 PAGINATION CHECK", {
-        userInput: selectedId,
-        parsedIndex: index,
-        currentPage: session.page || 1,
-        pageSize: 5,
-        totalProducts: session.products?.length || 0,
-        maxPage: Math.ceil((session.products?.length || 0) / 5),
-      });
+      const inputNumber = parseInt(selectedId, 10);
 
       const PAGE_SIZE = 5;
-      const absoluteIndex = (session.page * PAGE_SIZE) + (index - 1);
+      const realIndex = (session.page * PAGE_SIZE) + (inputNumber - 1);
 
-      if (!session.products[absoluteIndex]) {
-        return res.send(twiml("❌ Invalid selection. Reply with a plan number."));
+      console.log("🧮 SELECTION RESOLVE", {
+        inputNumber,
+        page: session.page,
+        pageSize: PAGE_SIZE,
+        realIndex,
+        sku: session.products[realIndex]?.productSku,
+      });
+
+      if (!session.products[realIndex]) {
+        return res.send(
+          twiml("❌ Invalid selection. Please choose a listed plan.")
+        );
       }
 
-      session.selectedProduct = session.products[absoluteIndex];
-
+      session.selectedProduct = session.products[realIndex];
       session.step = "EMAIL";
 
-      return res.send(twiml("📧 Enter your email address for the Stripe receipt:"));
+      return res.send(
+        twiml("📧 Enter your email address for the Stripe receipt:")
+      );
+      
     }
 
     if (session.step === "EMAIL") {
