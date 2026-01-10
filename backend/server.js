@@ -440,7 +440,8 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
           const payload = {
             items: [
               {
-                type: "1",
+                type: String(
+                pricingMap.get(metadata.productSku)?.productType ?? "1"),
                 sku: metadata.productSku,
                 quantity: Number(metadata.quantity || 1),
                 mobileno: mobileno,
