@@ -842,33 +842,27 @@ return res.send(twiml(renderPlans(session)));
 
       const inputNumber = parseInt(selectedId, 10);
 
-      const PAGE_SIZE = 5;
-      //const page = session.page ?? 0;
+if (!Number.isFinite(inputNumber) || inputNumber < 1) {
+  return res.send(twiml("❌ Invalid selection. Reply with a plan number."));
+}
 
-      // ✅ FIX: calculate real index WITH pagination offset
-      const realIndex = (session.page * PAGE_SIZE + (inputNumber - 1));
+// Because renderPlans uses start+i+1, numbering is GLOBAL
+const realIndex = inputNumber - 1;
 
-      // 🔐 SAFETY LOG (keep this)
-      console.log("✅ SELECTION RESOLVE", {
-        inputNumber,
-        page,
-        pageSize: PAGE_SIZE,
-        realIndex,
-        sku: session.products?.[realIndex]?.productSku,
-      });
+console.log("✅ SELECTION RESOLVE", {
+  inputNumber,
+  realIndex,
+  sku: session.products?.[realIndex]?.productSku,
+});
 
-      if (!session.products[realIndex]) {
-        return res.send(
-          twiml("❌ Invalid selection. Reply with a valid plan number.")
-        );
-      }
+if (!session.products?.[realIndex]) {
+  return res.send(twiml("❌ Invalid selection. Reply with a plan number shown."));
+}
 
-      session.selectedProduct = session.products[realIndex];
-      session.step = "EMAIL";
+session.selectedProduct = session.products[realIndex];
+session.step = "EMAIL";
 
-      return res.send(
-        twiml("📧 Enter your email address for the Stripe receipt:")
-      );
+return res.send(twiml("📧 Enter your email address for the Stripe receipt:"));
       
     }
 
