@@ -48,6 +48,18 @@ const app = express();
 // =====================================================
 const pricingMap = new Map();
 
+csvRows.forEach(row => {
+  if (row.apiSku) {
+    pricingMap.set(row.apiSku.trim(), {
+      finalPrice: Number(row.finalPrice),
+      baseCost: Number(row.BaseCost),
+      validityDays: parseInt(row['Validity Days']),
+      data: row['Data Allowanance'],
+      planName: row['Plan Name']
+    });
+  }
+});
+
 // =====================================================
 // 1) QUOTAGUARD PROXY (eSIM API only)
 // =====================================================
