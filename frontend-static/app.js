@@ -40,7 +40,7 @@ async function searchPlans() {
         <p>📶 Data: ${p.data}</p>
         <p>📅 Validity: ${p.validity} days</p>
         <p>💷 Price: £${p.price}</p>
-        <button onclick="checkout('${p.sku}', '${p.name}', ${p.price}, '${p.country}', '${p.destinationId}')">
+        <button onclick="checkout('${p.sku}', '${p.name}', ${p.price}, '${p.country}', '${p.destinationId}', '${p.productType}')">
           Buy Now
         </button>
       `;
@@ -54,7 +54,7 @@ async function searchPlans() {
   }
 }
 
-async function checkout(sku, name, price, country, destinationId) {
+async function checkout(sku, name, price, country, destinationId, productType) {
   const email = prompt("Enter your email for receipt:");
   const mobile = prompt("Enter your mobile number:");
 
@@ -72,6 +72,7 @@ async function checkout(sku, name, price, country, destinationId) {
         currency: "gbp",
         planName: name,
         productSku: sku,
+        productType,
         country,
         destinationId,
         mobile

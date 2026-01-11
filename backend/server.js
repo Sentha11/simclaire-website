@@ -518,11 +518,19 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
           // =============================================
           console.log("📡 Purchasing eSIM...");
 
+          if (!metadata.productType) {
+            console.error("❌ Missing productType", {
+              sku: metadata.productSku,
+              metadata,
+            });
+            throw new Error("Missing productType for eSIM purchase");
+          }
+
           const payload = {
             items: [
               {
                 type: String(
-                pricingMap.get(metadata.productSku)?.productType ?? "1"),
+                pricingMap.get(metadata.productSku)),
                 sku: metadata.productSku,
                 quantity: Number(metadata.quantity || 1),
                 mobileno: mobileno,
