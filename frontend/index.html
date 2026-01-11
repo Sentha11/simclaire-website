@@ -1,116 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>SimClaire | Dedicated Travel Number</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="Get a dedicated travel phone number with eSIM. Recharge monthly or yearly. Not a roaming number." />
-  <link rel="stylesheet" href="styles.css" />
-</head>
-<body>
+  <head>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SimClaire | Dedicated Travel Number</title>
+  </head>
+  <body>
+    <div id="root"></div>
 
-  <!-- HEADER -->
-  <header class="header">
-    <h1>SimClaire</h1>
-    <nav>
-      <a href="#how">How It Works</a>
-      <a href="#faq">FAQ</a>
-      <a href="#support">Support</a>
-    </nav>
-  </header>
-
-  <!-- HERO -->
-  <section class="hero">
-    <h2>Your own dedicated travel number</h2>
-    <p>Recharge monthly or yearly. Not a roaming number.</p>
-    <button>Browse Plans</button>
-  </section>
-
-  <button
-  id="buyBtn"
-  class="bg-black text-white px-6 py-3 rounded"
->
-  Buy Holiday eSIM – £9.99
-</button>
-
-  <!-- HOW IT WORKS -->
-  <section id="how" class="section">
-    <h3>How It Works</h3>
-
-    <div class="steps">
-      <div>
-        <strong>1. Choose a plan</strong>
-        <p>Select a monthly or yearly plan.</p>
-      </div>
-      <div>
-        <strong>2. Get your number</strong>
-        <p>You receive a real, dedicated phone number.</p>
-      </div>
-      <div>
-        <strong>3. Install eSIM</strong>
-        <p>Scan the QR code and install in minutes.</p>
-      </div>
-      <div>
-        <strong>4. Manage & recharge</strong>
-        <p>Use your account to top up or renew.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- FAQ -->
-  <section id="faq" class="section gray">
-    <h3>FAQ</h3>
-
-    <p><strong>Do I get a real phone number?</strong><br />
-    Yes. You receive a dedicated physical number.</p>
-
-    <p><strong>Is this a roaming number?</strong><br />
-    No. Your number stays the same as long as you renew.</p>
-
-    <p><strong>Can I recharge?</strong><br />
-    Yes, monthly or yearly.</p>
-  </section>
-
-  <!-- SUPPORT -->
-  <section id="support" class="section">
-    <h3>Support</h3>
-    <p>💬 Live chat available on the website</p>
-    <p>📱 WhatsApp: +1 (437) 925-9578</p>
-    <p>📧 Email: support@simclaire.com</p>
-  </section>
-
-  <!-- FOOTER -->
-  <footer class="footer">
-    © 2025 SimClaire. All rights reserved.
-  </footer>
-
-</body>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
 </html>
 
-<script>
-  document.getElementById("buyBtn").onclick = async () => {
-    const res = await fetch(
-      "https://simclaire-website-backend.onrender.com/api/payments/create-checkout-session",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: "test@simclaire.com",
-          quantity: 1,
-          price: 9.99,
-          currency: "gbp",
-          planName: "Holiday eSIM",
-          productSku: "TEST-SKU-001",
-          data: "5GB",
-          validity: 7,
-          country: "United Kingdom",
-          destinationId: "GB",
-          mobile: "447700900123"
-        })
-      }
-    );
-
-    const data = await res.json();
-    window.location.href = data.url;
-  };
-</script>

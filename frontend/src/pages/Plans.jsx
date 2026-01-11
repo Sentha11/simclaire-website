@@ -1,5 +1,4 @@
 import { useState } from "react";
-import "./plans.css";
 
 export default function Plans() {
   const [query, setQuery] = useState("");
@@ -22,10 +21,7 @@ export default function Plans() {
 
     const data = await res.json();
 
-    setPlans(
-      data.sort((a, b) => a.price - b.price)
-    );
-
+    setPlans(data.sort((a, b) => a.price - b.price));
     setLoading(false);
   }
 
@@ -53,33 +49,54 @@ export default function Plans() {
   }
 
   return (
-    <div className="plans">
-      <h1>Choose your destination</h1>
+    <section className="section">
+      <div className="container">
+        <h2 className="h2">Choose your destination</h2>
+        <p className="lead">
+          Find the best eSIM plan for your trip. Instant activation after purchase.
+        </p>
 
-      <input
-        placeholder="Type a country (e.g. United Kingdom)"
-        value={query}
-        onChange={(e) => searchPlans(e.target.value)}
-      />
+        <input
+          className="input"
+          placeholder="Type a country (e.g. United Kingdom)"
+          value={query}
+          onChange={(e) => searchPlans(e.target.value)}
+          style={{
+            padding: "14px",
+            borderRadius: "12px",
+            border: "1px solid var(--border)",
+            background: "var(--surface)",
+            color: "var(--text)",
+            width: "100%",
+            maxWidth: "420px",
+            marginBottom: "24px",
+          }}
+        />
 
-      {loading && <div className="skeleton">Loading plans…</div>}
+        {loading && <div className="muted">Loading plans…</div>}
 
-      <div className="plans-list">
-        {plans.map((p, i) => (
-          <div key={i} className="plan">
-            <div className="plan-left">
-              <strong>{p.name}</strong>
-              <span>{p.data}GB</span>
-              <span>{p.validity} days</span>
-            </div>
+        <div className="grid grid--2">
+          {plans.map((p, i) => (
+            <div key={i} className="plan lift">
+              <div className="plan__top">
+                <div className="h3">{p.name}</div>
+                <div className="muted">
+                  {p.data} GB · {p.validity} days
+                </div>
+              </div>
 
-            <div className="plan-right">
               <div className="price">£{p.price}</div>
-              <button onClick={() => buy(p)}>Buy</button>
+
+              <button
+                className="btn btn--primary btn--full"
+                onClick={() => buy(p)}
+              >
+                Buy eSIM
+              </button>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
-    </div>
+    </section>
   );
 }
