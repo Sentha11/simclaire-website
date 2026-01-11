@@ -83,3 +83,23 @@ async function checkout(sku, name, price, country, destinationId, productType) {
   const data = await res.json();
   window.location.href = data.url;
 }
+
+const hero = document.querySelector(".hero");
+
+window.addEventListener("mousemove", (e) => {
+  const x = (e.clientX / window.innerWidth - 0.5) * 10;
+  const y = (e.clientY / window.innerHeight - 0.5) * 10;
+
+  hero.style.setProperty(
+    "--parallax",
+    `translate(${x}px, ${y}px)`
+  );
+});
+
+document.querySelectorAll("button").forEach(btn => {
+  btn.addEventListener("mousemove", e => {
+    const rect = btn.getBoundingClientRect();
+    btn.style.setProperty("--x", `${e.clientX - rect.left}px`);
+    btn.style.setProperty("--y", `${e.clientY - rect.top}px`);
+  });
+});

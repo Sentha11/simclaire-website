@@ -1,88 +1,271 @@
-body {
+@media (prefers-color-scheme: light) {
+  body {
+    background: #f7f9fc;
+    color: #0b0f1a;
+  }
+
+  .hero {
+    background:
+      radial-gradient(ellipse at bottom, #e8ecff 0%, #ffffff 60%),
+      url("/assets/stars.png");
+  }
+
+  .hero::before {
+    opacity: 0.15;
+  }
+
+  .search-box button {
+    background: #0b0f1a;
+    color: white;
+  }
+}
+
+/* =========================
+   RESET
+========================= */
+* {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto;
-  background: #f7f7f7;
-  color: #111;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-.hero {
-  background: linear-gradient(135deg, #0f172a, #020617);
+/* =========================
+   BODY
+========================= */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+  background: #0b0f1a;
   color: white;
-  text-align: center;
-  padding: 80px 20px;
 }
 
-.hero h1 {
-  font-size: 42px;
-  margin-bottom: 10px;
+/* =========================
+   HERO
+========================= */
+.hero {
+  position: relative;
+  height: 100vh;
+  background:
+    radial-gradient(ellipse at bottom, #101528 0%, #05070f 60%),
+    url("/assets/stars.png");
+  background-size: cover;
+  background-position: center;
+  overflow: hidden;
 }
 
-.tagline {
-  opacity: 0.9;
-  margin-bottom: 30px;
+/* 🌟 TWINKLE LAYER */
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url("/assets/stars.png");
+  background-size: cover;
+  opacity: 0.25;
+  animation: twinkle 8s ease-in-out infinite;
 }
 
-.search-box {
+.hero::before {
+  transition: transform 0.15s ease-out;
+}
+
+.hero::before {
+  transform: var(--parallax);
+}
+
+/* 🌌 GLOW / AURORA LAYER */
+.hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at 50% 60%,
+    rgba(120, 130, 255, 0.15),
+    transparent 60%
+  );
+  animation: glow 10s ease-in-out infinite;
+}
+
+/* =========================
+   ANIMATIONS
+========================= */
+@keyframes twinkle {
+  0%   { opacity: 0.20; }
+  50%  { opacity: 0.35; }
+  100% { opacity: 0.20; }
+}
+
+@keyframes glow {
+  0%   { opacity: 0.4; }
+  50%  { opacity: 0.7; }
+  100% { opacity: 0.4; }
+}
+
+/* =========================
+   HERO CONTENT
+========================= */
+.hero-content {
+  position: relative;
+  z-index: 2;
+  height: 100%;
+  max-width: 900px;
+  margin: auto;
   display: flex;
+  flex-direction: column;
   justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+/* =========================
+   TYPOGRAPHY
+========================= */
+.hero h1 {
+  font-size: 3.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.hero p {
+  margin-top: 12px;
+  font-size: 1.2rem;
+  opacity: 0.85;
+}
+
+/* =========================
+   SEARCH
+========================= */
+.search-box {
+  margin-top: 30px;
+  display: flex;
   gap: 10px;
-  flex-wrap: wrap;
 }
 
 .search-box input {
-  padding: 14px;
+  padding: 14px 16px;
   min-width: 260px;
   border-radius: 8px;
   border: none;
+  outline: none;
+  font-size: 1rem;
 }
 
 .search-box button {
-  padding: 14px 24px;
+  padding: 14px 22px;
   border-radius: 8px;
   border: none;
-  background: #2563eb;
-  color: white;
-  font-weight: 600;
   cursor: pointer;
-}
-
-main {
-  padding: 40px 20px;
-}
-
-.plans-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 20px;
-  max-width: 1100px;
-  margin: auto;
-}
-
-.plan {
-  background: white;
-  border-radius: 14px;
-  padding: 20px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.08);
-}
-
-.plan h3 {
-  margin-top: 0;
-}
-
-.plan button {
-  width: 100%;
-  padding: 12px;
-  border-radius: 10px;
-  border: none;
-  background: #111;
-  color: white;
+  background: #ffffff;
+  color: #0b0f1a;
   font-weight: 600;
-  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
-footer {
+.search-box button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 25px rgba(255,255,255,0.15);
+}
+
+/* 🌌 Gradient drift */
+.hero {
+  background-size: 120% 120%;
+  animation: gradientDrift 30s ease-in-out infinite;
+}
+
+@keyframes gradientDrift {
+  0%   { background-position: 50% 80%; }
+  50%  { background-position: 55% 70%; }
+  100% { background-position: 50% 80%; }
+}
+
+.search-box button {
+  position: relative;
+  overflow: hidden;
+}
+
+.search-box button::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at var(--x, 50%) var(--y, 50%),
+    rgba(255,255,255,0.35),
+    transparent 60%
+  );
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.search-box button:hover::after {
+  opacity: 1;
+}
+
+@media (max-width: 768px) {
+  .hero h1 {
+    font-size: 2.4rem;
+  }
+
+  .hero p {
+    font-size: 1rem;
+  }
+
+  .search-box {
+    flex-direction: column;
+    width: 90%;
+  }
+
+  .search-box input,
+  .search-box button {
+    width: 100%;
+  }
+
+  .hero {
+    height: 85vh;
+  }
+}
+
+/* NAV */
+.nav {
+  display: flex;
+  justify-content: space-between;
+  padding: 20px 32px;
+}
+
+.nav a {
+  color: inherit;
+  text-decoration: none;
+  margin-left: 16px;
+  font-weight: 500;
+}
+
+/* PAGE LAYOUT */
+.page {
+  max-width: 900px;
+  margin: 80px auto;
+  padding: 0 20px;
+}
+
+.page h1 {
+  font-size: 2.6rem;
+  margin-bottom: 32px;
+}
+
+/* FAQ */
+.faq h3 {
+  margin-top: 24px;
+}
+
+.faq p {
+  opacity: 0.85;
+  margin-top: 8px;
+}
+
+.hero-links a {
+  margin: 0 12px;
+  opacity: 0.85;
+}
+
+/* FOOTER */
+.footer {
   text-align: center;
-  padding: 30px;
-  font-size: 14px;
-  color: #777;
+  padding: 40px 0;
+  opacity: 0.6;
 }
