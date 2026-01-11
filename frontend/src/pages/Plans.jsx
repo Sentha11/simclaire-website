@@ -16,7 +16,7 @@ export default function Plans() {
     setLoading(true);
 
     const res = await fetch(
-      `${import.meta.env.VITE_BACKEND_URL}/api/esim/search?country=${encodeURIComponent(value)}`
+      `${import.meta.env.VITE_BACKEND_URL}/api/web/esim/products?country=${encodeURIComponent(value)}`
     );
 
     const data = await res.json();
@@ -32,7 +32,7 @@ export default function Plans() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email: "test@simclaire.com",
+          email: "care@simclaire.com",
           quantity: 1,
           price: plan.price,
           planName: plan.name,
