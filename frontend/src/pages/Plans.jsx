@@ -16,7 +16,7 @@ export default function Plans() {
     setLoading(true);
 
     const res = await fetch(
-      `${import.meta.env.VITE_BACKEND_URL}/api/web/esim/products?country=${encodeURIComponent(value)}`
+      `${import.meta.env.VITE_BACKEND_URL}/api/web/esim/search?country=${encodeURIComponent(value)}`
     );
 
     const data = await res.json();
