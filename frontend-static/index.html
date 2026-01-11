@@ -7,21 +7,27 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+  <header class="hero">
+    <h1>SimClaire</h1>
+    <p class="tagline">Travel eSIMs made simple</p>
 
-<header>
-  <h1>SimClaire</h1>
-  <p>Travel eSIMs made simple</p>
-</header>
+    <div class="search-box">
+      <input
+        id="countryInput"
+        placeholder="Where are you travelling?"
+      />
+      <button onclick="searchPlans()">Browse Plans</button>
+    </div>
+  </header>
 
-<main>
-  <section class="search">
-    <input id="countryInput" placeholder="🌍 Enter your travel destination (country).\nExample: Italy, USA, Japan, United Kingdom." />
-    <button onclick="searchPlans()">Browse Plans</button>
-  </section>
+  <main>
+    <div id="results" class="plans-grid"></div>
+  </main>
 
-  <section id="results"></section>
-</main>
+  <footer>
+    <p>© SimClaire • Global eSIM connectivity</p>
+  </footer>
 
-<script src="app.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>

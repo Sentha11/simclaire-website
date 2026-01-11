@@ -4,7 +4,9 @@ async function searchPlans() {
   const country = document.getElementById("countryInput").value.trim();
   const resultsDiv = document.getElementById("results");
 
-  resultsDiv.innerHTML = "Loading plans...";
+  resultsDiv.innerHTML = "";
+
+  resultsDiv.innerHTML = `<p style="text-align:center">Loading plans…</p>`;
 
   if (!country) {
     resultsDiv.innerHTML = "Please enter a country.";
