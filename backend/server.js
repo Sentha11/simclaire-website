@@ -767,7 +767,7 @@ app.post("/webhook/whatsapp", async (req, res) => {
       if (text === "1") {
         session.step = "COUNTRY";
         return res.send(
-          twiml("🌍 Enter your travel destination (country).\nExample: Italy, USA, Japan, United Kingdom.")
+          twiml("🌍 Enter your travel destination.")
         );
       }
 
