@@ -43,26 +43,24 @@ body::after {
   position: fixed;
   inset: 0;
   z-index: -1;
+
   background-image:
-    radial-gradient(1px 1px at 20% 30%, white 80%, transparent),
-    radial-gradient(1px 1px at 70% 40%, white 80%, transparent),
-    radial-gradient(1px 1px at 40% 80%, white 80%, transparent),
-    radial-gradient(1px 1px at 90% 10%, white 80%, transparent),
-    radial-gradient(1px 1px at 10% 70%, white 80%, transparent);
-  background-size: 300px 300px;
-  opacity: 0.25;
+    radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.8) 100%, transparent),
+    radial-gradient(1px 1px at 30% 80%, rgba(255,255,255,0.7) 100%, transparent),
+    radial-gradient(1px 1px at 50% 40%, rgba(255,255,255,0.6) 100%, transparent),
+    radial-gradient(1px 1px at 70% 10%, rgba(255,255,255,0.9) 100%, transparent),
+    radial-gradient(1px 1px at 90% 60%, rgba(255,255,255,0.75) 100%, transparent),
+    radial-gradient(1px 1px at 15% 65%, rgba(255,255,255,0.5) 100%, transparent);
+
+  background-size: 400px 400px;
+  opacity: 0.35;
+  pointer-events: none;
   transform: var(--parallax, translate(0,0));
 }
 
 /* =========================
    NAV LINKS
 ========================= */
-.top-links {
-  position: absolute;
-  top: 20px;
-  width: 100%;
-  text-align: center;
-}
 
 .top-links a {
   color: rgba(255,255,255,0.6);
@@ -73,6 +71,33 @@ body::after {
 
 .top-links a:hover {
   color: #fff;
+}
+
+.top-links {
+  position: absolute;
+  top: 20px;
+  right: 30px;
+  display: flex;
+  gap: 14px;
+  z-index: 10;
+}
+
+.top-btn {
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  text-decoration: none;
+  color: rgba(255,255,255,0.85);
+  border: 1px solid rgba(255,255,255,0.25);
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(8px);
+  transition: all 0.2s ease;
+}
+
+.top-btn:hover {
+  color: #fff;
+  background: rgba(255,255,255,0.15);
+  border-color: rgba(255,255,255,0.5);
 }
 
 /* =========================
@@ -212,4 +237,13 @@ body::after {
   .hero {
     padding-top: 100px;
   }
+}
+
+@keyframes starTwinkle {
+  0% { opacity: 0.25; }
+  100% { opacity: 0.4; }
+}
+
+body::after {
+  animation: starTwinkle 6s ease-in-out infinite alternate;
 }
