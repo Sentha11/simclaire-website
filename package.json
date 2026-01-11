@@ -1,9 +1,14 @@
 {
+  "name": "simclaire-backend",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node backend/server.js"
+  },
   "dependencies": {
-    "@tailwindcss/vite": "^4.1.18",
-    "socks-proxy-agent": "^8.0.5",
-    "stripe": "^20.0.0",
-    "tailwindcss": "^4.1.18",
-    "twilio": "^5.10.7"
+    "express": "^4.19.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "stripe": "^14.0.0"
   }
 }

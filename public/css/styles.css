@@ -1,0 +1,89 @@
+body {
+  margin: 0;
+  font-family: Inter, system-ui, sans-serif;
+  background: #0b0f14;
+  color: #e7eefc;
+}
+
+a { color: inherit; text-decoration: none; }
+
+.container {
+  max-width: 1100px;
+  margin: auto;
+  padding: 0 20px;
+}
+
+.header {
+  background: #0f172a;
+  padding: 18px 0;
+}
+
+.header h1 { margin: 0; }
+
+.header nav a {
+  margin-left: 16px;
+  color: #94a3b8;
+}
+
+.hero {
+  padding: 80px 0;
+  text-align: center;
+  background: linear-gradient(135deg, #ff7a18, #ff4d00);
+}
+
+.hero button {
+  margin-top: 20px;
+  padding: 14px 28px;
+  border-radius: 999px;
+  border: none;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.section {
+  padding: 60px 0;
+}
+
+.section.gray {
+  background: #111826;
+}
+
+input {
+  padding: 14px;
+  width: 100%;
+  max-width: 420px;
+  border-radius: 12px;
+  border: none;
+  margin-bottom: 24px;
+}
+
+.plans-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.plan {
+  background: #111826;
+  padding: 20px;
+  border-radius: 14px;
+}
+
+.plan button {
+  margin-top: 12px;
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  background: #ff7a18;
+  border: none;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.footer {
+  text-align: center;
+  padding: 30px;
+  color: #64748b;
+}
+
+.muted { color: #94a3b8; }
