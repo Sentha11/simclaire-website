@@ -42,6 +42,7 @@ if (process.env.SENDGRID_API_KEY) {
 }
 
 const app = express();
+app.set("trust proxy", true);
 
 // =====================================================
 // CSV PRICING (PROD FINAL PRICES)
