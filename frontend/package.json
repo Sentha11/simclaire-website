@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "vite",
-    "build": "build",
+    "build": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {
