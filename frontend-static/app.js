@@ -1,35 +1,31 @@
 const BACKEND_URL = "https://simclaire-website-backend.onrender.com";
 
+/* =========================
+   SEARCH + LOAD PLANS
+========================= */
 async function searchPlans() {
   const country = document.getElementById("countryInput").value.trim();
   const resultsDiv = document.getElementById("results");
 
-  resultsDiv.innerHTML = "";
-
-  resultsDiv.innerHTML = `<p style="text-align:center">Loading plans…</p>`;
-
   if (!country) {
-    resultsDiv.innerHTML = "Please enter a country.";
+    resultsDiv.innerHTML = "<p>Please enter a country.</p>";
     return;
   }
+
+  resultsDiv.innerHTML = "Loading plans...";
 
   try {
     const res = await fetch(
       `${BACKEND_URL}/api/web/esim/products?country=${encodeURIComponent(country)}`
     );
 
-    if (!res.ok) {
-      throw new Error("Failed to fetch plans");
-    }
-
     const plans = await res.json();
+    resultsDiv.innerHTML = "";
 
     if (!plans.length) {
       resultsDiv.innerHTML = "No plans found.";
       return;
     }
-
-    resultsDiv.innerHTML = "";
 
     plans.forEach(p => {
       const div = document.createElement("div");
@@ -40,13 +36,19 @@ async function searchPlans() {
         <p>📶 Data: ${p.data}</p>
         <p>📅 Validity: ${p.validity} days</p>
         <p>💷 Price: £${p.price}</p>
-        <button onclick="checkout('${p.sku}', '${p.name}', ${p.price}, '${p.country}', '${p.destinationId}', '${p.productType}')">
-          Buy Now
-        </button>
+        <button onclick="checkout(
+          '${p.sku}',
+          '${p.name}',
+          '${p.price}',
+          '${p.country}',
+          '${p.destinationId}'
+        )">Buy Now</button>
       `;
 
       resultsDiv.appendChild(div);
     });
+
+    resultsDiv.scrollIntoView({ behavior: "smooth" });
 
   } catch (err) {
     console.error(err);
@@ -54,7 +56,10 @@ async function searchPlans() {
   }
 }
 
-async function checkout(sku, name, price, country, destinationId, productType) {
+/* =========================
+   CHECKOUT
+========================= */
+async function checkout(sku, name, price, country, destinationId) {
   const email = prompt("Enter your email for receipt:");
   const mobile = prompt("Enter your mobile number:");
 
@@ -68,11 +73,10 @@ async function checkout(sku, name, price, country, destinationId, productType) {
       body: JSON.stringify({
         email,
         quantity: 1,
-        price: Number(price), // ✅ important
+        price,
         currency: "gbp",
         planName: name,
         productSku: sku,
-        productType,
         country,
         destinationId,
         mobile
@@ -84,22 +88,14 @@ async function checkout(sku, name, price, country, destinationId, productType) {
   window.location.href = data.url;
 }
 
-const hero = document.querySelector(".hero");
-
-window.addEventListener("mousemove", (e) => {
-  const x = (e.clientX / window.innerWidth - 0.5) * 10;
-  const y = (e.clientY / window.innerHeight - 0.5) * 10;
-
-  hero.style.setProperty(
+/* =========================
+   HERO PARALLAX
+========================= */
+document.addEventListener("mousemove", (e) => {
+  const x = (e.clientX / window.innerWidth - 0.5) * 12;
+  const y = (e.clientY / window.innerHeight - 0.5) * 12;
+  document.documentElement.style.setProperty(
     "--parallax",
     `translate(${x}px, ${y}px)`
   );
-});
-
-document.querySelectorAll("button").forEach(btn => {
-  btn.addEventListener("mousemove", e => {
-    const rect = btn.getBoundingClientRect();
-    btn.style.setProperty("--x", `${e.clientX - rect.left}px`);
-    btn.style.setProperty("--y", `${e.clientY - rect.top}px`);
-  });
 });

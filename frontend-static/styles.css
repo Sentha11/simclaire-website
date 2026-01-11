@@ -1,271 +1,215 @@
-@media (prefers-color-scheme: light) {
-  body {
-    background: #f7f9fc;
-    color: #0b0f1a;
-  }
-
-  .hero {
-    background:
-      radial-gradient(ellipse at bottom, #e8ecff 0%, #ffffff 60%),
-      url("/assets/stars.png");
-  }
-
-  .hero::before {
-    opacity: 0.15;
-  }
-
-  .search-box button {
-    background: #0b0f1a;
-    color: white;
-  }
-}
-
 /* =========================
-   RESET
+   RESET + BASE
 ========================= */
 * {
+  box-sizing: border-box;
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+  background: #070b16;
+  color: #ffffff;
+  overflow-x: hidden;
 }
 
 /* =========================
-   BODY
+   HERO BACKGROUND
 ========================= */
-body {
-  font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
-  background: #0b0f1a;
-  color: white;
-}
-
-/* =========================
-   HERO
-========================= */
-.hero {
-  position: relative;
-  height: 100vh;
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
   background:
-    radial-gradient(ellipse at bottom, #101528 0%, #05070f 60%),
-    url("/assets/stars.png");
-  background-size: cover;
-  background-position: center;
-  overflow: hidden;
+    radial-gradient(circle at 20% 20%, #1b2a55, transparent 40%),
+    radial-gradient(circle at 80% 30%, #0f3460, transparent 45%),
+    radial-gradient(circle at 50% 80%, #020617, transparent 60%);
+  animation: gradientDrift 30s ease-in-out infinite alternate;
 }
 
-/* 🌟 TWINKLE LAYER */
-.hero::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: url("/assets/stars.png");
-  background-size: cover;
-  opacity: 0.25;
-  animation: twinkle 8s ease-in-out infinite;
-}
-
-.hero::before {
-  transition: transform 0.15s ease-out;
-}
-
-.hero::before {
-  transform: var(--parallax);
-}
-
-/* 🌌 GLOW / AURORA LAYER */
-.hero::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    circle at 50% 60%,
-    rgba(120, 130, 255, 0.15),
-    transparent 60%
-  );
-  animation: glow 10s ease-in-out infinite;
+@keyframes gradientDrift {
+  from { filter: hue-rotate(0deg); }
+  to   { filter: hue-rotate(25deg); }
 }
 
 /* =========================
-   ANIMATIONS
+   STAR FIELD (CSS ONLY)
 ========================= */
-@keyframes twinkle {
-  0%   { opacity: 0.20; }
-  50%  { opacity: 0.35; }
-  100% { opacity: 0.20; }
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image:
+    radial-gradient(1px 1px at 20% 30%, white 80%, transparent),
+    radial-gradient(1px 1px at 70% 40%, white 80%, transparent),
+    radial-gradient(1px 1px at 40% 80%, white 80%, transparent),
+    radial-gradient(1px 1px at 90% 10%, white 80%, transparent),
+    radial-gradient(1px 1px at 10% 70%, white 80%, transparent);
+  background-size: 300px 300px;
+  opacity: 0.25;
+  transform: var(--parallax, translate(0,0));
 }
 
-@keyframes glow {
-  0%   { opacity: 0.4; }
-  50%  { opacity: 0.7; }
-  100% { opacity: 0.4; }
+/* =========================
+   NAV LINKS
+========================= */
+.top-links {
+  position: absolute;
+  top: 20px;
+  width: 100%;
+  text-align: center;
+}
+
+.top-links a {
+  color: rgba(255,255,255,0.6);
+  text-decoration: none;
+  margin: 0 12px;
+  font-size: 0.85rem;
+}
+
+.top-links a:hover {
+  color: #fff;
 }
 
 /* =========================
    HERO CONTENT
 ========================= */
-.hero-content {
-  position: relative;
-  z-index: 2;
-  height: 100%;
-  max-width: 900px;
-  margin: auto;
+.hero {
+  min-height: 70vh;
   display: flex;
-  flex-direction: column;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
   text-align: center;
+  padding: 120px 20px 40px;
 }
 
-/* =========================
-   TYPOGRAPHY
-========================= */
 .hero h1 {
-  font-size: 3.5rem;
+  font-size: clamp(2.4rem, 5vw, 3.4rem);
   font-weight: 700;
-  letter-spacing: -0.02em;
+  margin-bottom: 12px;
 }
 
 .hero p {
-  margin-top: 12px;
-  font-size: 1.2rem;
-  opacity: 0.85;
+  opacity: 0.75;
+  margin-bottom: 28px;
 }
 
 /* =========================
-   SEARCH
+   SEARCH BAR
 ========================= */
 .search-box {
-  margin-top: 30px;
   display: flex;
-  gap: 10px;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
 }
 
 .search-box input {
-  padding: 14px 16px;
-  min-width: 260px;
-  border-radius: 8px;
+  width: 260px;
+  padding: 14px;
+  border-radius: 10px;
   border: none;
   outline: none;
-  font-size: 1rem;
 }
 
 .search-box button {
-  padding: 14px 22px;
-  border-radius: 8px;
+  padding: 14px 20px;
+  border-radius: 10px;
   border: none;
+  font-weight: 600;
   cursor: pointer;
   background: #ffffff;
   color: #0b0f1a;
-  font-weight: 600;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .search-box button:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 10px 25px rgba(255,255,255,0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(255,255,255,0.3);
 }
 
-/* 🌌 Gradient drift */
-.hero {
-  background-size: 120% 120%;
-  animation: gradientDrift 30s ease-in-out infinite;
+/* =========================
+   PRODUCT RESULTS
+========================= */
+#results {
+  max-width: 1100px;
+  margin: 60px auto 120px;
+  padding: 0 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
 }
 
-@keyframes gradientDrift {
-  0%   { background-position: 50% 80%; }
-  50%  { background-position: 55% 70%; }
-  100% { background-position: 50% 80%; }
+.plan {
+  background: rgba(255,255,255,0.06);
+  backdrop-filter: blur(12px);
+  border-radius: 16px;
+  padding: 22px;
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 
-.search-box button {
-  position: relative;
-  overflow: hidden;
+.plan:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 25px 50px rgba(0,0,0,0.4);
 }
 
-.search-box button::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    circle at var(--x, 50%) var(--y, 50%),
-    rgba(255,255,255,0.35),
-    transparent 60%
-  );
-  opacity: 0;
-  transition: opacity 0.25s ease;
+.plan h3 {
+  margin-bottom: 12px;
 }
 
-.search-box button:hover::after {
-  opacity: 1;
+.plan p {
+  opacity: 0.85;
+  margin: 6px 0;
 }
 
-@media (max-width: 768px) {
-  .hero h1 {
-    font-size: 2.4rem;
-  }
-
-  .hero p {
-    font-size: 1rem;
-  }
-
-  .search-box {
-    flex-direction: column;
-    width: 90%;
-  }
-
-  .search-box input,
-  .search-box button {
-    width: 100%;
-  }
-
-  .hero {
-    height: 85vh;
-  }
+.plan button {
+  margin-top: 16px;
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  background: #ffffff;
+  color: #0b0f1a;
 }
 
-/* NAV */
-.nav {
-  display: flex;
-  justify-content: space-between;
-  padding: 20px 32px;
+.plan button:hover {
+  box-shadow: 0 12px 30px rgba(255,255,255,0.3);
 }
 
-.nav a {
-  color: inherit;
-  text-decoration: none;
-  margin-left: 16px;
-  font-weight: 500;
-}
-
-/* PAGE LAYOUT */
+/* =========================
+   STATIC PAGES
+========================= */
 .page {
-  max-width: 900px;
-  margin: 80px auto;
+  max-width: 800px;
+  margin: 120px auto;
   padding: 0 20px;
 }
 
 .page h1 {
-  font-size: 2.6rem;
-  margin-bottom: 32px;
+  margin-bottom: 24px;
 }
 
-/* FAQ */
-.faq h3 {
+.page h3 {
   margin-top: 24px;
 }
 
-.faq p {
+.page p {
   opacity: 0.85;
   margin-top: 8px;
 }
 
-.hero-links a {
-  margin: 0 12px;
-  opacity: 0.85;
-}
-
-/* FOOTER */
-.footer {
-  text-align: center;
-  padding: 40px 0;
-  opacity: 0.6;
+/* =========================
+   MOBILE
+========================= */
+@media (max-width: 600px) {
+  .hero {
+    padding-top: 100px;
+  }
 }
