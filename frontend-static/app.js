@@ -16,6 +16,10 @@ async function searchPlans() {
       `${BACKEND_URL}/api/web/esim/products?country=${encodeURIComponent(country)}`
     );
 
+    if (!res.ok) {
+      throw new Error("Failed to fetch plans");
+    }
+
     const plans = await res.json();
 
     if (!plans.length) {
@@ -34,7 +38,7 @@ async function searchPlans() {
         <p>📶 Data: ${p.data}</p>
         <p>📅 Validity: ${p.validity} days</p>
         <p>💷 Price: £${p.price}</p>
-        <button onclick="checkout('${p.sku}', '${p.name}', '${p.price}', '${p.country}', '${p.destinationId}')">
+        <button onclick="checkout('${p.sku}', '${p.name}', ${p.price}, '${p.country}', '${p.destinationId}')">
           Buy Now
         </button>
       `;
@@ -54,21 +58,24 @@ async function checkout(sku, name, price, country, destinationId) {
 
   if (!email || !mobile) return;
 
-  const res = await fetch(`${BACKEND_URL}/api/payments/create-checkout-session`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      email,
-      quantity: 1,
-      price,
-      currency: "gbp",
-      planName: name,
-      productSku: sku,
-      country,
-      destinationId,
-      mobile
-    })
-  });
+  const res = await fetch(
+    `${BACKEND_URL}/api/payments/create-checkout-session`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email,
+        quantity: 1,
+        price: Number(price), // ✅ important
+        currency: "gbp",
+        planName: name,
+        productSku: sku,
+        country,
+        destinationId,
+        mobile
+      })
+    }
+  );
 
   const data = await res.json();
   window.location.href = data.url;
