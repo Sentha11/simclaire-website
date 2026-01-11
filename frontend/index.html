@@ -26,6 +26,13 @@
     <button>Browse Plans</button>
   </section>
 
+  <button
+  id="buyBtn"
+  class="bg-black text-white px-6 py-3 rounded"
+>
+  Buy Holiday eSIM – £9.99
+</button>
+
   <!-- HOW IT WORKS -->
   <section id="how" class="section">
     <h3>How It Works</h3>
@@ -79,3 +86,31 @@
 
 </body>
 </html>
+
+<script>
+  document.getElementById("buyBtn").onclick = async () => {
+    const res = await fetch(
+      "https://simclaire-website-backend.onrender.com/api/payments/create-checkout-session",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: "test@simclaire.com",
+          quantity: 1,
+          price: 9.99,
+          currency: "gbp",
+          planName: "Holiday eSIM",
+          productSku: "TEST-SKU-001",
+          data: "5GB",
+          validity: 7,
+          country: "United Kingdom",
+          destinationId: "GB",
+          mobile: "447700900123"
+        })
+      }
+    );
+
+    const data = await res.json();
+    window.location.href = data.url;
+  };
+</script>
