@@ -136,6 +136,22 @@ if (process.env.STRIPE_SECRET_KEY) {
   console.log("🟡 Stripe not configured");
 }
 
+app.post("/api/checkout", async (req, res) => {
+  const { sku } = req.body;
+
+  const session = await stripe.checkout.sessions.create({
+    mode: "payment",
+    line_items: [{
+      price: process.env[`STRIPE_${sku.toUpperCase()}`],
+      quantity: 1
+    }],
+    success_url: `${FRONTEND_URL}/success`,
+    cancel_url: `${FRONTEND_URL}/cancel`
+  });
+
+  res.json({ url: session.url });
+});
+
 // =====================================================
 // 6) eSIM AUTH + REQUEST WRAPPER (UAT)
 // Based on screenshots:
@@ -239,6 +255,173 @@ function extractArray(payload) {
   if (Array.isArray(payload?.items)) return payload.items;
   return [];
 }
+
+app.get("/api/web/esim/search", async (req, res) => {
+  try {
+    const { country } = req.query;
+    if (!country) return res.json([]);
+
+    const destRes = await esimRequest("get", "/api/esim/destinations");
+    const destinations = extractArray(destRes);
+
+    const match = destinations.find(d =>
+      String(d.destinationName || d.name || "")
+        .toLowerCase()
+        .includes(country.toLowerCase())
+    );
+
+    if (!match) return res.json([]);
+
+    const destinationId =
+      match.destinationID || match.destinationId || match.id;
+
+    const prodRes = await esimRequest(
+      "get",
+      `/api/esim/products?destinationid=${destinationId}`
+    );
+
+    const products = extractArray(prodRes);
+
+    // Only products that exist in pricing CSV
+    const filtered = products
+      .filter(p => pricingMap.has(p.productSku))
+      .map(p => {
+        const csv = pricingMap.get(p.productSku);
+        return {
+          name: p.productName,
+          sku: p.productSku,
+          data: p.productDataAllowance,
+          validity: csv.validity,
+          price: csv.finalPrice,
+          country: match.destinationName,
+          destinationId,
+          type: p.productType || "1",
+        };
+      });
+
+    res.json(filtered);
+  } catch (err) {
+    console.error("WEB SEARCH ERROR:", err.message);
+    res.status(500).json([]);
+  }
+});
+
+app.get("/api/web/esim/destinations", async (req, res) => {
+  try {
+    const destRes = await esimRequest("get", "/api/esim/destinations");
+    const destinations = extractArray(destRes);
+
+    // Normalize
+    const clean = destinations.map(d => ({
+      id: d.destinationID || d.destinationId || d.id,
+      name: d.destinationName || d.name,
+    }));
+
+    res.json(clean);
+  } catch (err) {
+    console.error("❌ Destinations fetch failed", err.message);
+    res.status(500).json({ error: "Failed to load destinations" });
+  }
+});
+
+app.get("/api/web/esim/products", async (req, res) => {
+  try {
+    const { destinationId } = req.query;
+    if (!destinationId) {
+      return res.status(400).json({ error: "destinationId required" });
+    }
+
+    const prodRes = await esimRequest(
+      "get",
+      `/api/esim/products?destinationid=${destinationId}`
+    );
+
+    const products = extractArray(prodRes);
+
+    // 🔐 FILTER ONLY PRICED PRODUCTS (CSV enforced)
+    const filtered = products
+      .filter(p => pricingMap.has(p.productSku))
+      .map(p => {
+        const priceEntry = pricingMap.get(p.productSku);
+
+        return {
+          sku: p.productSku,
+          name: p.productName,
+          data: p.productDataAllowance,
+          validity: priceEntry.validity,
+          price: priceEntry.finalPrice,
+          currency: priceEntry.currency,
+          destinationId,
+          country: priceEntry.country,
+        };
+      });
+
+    res.json(filtered);
+  } catch (err) {
+    console.error("❌ Product fetch failed", err.message);
+    res.status(500).json({ error: "Failed to load products" });
+  }
+});
+
+// =====================================================
+// WEB: Browse eSIM products (same logic as WhatsApp)
+// =====================================================
+app.get("/api/web/esim/products", async (req, res) => {
+  try {
+    const { country } = req.query;
+
+    if (!country) {
+      return res.status(400).json({ error: "country is required" });
+    }
+
+    // 1️⃣ Get destinations
+    const destRes = await esimRequest("get", "/api/esim/destinations");
+    const destinations = extractArray(destRes);
+
+    const match = destinations.find(d =>
+      String(d.destinationName || d.name || "")
+        .toLowerCase()
+        .includes(country.toLowerCase())
+    );
+
+    if (!match) {
+      return res.json([]);
+    }
+
+    const destinationId =
+      match.destinationID || match.destinationId || match.id;
+
+    // 2️⃣ Get products
+    const prodRes = await esimRequest(
+      "get",
+      `/api/esim/products?destinationid=${destinationId}`
+    );
+
+    const products = extractArray(prodRes);
+
+    // 3️⃣ Filter + map using CSV (same as WhatsApp)
+    const results = products
+      .filter(p => p.productSku && pricingMap.has(p.productSku))
+      .map(p => {
+        const csv = pricingMap.get(p.productSku);
+
+        return {
+          name: p.productName,
+          sku: p.productSku,
+          price: csv.finalPrice,
+          data: p.productDataAllowance,
+          validity: csv.validity || p.validity,
+          country: match.destinationName || match.name,
+          destinationId,
+        };
+      });
+
+    res.json(results);
+  } catch (err) {
+    console.error("❌ WEB PRODUCT ERROR:", err.message);
+    res.status(500).json({ error: "Failed to load products" });
+  }
+});
 
 // =====================================================
 // LOAD PRICING CSV ON STARTUP
