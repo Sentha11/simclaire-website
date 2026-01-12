@@ -341,3 +341,118 @@ body::before {
 .suggestion-item:hover {
   background: rgba(255,255,255,0.1);
 }
+
+/* ===============================
+   HERO BACKGROUND SYSTEM
+================================ */
+
+.hero {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  background: #000;
+}
+
+/* Shared bg styles */
+.bg-layer {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center bottom;
+  animation: drift 60s linear infinite;
+  will-change: transform, opacity;
+}
+
+/* First sky */
+.bg-1 {
+  background-image: url("./images/sky-night-1.jpg");
+  animation: fade1 30s infinite;
+}
+
+/* Second sky */
+.bg-2 {
+  background-image: url("./images/sky-night-2.jpg");
+  animation: fade2 30s infinite;
+}
+
+/* Optional 3rd layer later */
+.bg-3 {
+  background-image: url("./images/sky-night-3.jpg");
+}
+
+/* Dark cinematic overlay */
+.bg-overlay {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(0,0,0,0.25) 0%,
+    rgba(0,0,0,0.75) 70%
+  );
+  z-index: 2;
+}
+
+/* Content stays on top */
+.hero-content {
+  position: relative;
+  z-index: 3;
+  text-align: center;
+  color: #fff;
+}
+
+/* ===============================
+   ANIMATIONS
+================================ */
+
+@keyframes fade1 {
+  0%, 45% { opacity: 1; }
+  50%, 95% { opacity: 0; }
+}
+
+@keyframes fade2 {
+  0%, 45% { opacity: 0; }
+  50%, 95% { opacity: 1; }
+}
+
+@keyframes drift {
+  0% {
+    transform: scale(1) translateY(0);
+  }
+  100% {
+    transform: scale(1.05) translateY(-20px);
+  }
+}
+
+.logo {
+  font-size: 3.5rem;
+  font-weight: 600;
+  animation: fadeUp 1.2s ease forwards;
+}
+
+.tagline {
+  opacity: 0;
+  animation: fadeUp 1.2s ease forwards;
+  animation-delay: 0.2s;
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .bg-layer {
+    background-position: center center;
+    animation-duration: 90s;
+  }
+
+  .logo {
+    font-size: 2.4rem;
+  }
+}
