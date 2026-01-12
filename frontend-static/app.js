@@ -99,3 +99,38 @@ document.addEventListener("mousemove", (e) => {
     `translate(${x}px, ${y}px)`
   );
 });
+
+const countries = [
+  "United Kingdom", "United States", "Italy", "France",
+  "Spain", "Germany", "India", "Canada", "Australia",
+  "Japan", "South Korea", "Thailand"
+];
+
+const input = document.getElementById("countryInput");
+const suggestions = document.getElementById("suggestions");
+
+input.addEventListener("input", () => {
+  const val = input.value.toLowerCase();
+  suggestions.innerHTML = "";
+
+  if (!val) {
+    suggestions.style.display = "none";
+    return;
+  }
+
+  countries
+    .filter(c => c.toLowerCase().includes(val))
+    .slice(0, 6)
+    .forEach(country => {
+      const div = document.createElement("div");
+      div.className = "suggestion-item";
+      div.textContent = country;
+      div.onclick = () => {
+        input.value = country;
+        suggestions.style.display = "none";
+      };
+      suggestions.appendChild(div);
+    });
+
+  suggestions.style.display = "block";
+});

@@ -123,6 +123,26 @@ body::after {
   margin-bottom: 28px;
 }
 
+.hero-title {
+  font-size: clamp(3rem, 5vw, 4.2rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin-bottom: 12px;
+}
+
+.hero-subtitle {
+  font-size: 1.05rem;
+  font-weight: 400;
+  opacity: 0.85;
+  margin-bottom: 28px;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
 /* =========================
    SEARCH BAR
 ========================= */
@@ -246,4 +266,78 @@ body::after {
 
 body::after {
   animation: starTwinkle 6s ease-in-out infinite alternate;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+
+  background-image:
+    radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,0.35) 100%, transparent),
+    radial-gradient(1px 1px at 80% 70%, rgba(255,255,255,0.3) 100%, transparent),
+    radial-gradient(1px 1px at 60% 15%, rgba(255,255,255,0.25) 100%, transparent);
+
+  background-size: 800px 800px;
+  opacity: 0.25;
+  pointer-events: none;
+}
+
+.hero {
+  animation: heroFade 0.9s ease-out both;
+}
+
+@keyframes heroFade {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hero-title {
+  animation: heroText 0.6s ease-out both;
+}
+
+.hero-subtitle {
+  animation: heroText 0.6s ease-out 0.15s both;
+}
+
+@keyframes heroText {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.suggestions {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: rgba(20,20,20,0.95);
+  border-radius: 12px;
+  overflow: hidden;
+  display: none;
+  z-index: 20;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.suggestion-item {
+  padding: 10px 14px;
+  cursor: pointer;
+  color: rgba(255,255,255,0.85);
+  transition: background 0.15s;
+}
+
+.suggestion-item:hover {
+  background: rgba(255,255,255,0.1);
 }
