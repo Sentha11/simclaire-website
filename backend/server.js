@@ -1148,6 +1148,44 @@ app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
+app.get("/api/account/purchases", async (req, res) => {
+  try {
+    if (!stripe) {
+      return res.status(500).json({ error: "Stripe not configured" });
+    }
+
+    const { email } = req.query;
+    if (!email) {
+      return res.status(400).json({ error: "Email is required" });
+    }
+
+    const sessions = await stripe.checkout.sessions.list({ limit: 100 });
+
+    const purchases = sessions.data
+      .filter(s => s.customer_details?.email === email)
+      .map(s => ({
+        id: s.id,
+        planName: s.metadata?.planName || "eSIM Plan",
+        sku: s.metadata?.productSku || "",
+        country: s.metadata?.country || "",
+        price: s.amount_total ? s.amount_total / 100 : 0,
+        currency: s.currency?.toUpperCase() || "GBP",
+        status: s.payment_status,
+        date: new Date(s.created * 1000).toISOString()
+      }));
+
+    res.json({
+      email,
+      totalPurchases: purchases.length,
+      purchases
+    });
+
+  } catch (err) {
+    console.error("Account lookup error:", err);
+    res.status(500).json({ error: "Failed to fetch account data" });
+  }
+});
+
 // =====================================================
 // 13) START SERVER
 // =====================================================
