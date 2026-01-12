@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="styles.css" />
 </head>
-
+<div id="header"></div>
 <body>
   <div class="hero account-hero">
     <div class="hero-content">
@@ -32,3 +32,11 @@
   <script src="account.js"></script>
 </body>
 </html>
+
+<script>
+  fetch('/header.html')
+    .then(res => res.text())
+    .then(html => {
+      document.getElementById('header').innerHTML = html;
+    });
+</script>
