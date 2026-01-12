@@ -30,62 +30,49 @@ html, body {
 }
 
 /* ===============================
-   BACKGROUND IMAGE LAYERS
+   MP4 SKY VIDEO BACKGROUND
 ================================ */
-.bg-layer {
+.sky-video {
   position: absolute;
   inset: 0;
-  background-size: cover;
-  background-position: center;
-  opacity: 0;
-  transition: opacity 2.5s ease-in-out;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
   z-index: 0;
-}
-
-/* Replace with your images */
-.bg-1 {
-  background-image: url("./images/sky-night-1.jpg");
-}
-.bg-2 {
-  background-image: url("./images/sky-night-2.jpg");
-}
-
-.bg-layer.active {
-  opacity: 1;
+  opacity: 0.85;
+  filter: brightness(0.85) contrast(1.05);
 }
 
 /* ===============================
-   STAR LAYERS (PURE CSS)
+   STAR LAYERS
 ================================ */
 .stars {
   position: absolute;
   inset: 0;
-  background-repeat: repeat;
   pointer-events: none;
   z-index: 1;
+  background-repeat: repeat;
 }
 
 /* Small stars */
 .stars-small {
   background-image:
     radial-gradient(1px 1px at 20px 30px, #fff, transparent),
-    radial-gradient(1px 1px at 100px 80px, #fff, transparent),
-    radial-gradient(1px 1px at 200px 120px, #fff, transparent),
-    radial-gradient(1px 1px at 300px 200px, #fff, transparent);
+    radial-gradient(1px 1px at 120px 90px, #fff, transparent),
+    radial-gradient(1px 1px at 220px 140px, #fff, transparent);
   background-size: 400px 400px;
-  animation: driftStars 120s linear infinite;
-  opacity: 0.4;
+  animation: driftStars 140s linear infinite;
+  opacity: 0.35;
 }
 
 /* Large stars */
 .stars-large {
   background-image:
-    radial-gradient(2px 2px at 50px 50px, #fff, transparent),
-    radial-gradient(2px 2px at 250px 150px, #fff, transparent),
-    radial-gradient(2px 2px at 350px 300px, #fff, transparent);
+    radial-gradient(2px 2px at 80px 60px, #fff, transparent),
+    radial-gradient(2px 2px at 280px 180px, #fff, transparent);
   background-size: 600px 600px;
-  animation: driftStarsReverse 180s linear infinite;
-  opacity: 0.25;
+  animation: driftStarsReverse 200s linear infinite;
+  opacity: 0.22;
 }
 
 @keyframes driftStars {
@@ -104,7 +91,7 @@ html, body {
 .hero-content {
   position: relative;
   z-index: 3;
-  max-width: 680px;
+  max-width: 720px;
   padding: 40px 20px;
   animation: heroFadeUp 1.2s ease forwards;
   opacity: 0;
@@ -113,7 +100,7 @@ html, body {
 @keyframes heroFadeUp {
   from {
     opacity: 0;
-    transform: translateY(16px);
+    transform: translateY(18px);
   }
   to {
     opacity: 1;
@@ -125,10 +112,12 @@ html, body {
    TOP LINKS
 ================================ */
 .top-links {
+  position: absolute;
+  top: 20px;
+  right: 24px;
   display: flex;
-  justify-content: center;
-  gap: 14px;
-  margin-bottom: 28px;
+  gap: 12px;
+  z-index: 5;
 }
 
 .top-btn {
@@ -142,9 +131,13 @@ html, body {
   transition: all 0.25s ease;
 }
 
-.top-btn:hover {
+.top-btn.primary {
   background: rgba(255,255,255,0.15);
-  border-color: rgba(255,255,255,0.4);
+}
+
+.top-btn:hover {
+  background: rgba(255,255,255,0.22);
+  border-color: rgba(255,255,255,0.45);
 }
 
 /* ===============================
@@ -153,8 +146,8 @@ html, body {
 .hero-content h1 {
   font-size: 64px;
   font-weight: 600;
-  letter-spacing: -0.02em;
-  margin-bottom: 12px;
+  letter-spacing: -0.03em;
+  margin-bottom: 14px;
 }
 
 .hero-content p {
@@ -172,24 +165,25 @@ html, body {
   gap: 12px;
   justify-content: center;
   flex-wrap: wrap;
+  position: relative;
 }
 
 .search-box input {
-  width: 320px;
+  width: 340px;
   max-width: 90vw;
   padding: 14px 18px;
-  border-radius: 12px;
+  border-radius: 14px;
   border: none;
   font-size: 15px;
   outline: none;
 }
 
 .search-box button {
-  padding: 14px 22px;
-  border-radius: 12px;
+  padding: 14px 24px;
+  border-radius: 14px;
   border: none;
   font-size: 15px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   background: #fff;
   color: #000;
@@ -198,7 +192,7 @@ html, body {
 
 .search-box button:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+  box-shadow: 0 8px 26px rgba(0,0,0,0.35);
 }
 
 /* ===============================
@@ -206,14 +200,14 @@ html, body {
 ================================ */
 .suggestions {
   position: absolute;
-  margin-top: 54px;
-  background: rgba(20,20,20,0.95);
-  backdrop-filter: blur(10px);
-  border-radius: 12px;
-  width: 320px;
+  top: 60px;
+  background: rgba(15,15,20,0.95);
+  backdrop-filter: blur(14px);
+  border-radius: 14px;
+  width: 340px;
   max-width: 90vw;
   overflow: hidden;
-  z-index: 10;
+  z-index: 20;
 }
 
 .suggestion-item {
@@ -227,54 +221,22 @@ html, body {
 }
 
 /* ===============================
-   RESULTS SECTION
+   SORT DROPDOWN
 ================================ */
-#results {
-  padding: 60px 20px 100px;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.plan {
-  background: rgba(255,255,255,0.06);
-  border-radius: 16px;
-  padding: 20px;
-  margin-bottom: 16px;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255,255,255,0.08);
-}
-
-/* ===============================
-   MOBILE
-================================ */
-@media (max-width: 600px) {
-  .hero-content h1 {
-    font-size: 44px;
-  }
-
-  .hero-content p {
-    font-size: 16px;
-  }
-
-  .top-links {
-    margin-bottom: 20px;
-  }
-}
-
 .sort-wrapper {
-  margin-top: 14px;
+  margin-top: 16px;
   display: flex;
   justify-content: center;
 }
 
 #priceSort {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.1);
   color: #fff;
   border: 1px solid rgba(255,255,255,0.25);
-  padding: 10px 14px;
-  border-radius: 10px;
+  padding: 10px 16px;
+  border-radius: 12px;
   font-size: 14px;
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(12px);
   cursor: pointer;
 }
 
@@ -282,34 +244,60 @@ html, body {
   color: #000;
 }
 
-/* Account page */
+/* ===============================
+   RESULTS SECTION
+================================ */
+#results {
+  padding: 70px 20px 120px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.plan {
+  background: rgba(255,255,255,0.07);
+  border-radius: 18px;
+  padding: 22px;
+  margin-bottom: 18px;
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(255,255,255,0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.plan:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 50px rgba(0,0,0,0.4);
+}
+
+/* ===============================
+   ACCOUNT PAGE
+================================ */
 .account-hero {
   min-height: 100vh;
 }
 
 .account-card {
   background: rgba(255,255,255,0.08);
-  backdrop-filter: blur(12px);
-  border-radius: 16px;
-  padding: 24px;
+  backdrop-filter: blur(14px);
+  border-radius: 18px;
+  padding: 26px;
   max-width: 420px;
   margin: 30px auto;
-  box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.45);
 }
 
 .account-card input {
   width: 100%;
   padding: 14px;
-  border-radius: 10px;
+  border-radius: 12px;
   border: none;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
   font-size: 16px;
 }
 
 .account-card button {
   width: 100%;
   padding: 14px;
-  border-radius: 10px;
+  border-radius: 12px;
   border: none;
   background: #ffffff;
   font-weight: 600;
@@ -317,39 +305,30 @@ html, body {
 }
 
 #accountResults {
-  max-width: 900px;
-  margin: 40px auto;
+  max-width: 1000px;
+  margin: 50px auto;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 20px;
+  gap: 22px;
 }
 
 .account-order {
-  background: rgba(255,255,255,0.06);
-  padding: 20px;
-  border-radius: 14px;
-  backdrop-filter: blur(10px);
+  background: rgba(255,255,255,0.07);
+  padding: 22px;
+  border-radius: 16px;
+  backdrop-filter: blur(12px);
 }
 
-.back-link {
-  background: rgba(255, 255, 255, 0.08);
-  padding: 8px 14px;
-  border-radius: 999px;
-  backdrop-filter: blur(8px);
-}
-
-.back-link:hover {
-  opacity: 1;
-  transform: translateX(-2px);
-}
-
+/* ===============================
+   HEADER
+================================ */
 .site-header {
   position: fixed;
   top: 0;
   width: 100%;
   z-index: 1000;
   background: rgba(10, 10, 20, 0.6);
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(14px);
   border-bottom: 1px solid rgba(255,255,255,0.08);
 }
 
@@ -382,7 +361,25 @@ html, body {
 }
 
 .account-btn {
-  padding: 6px 12px;
+  padding: 6px 14px;
   border-radius: 999px;
-  background: rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.14);
+}
+
+/* ===============================
+   MOBILE
+================================ */
+@media (max-width: 600px) {
+  .hero-content h1 {
+    font-size: 44px;
+  }
+
+  .hero-content p {
+    font-size: 16px;
+  }
+
+  .top-links {
+    top: 14px;
+    right: 14px;
+  }
 }

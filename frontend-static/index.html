@@ -6,21 +6,34 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="styles.css" />
 </head>
+
 <body>
-    <div id="header"></div>
-   <div class="top-links">
-        <a href="/faq.html" class="top-btn">FAQ</a>
-        <a href="/support.html" class="top-btn">Support</a>
-        <a href="/account.html" class="top-btn primary">Account</a>
-    </div>
-  <!-- 🌌 HERO BACKGROUND STACK -->
+
+  <!-- Shared header -->
+  <div id="header"></div>
+
+  <!-- Top Nav Links -->
+  <div class="top-links">
+    <a href="/faq.html" class="top-btn">FAQ</a>
+    <a href="/support.html" class="top-btn">Support</a>
+    <a href="/account.html" class="top-btn primary">Account</a>
+  </div>
+
+  <!-- 🌌 HERO -->
   <div class="hero">
 
-    <!-- Background photo layers -->
-    <div class="bg-layer bg-1 active"></div>
-    <div class="bg-layer bg-2"></div>
+    <!-- 🎥 MP4 Sky Background -->
+    <video
+      class="sky-video"
+      autoplay
+      muted
+      loop
+      playsinline
+    >
+      <source src="/videos/sky-night-1.mp4" type="video/mp4" />
+    </video>
 
-    <!-- Star layers -->
+    <!-- ✨ Star Layers -->
     <div class="stars stars-small"></div>
     <div class="stars stars-large"></div>
 
@@ -38,28 +51,32 @@
         <div id="suggestions" class="suggestions"></div>
         <button onclick="searchPlans()">Browse Plans</button>
       </div>
+
+      <!-- Sort -->
       <div class="sort-wrapper">
         <select id="priceSort" onchange="sortPlans()">
-            <option value="">Sort by</option>
-            <option value="low-high">Price: Low → High</option>
-            <option value="high-low">Price: High → Low</option>
+          <option value="">Sort by</option>
+          <option value="low-high">Price: Low → High</option>
+          <option value="high-low">Price: High → Low</option>
         </select>
       </div>
-
     </div>
+
   </div>
 
   <!-- Results -->
   <div id="results"></div>
 
   <script src="app.js"></script>
+
+  <!-- Header loader -->
+  <script>
+    fetch('/header.html')
+      .then(res => res.text())
+      .then(html => {
+        document.getElementById('header').innerHTML = html;
+      });
+  </script>
+
 </body>
 </html>
-
-<script>
-  fetch('/header.html')
-    .then(res => res.text())
-    .then(html => {
-      document.getElementById('header').innerHTML = html;
-    });
-</script>
