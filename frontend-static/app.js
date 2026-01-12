@@ -1,5 +1,5 @@
 const BACKEND_URL = "https://simclaire-website-backend.onrender.com";
-
+let currentPlans = [];
 /* =========================
    SEARCH + LOAD PLANS
 ========================= */
@@ -20,6 +20,9 @@ async function searchPlans() {
     );
 
     const plans = await res.json();
+    currentPlans = plans;
+    renderPlans(plans);
+    return;
     resultsDiv.innerHTML = "";
 
     if (!plans.length) {
@@ -134,3 +137,81 @@ input.addEventListener("input", () => {
 
   suggestions.style.display = "block";
 });
+
+/* ===============================
+   HERO BACKGROUND CROSSFADE
+================================ */
+
+const backgrounds = document.querySelectorAll(".bg-layer");
+let currentBg = 0;
+
+setInterval(() => {
+  backgrounds[currentBg].classList.remove("active");
+  currentBg = (currentBg + 1) % backgrounds.length;
+  backgrounds[currentBg].classList.add("active");
+}, 10000); // 10 seconds
+
+/* ===============================
+   STAR PARALLAX EFFECT
+================================ */
+
+const starsSmall = document.querySelector(".stars-small");
+const starsLarge = document.querySelector(".stars-large");
+
+document.addEventListener("mousemove", (e) => {
+  const x = (e.clientX / window.innerWidth - 0.5) * 20;
+  const y = (e.clientY / window.innerHeight - 0.5) * 20;
+
+  starsSmall.style.transform = `translate(${x}px, ${y}px)`;
+  starsLarge.style.transform = `translate(${x * 1.8}px, ${y * 1.8}px)`;
+});
+
+if (window.innerWidth < 768) {
+  document.removeEventListener("mousemove", () => {});
+}
+
+function sortPlans() {
+  const sortValue = document.getElementById("priceSort").value;
+  let sorted = [...currentPlans];
+
+  if (sortValue === "low-high") {
+    sorted.sort((a, b) => Number(a.price) - Number(b.price));
+  }
+
+  if (sortValue === "high-low") {
+    sorted.sort((a, b) => Number(b.price) - Number(a.price));
+  }
+
+  renderPlans(sorted);
+}
+
+function renderPlans(plans) {
+  const resultsDiv = document.getElementById("results");
+  resultsDiv.innerHTML = "";
+
+  if (!plans.length) {
+    resultsDiv.innerHTML = "No plans found.";
+    return;
+  }
+
+  plans.forEach(p => {
+    const div = document.createElement("div");
+    div.className = "plan";
+
+    div.innerHTML = `
+      <h3>${p.name}</h3>
+      <p>📶 Data: ${p.data}</p>
+      <p>📅 Validity: ${p.validity} days</p>
+      <p>💷 Price: £${p.price}</p>
+      <button onclick="checkout(
+        '${p.sku}',
+        '${p.name}',
+        '${p.price}',
+        '${p.country}',
+        '${p.destinationId}'
+      )">Buy Now</button>
+    `;
+
+    resultsDiv.appendChild(div);
+  });
+}

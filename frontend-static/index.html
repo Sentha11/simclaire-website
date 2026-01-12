@@ -37,6 +37,13 @@
         <div id="suggestions" class="suggestions"></div>
         <button onclick="searchPlans()">Browse Plans</button>
       </div>
+      <div class="sort-wrapper">
+        <select id="priceSort" onchange="sortPlans()">
+            <option value="">Sort by</option>
+            <option value="low-high">Price: Low → High</option>
+            <option value="high-low">Price: High → Low</option>
+        </select>
+      </div>
 
     </div>
   </div>
