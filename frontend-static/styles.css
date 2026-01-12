@@ -281,3 +281,52 @@ html, body {
 #priceSort option {
   color: #000;
 }
+
+/* Account page */
+.account-hero {
+  min-height: 100vh;
+}
+
+.account-card {
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(12px);
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 420px;
+  margin: 30px auto;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+}
+
+.account-card input {
+  width: 100%;
+  padding: 14px;
+  border-radius: 10px;
+  border: none;
+  margin-bottom: 12px;
+  font-size: 16px;
+}
+
+.account-card button {
+  width: 100%;
+  padding: 14px;
+  border-radius: 10px;
+  border: none;
+  background: #ffffff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+#accountResults {
+  max-width: 900px;
+  margin: 40px auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.account-order {
+  background: rgba(255,255,255,0.06);
+  padding: 20px;
+  border-radius: 14px;
+  backdrop-filter: blur(10px);
+}

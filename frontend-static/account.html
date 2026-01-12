@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>My Account • SimClaire</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <div class="hero account-hero">
+    <div class="hero-content">
+      <h1>My Account</h1>
+      <p>View your eSIMs and purchases</p>
+
+      <div class="account-card">
+        <input
+          id="accountEmail"
+          type="email"
+          placeholder="Enter your email address"
+        />
+        <button onclick="loadAccount()">View Account</button>
+
+        <div id="accountStatus"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="accountResults"></div>
+
+  <script src="account.js"></script>
+</body>
+</html>
