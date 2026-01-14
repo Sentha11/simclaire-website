@@ -2,52 +2,51 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FAQ – SimClaire</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
 
-<header class="nav">
-  <a href="/" class="logo">SimClaire</a>
-  <nav>
-    <a href="/faq.html">FAQ</a>
-    <a href="/support.html">Support</a>
-  </nav>
-</header>
+<div class="hero account-hero">
+  <div class="stars stars-small"></div>
+  <div class="stars stars-large"></div>
 
-<section class="page">
-  <h1>Frequently Asked Questions</h1>
+  <div class="glass-card faq-card">
+    <a href="/" class="back-link">← Back to Home</a>
+    <h1>Frequently Asked Questions</h1>
 
-  <div class="faq">
-    <h3>📶 When does my eSIM activate?</h3>
-    <p>Your eSIM activates automatically when you arrive at your destination or when you enable it.</p>
+    <div class="faq-item">
+      <button class="faq-question">What is an eSIM?</button>
+      <div class="faq-answer">
+        An eSIM is a digital SIM that lets you activate a mobile plan without a physical SIM card.
+      </div>
+    </div>
 
-    <h3>📱 Is my phone compatible?</h3>
-    <p>Your device must support eSIM. Most modern iPhones, Samsung, and Pixel devices are supported.</p>
+    <div class="faq-item">
+      <button class="faq-question">How do I activate my eSIM?</button>
+      <div class="faq-answer">
+        After purchase, you’ll receive QR code instructions by email. Scan and install.
+      </div>
+    </div>
 
-    <h3>🌍 Can I use it in multiple countries?</h3>
-    <p>Each plan is country-specific unless stated otherwise.</p>
-
-    <h3>🔄 Can I top up?</h3>
-    <p>Top-ups are not currently supported. You can purchase another plan anytime.</p>
-
-    <h3>🧾 Will I receive a receipt?</h3>
-    <p>Yes. Stripe automatically emails your receipt after payment.</p>
+    <div class="faq-item">
+      <button class="faq-question">Can I reuse my eSIM?</button>
+      <div class="faq-answer">
+        No. Each eSIM is tied to one device and one plan.
+      </div>
+    </div>
   </div>
-</section>
+</div>
 
-<footer class="footer">
-  <p>© SimClaire • Travel smarter</p>
-</footer>
+<script>
+  document.querySelectorAll('.faq-question').forEach(btn => {
+    btn.onclick = () => {
+      const answer = btn.nextElementSibling;
+      answer.style.display = answer.style.display === 'block' ? 'none' : 'block';
+    };
+  });
+</script>
 
 </body>
 </html>
-
-<script>
-  fetch('/header.html')
-    .then(res => res.text())
-    .then(html => {
-      document.getElementById('header').innerHTML = html;
-    });
-</script>

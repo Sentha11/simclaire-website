@@ -2,41 +2,28 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>My Account • SimClaire</title>
+  <title>My Account – SimClaire</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="styles.css" />
 </head>
-
 <body>
-  <div class="hero account-hero">
-    <div class="hero-content">
+
+<div class="hero account-hero">
+  <div class="stars stars-small"></div>
+  <div class="stars stars-large"></div>
+
+  <div class="glass-card account-card">
     <a href="/" class="back-link">← Back to Home</a>
-      <h1>My Account</h1>
-      <p>View your eSIMs and purchases</p>
+    <h1>My Account</h1>
+    <p>View your eSIMs and purchases</p>
 
-      <div class="account-card">
-        <input
-          id="accountEmail"
-          type="email"
-          placeholder="Enter your email address"
-        />
-        <button onclick="loadAccount()">View Account</button>
+    <input id="emailInput" placeholder="Enter your email address" />
+    <button onclick="loadAccount()">View Account</button>
 
-        <div id="accountStatus"></div>
-      </div>
-    </div>
+    <div id="accountResults"></div>
   </div>
+</div>
 
-  <div id="accountResults"></div>
-
-  <script src="account.js"></script>
+<script src="account.js"></script>
 </body>
 </html>
-
-<script>
-  fetch('/header.html')
-    .then(res => res.text())
-    .then(html => {
-      document.getElementById('header').innerHTML = html;
-    });
-</script>

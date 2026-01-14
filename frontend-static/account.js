@@ -1,48 +1,36 @@
 const BACKEND_URL = "https://simclaire-website-backend.onrender.com";
 
 async function loadAccount() {
-  const email = document.getElementById("accountEmail").value.trim();
-  const status = document.getElementById("accountStatus");
-  const results = document.getElementById("accountResults");
+  const email = document.getElementById('emailInput').value.trim();
+  const results = document.getElementById('accountResults');
 
   if (!email) {
-    status.innerText = "Please enter your email.";
+    results.innerHTML = '<p>Please enter an email.</p>';
     return;
   }
 
-  status.innerText = "Loading your account...";
-  results.innerHTML = "";
+  results.innerHTML = 'Loading…';
 
   try {
-    const res = await fetch(
-      `${BACKEND_URL}/api/account/orders?email=${encodeURIComponent(email)}`
-    );
-
+    const res = await fetch(`${BACKEND_URL}/api/account/purchases?email=${encodeURIComponent(email)}`);
     const data = await res.json();
 
     if (!data.length) {
-      status.innerText = "No purchases found for this email.";
+      results.innerHTML = '<p>No purchases found for this email.</p>';
       return;
     }
 
-    status.innerText = "";
-
-    data.forEach(order => {
-      const div = document.createElement("div");
-      div.className = "account-order";
-
-      div.innerHTML = `
-        <h3>${order.planName}</h3>
-        <p>📍 Country: ${order.country}</p>
-        <p>📦 Status: <strong>${order.status}</strong></p>
-        <p>📧 Email: ${order.email}</p>
-      `;
-
-      results.appendChild(div);
-    });
+    results.innerHTML = data.map(p => `
+      <div class="account-order">
+        <h3>${p.productName}</h3>
+        <p>Data: ${p.data}</p>
+        <p>Validity: ${p.validity}</p>
+        <p>Status: ${p.status}</p>
+        <button>View eSIM Instructions</button>
+      </div>
+    `).join('');
 
   } catch (err) {
-    console.error(err);
-    status.innerText = "Error loading account.";
+    results.innerHTML = '<p>Error loading account.</p>';
   }
 }

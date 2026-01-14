@@ -416,3 +416,34 @@ html, body {
 .account-hero {
   padding-top: 64px;
 }
+
+.faq-card, .support-card {
+  max-width: 700px;
+  margin: auto;
+  padding: 30px;
+}
+
+.faq-item {
+  margin-top: 20px;
+}
+
+.support-btn {
+  display: block;
+  margin: 16px 0;
+  padding: 14px;
+  text-align: center;
+  background: rgba(255,255,255,0.12);
+  border-radius: 12px;
+  text-decoration: none;
+  color: #fff;
+}
+
+.support-btn:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+.support-note {
+  opacity: 0.7;
+  font-size: 14px;
+  margin-top: 12px;
+}
