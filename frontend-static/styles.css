@@ -447,3 +447,52 @@ html, body {
   font-size: 14px;
   margin-top: 12px;
 }
+
+/* Chat CTA pulse */
+@keyframes chatPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(255,255,255,0.35); }
+  70%  { box-shadow: 0 0 0 12px rgba(255,255,255,0); }
+  100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); }
+}
+
+/* Target Tawk widget iframe */
+iframe[src*="tawk.to"] {
+  animation: chatPulse 3.5s infinite;
+  border-radius: 50% !important;
+}
+
+.support-options {
+  text-align: center;
+  padding: 80px 20px;
+}
+
+.support-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+  max-width: 700px;
+  margin: 40px auto 0;
+}
+
+.support-card {
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(12px);
+  border-radius: 16px;
+  padding: 24px;
+  color: white;
+  text-decoration: none;
+  border: 1px solid rgba(255,255,255,0.12);
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.support-card:hover {
+  transform: translateY(-3px);
+  background: rgba(255,255,255,0.12);
+}
+
+.support-card span {
+  display: block;
+  opacity: 0.8;
+  margin-top: 6px;
+  font-size: 14px;
+}
