@@ -1133,21 +1133,6 @@ app.get("/success", (req, res) => {
   `);
 });
 
-// =====================================================
-// WEBSITE ROUTE FALLBACK (SPA SUPPORT)
-// =====================================================
-app.get("*", (req, res) => {
-  // Allow API & webhook routes to behave normally
-  if (
-    req.path.startsWith("/api") ||
-    req.path.startsWith("/webhook")
-  ) {
-    return res.status(404).json({ error: "Not found" });
-  }
-
-  res.sendFile(path.join(__dirname, "public", "index.html"));
-});
-
 app.get("/api/account/purchases", async (req, res) => {
   try {
     if (!stripe) {
@@ -1162,7 +1147,9 @@ app.get("/api/account/purchases", async (req, res) => {
     const sessions = await stripe.checkout.sessions.list({ limit: 100 });
 
     const purchases = sessions.data
-      .filter(s => s.customer_details?.email === email)
+      .filter(s =>
+        s.metadata?.email?.toLowerCase() === email.toLowerCase()
+      )
       .map(s => ({
         id: s.id,
         planName: s.metadata?.planName || "eSIM Plan",
@@ -1185,6 +1172,22 @@ app.get("/api/account/purchases", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch account data" });
   }
 });
+
+// =====================================================
+// WEBSITE ROUTE FALLBACK (SPA SUPPORT)
+// =====================================================
+app.get("*", (req, res) => {
+  // Allow API & webhook routes to behave normally
+  if (
+    req.path.startsWith("/api") ||
+    req.path.startsWith("/webhook")
+  ) {
+    return res.status(404).json({ error: "Not found" });
+  }
+
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
 
 // =====================================================
 // 13) START SERVER
