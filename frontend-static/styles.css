@@ -535,19 +535,24 @@ iframe[src*="tawk.to"] {
    SORT DROPDOWN
 ================================ */
 
-.sort-wrapper {
-  display: flex;
-  justify-content: center;
+#priceSort {
+  width: auto;              /* 🔥 KEY LINE */
+  min-width: unset;         /* 🔥 KEY LINE */
+  max-width: max-content;   /* 🔥 KEY LINE */
+
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 14px;
+
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.3);
+  backdrop-filter: blur(10px);
+
+  cursor: pointer;
+  appearance: none;
 }
 
 #priceSort {
-  width: auto;
-  min-width: unset;
-  padding: 8px 14px;
-  border-radius: 999px;
-  font-size: 13px;
-}
-
-#priceSort:hover {
-  background: rgba(255,255,255,0.14);
+  padding-right: 32px;
 }
