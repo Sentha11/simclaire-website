@@ -263,6 +263,13 @@ document.querySelectorAll(".top-btn").forEach(btn => {
 });
 
 async function startStripeCheckout(payload) {
+
+  console.log("🧪 CHECKOUT PAYLOAD", {
+  sku: plan.sku,
+  productType: plan.productType,
+  typeof: typeof plan.productType
+});
+
   try {
     const res = await fetch(
       `${BACKEND_URL}/api/payments/create-checkout-session`,
@@ -276,7 +283,7 @@ async function startStripeCheckout(payload) {
           currency: "gbp",
           planName: plan.name,
           productSku: plan.sku,
-          productType: selectedPlan.productType, // ✅ REAL VALUE ONLY
+          productType: plan.productType, // ✅ REAL VALUE ONLY
           data: plan.data,
           validity: plan.validity,
           country: plan.country,
@@ -289,6 +296,13 @@ async function startStripeCheckout(payload) {
     const data = await res.json();
     window.location.href = data.url; // ✅ THIS STAYS
 
+
+    if (!productType) {
+      console.error("❌ BLOCKED: Missing productType", req.body);
+      return res.status(400).json({
+        error: "productType missing – checkout blocked"
+      });
+    }
 
     if (!data.url) {
       alert("Stripe checkout failed");
