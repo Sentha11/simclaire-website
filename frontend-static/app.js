@@ -261,3 +261,43 @@ document.querySelectorAll(".top-btn").forEach(btn => {
     btn.classList.add("active");
   }
 });
+
+async function startStripeCheckout(payload) {
+  try {
+    const res = await fetch(
+      `${BACKEND_URL}/api/payments/create-checkout-session`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          quantity: 1,
+          price: plan.price,
+          currency: "gbp",
+          planName: plan.name,
+          productSku: plan.sku,
+          productType: plan.productType, // ✅ REAL VALUE ONLY
+          data: plan.data,
+          validity: plan.validity,
+          country: plan.country,
+          destinationId: plan.destinationId,
+          mobile
+        })
+      }
+    );
+
+    const data = await res.json();
+    window.location.href = data.url; // ✅ THIS STAYS
+
+
+    if (!data.url) {
+      alert("Stripe checkout failed");
+      console.error(data);
+      return;
+    }
+
+  } catch (err) {
+    console.error("Checkout error", err);
+    alert("Unable to start checkout");
+  }
+}

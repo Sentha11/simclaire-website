@@ -99,7 +99,7 @@ app.use(express.json());
 // =====================================================
 // STATIC WEBSITE (NO VITE / NO REACT)
 // =====================================================
-app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static(path.join(__dirname, "frontend-static")));
 
 // =====================================================
 // 3) CONFIG (DO NOT CHANGE ENV NAMES)
@@ -1217,7 +1217,7 @@ app.get("*", (req, res) => {
     return res.status(404).json({ error: "Not found" });
   }
 
-  res.sendFile(path.join(__dirname, "public", "index.html"));
+  res.sendFile(path.join(__dirname, "frontend-static", "index.html"));
 });
 
 
