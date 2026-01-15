@@ -327,12 +327,7 @@ app.get("/api/web/esim/products", async (req, res) => {
           name: p.productName,
           sku: p.productSku,
           productType: String(
-            p.productType ??
-            p.type ??
-            p.product_type ??
-            p.category ??
-            ""
-          ),
+            p.productType ?? ""),
           data: p.productDataAllowance,
           validity: csv.validity || p.validity,
           price: csv.finalPrice,

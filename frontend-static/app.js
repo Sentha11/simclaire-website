@@ -276,7 +276,7 @@ async function startStripeCheckout(payload) {
           currency: "gbp",
           planName: plan.name,
           productSku: plan.sku,
-          productType: plan.productType, // ✅ REAL VALUE ONLY
+          productType: selectedPlan.productType, // ✅ REAL VALUE ONLY
           data: plan.data,
           validity: plan.validity,
           country: plan.country,
