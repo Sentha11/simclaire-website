@@ -326,8 +326,7 @@ app.get("/api/web/esim/products", async (req, res) => {
         return {
           name: p.productName,
           sku: p.productSku,
-          productType: p.productType || p.type || p.productType,
-          price: csv.finalPrice,
+          productType: p.productType,
           data: p.productDataAllowance,
           validity: csv.validity || p.validity,
           country: match.destinationName || match.name,
@@ -335,12 +334,16 @@ app.get("/api/web/esim/products", async (req, res) => {
         };
       });
 
+      console.log("🧪 SAMPLE PRODUCT", products[0]);
+
     res.json(results);
   } catch (err) {
     console.error("❌ WEB PRODUCT ERROR:", err.message);
     res.status(500).json({ error: "Failed to load products" });
   }
 });
+
+
 
 // =====================================================
 // LOAD PRICING CSV ON STARTUP
@@ -460,7 +463,7 @@ console.log("💷 Stripe unitAmount:", unitAmount);
       metadata: {
         planName: planName || "",
         productSku: productSku || "",
-        productType: String(productType || ""),
+        productType: productType,
         data: data || "",
         validity: String(validity ?? ""),
         quantity: String(quantity ?? ""),
@@ -550,7 +553,7 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
           const payload = {
             items: [
               {
-                type: Number(metadata.productType),
+                type: metadata.productType,
                 sku: metadata.productSku,
                 quantity: Number(metadata.quantity || 1),
                 mobileno: mobileno,
