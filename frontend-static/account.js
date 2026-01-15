@@ -11,7 +11,7 @@ async function loadAccount() {
 
   try {
     const res = await fetch(
-      /api/account/purchases?email=${encodeURIComponent(email)}
+      `${BACKEND_URL}/api/account/purchases?email=${encodeURIComponent(email)}`
     );
     const data = await res.json();
 
@@ -34,7 +34,7 @@ async function loadAccount() {
 
           <div class="account-actions">
             <button disabled>View Instructions</button>
-            <button disabled>Resend Instructions</button>
+            <button onclick="resendInstructions('${p.id}')"> Resend Instructions</button>
           </div>
         </div>
       `)
@@ -43,4 +43,14 @@ async function loadAccount() {
   } catch (err) {
     results.innerHTML = "<p>Error loading account data.</p>";
   }
+}
+
+async function resendInstructions(sessionId) {
+  await fetch("/api/account/resend", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ sessionId })
+  });
+
+  alert("Instructions resent (test mode).");
 }
