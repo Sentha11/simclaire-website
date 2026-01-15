@@ -1,6 +1,8 @@
 const BACKEND_URL = "https://simclaire-website-backend.onrender.com";
 let currentPlans = [];
 
+const sortWrapper = document.getElementById("sortWrapper");
+
 /* =========================
    SEARCH + LOAD PLANS
 ========================= */
@@ -21,6 +23,11 @@ async function searchPlans() {
     );
 
     const plans = await res.json();
+    if (plans.length > 0) {
+      sortWrapper?.classList.remove("hidden");
+    } else {
+      sortWrapper?.classList.add("hidden");
+    }
     currentPlans = plans;
 
     // ✅ Hide homepage FAQ when browsing plans
@@ -73,9 +80,11 @@ async function checkout(sku, name, price, country, destinationId) {
 ========================= */
 function renderPlans(plans) {
   const resultsDiv = document.getElementById("results");
+  sortWrapper?.classList.add("hidden");
   resultsDiv.innerHTML = "";
 
   if (!plans || !plans.length) {
+    sortWrapper?.classList.add("hidden");
     resultsDiv.innerHTML = "No plans found.";
     return;
   }

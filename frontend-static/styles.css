@@ -542,9 +542,13 @@ iframe[src*="tawk.to"] {
 ================================ */
 
 .sort-wrapper {
-  margin-top: 14px;
-  display: inline-flex;
-  justify-content: center;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.sort-wrapper.hidden {
+  opacity: 0;
+  transform: translateY(6px);
+  pointer-events: none;
 }
 
 #priceSort {
