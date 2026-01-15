@@ -326,11 +326,18 @@ app.get("/api/web/esim/products", async (req, res) => {
         return {
           name: p.productName,
           sku: p.productSku,
-          productType: p.productType,
+          productType: String(
+            p.productType ??
+            p.type ??
+            p.product_type ??
+            p.category ??
+            ""
+          ),
           data: p.productDataAllowance,
           validity: csv.validity || p.validity,
+          price: csv.finalPrice,
           country: match.destinationName || match.name,
-          destinationId,
+          destinationId
         };
       });
 
