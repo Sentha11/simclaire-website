@@ -459,7 +459,7 @@ console.log("💷 Stripe unitAmount:", unitAmount);
       metadata: {
         planName: planName || "",
         productSku: productSku || "",
-        productType: String(productType ?? ""),
+        productType: "esim",
         data: data || "",
         validity: String(validity ?? ""),
         quantity: String(quantity ?? ""),
@@ -549,8 +549,7 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
           const payload = {
             items: [
               {
-                type: String(
-                pricingMap.get(metadata.productSku)),
+                type: "esim",
                 sku: metadata.productSku,
                 quantity: Number(metadata.quantity || 1),
                 mobileno: mobileno,
@@ -1169,31 +1168,21 @@ app.get("/success", (req, res) => {
 
 app.get("/api/account/purchases", async (req, res) => {
   try {
-    if (!stripe) {
-      return res.status(500).json({ error: "Stripe not configured" });
-    }
-
     const { email } = req.query;
     if (!email) {
       return res.status(400).json({ error: "Email is required" });
     }
 
-    const sessions = await stripe.checkout.sessions.list({ limit: 100 });
+    let records = [];
+    try {
+      records = JSON.parse(
+        fs.readFileSync(FULFILLMENTS_PATH, "utf8")
+      );
+    } catch {}
 
-    const purchases = sessions.data
-      .filter(s =>
-        s.metadata?.email?.toLowerCase() === email.toLowerCase()
-      )
-      .map(s => ({
-        id: s.id,
-        planName: s.metadata?.planName || "eSIM Plan",
-        sku: s.metadata?.productSku || "",
-        country: s.metadata?.country || "",
-        price: s.amount_total ? s.amount_total / 100 : 0,
-        currency: s.currency?.toUpperCase() || "GBP",
-        status: s.payment_status,
-        date: new Date(s.created * 1000).toISOString()
-      }));
+    const purchases = records.filter(
+      r => r.email.toLowerCase() === email.toLowerCase()
+    );
 
     res.json({
       email,
@@ -1207,34 +1196,6 @@ app.get("/api/account/purchases", async (req, res) => {
   }
 });
 
-// =====================================================
-// PHASE 1 – RESEND eSIM INSTRUCTIONS
-// =====================================================
-app.post("/api/account/resend", async (req, res) => {
-  const { sessionId } = req.body;
-
-  if (!sessionId) {
-    return res.status(400).json({ error: "sessionId required" });
-  }
-
-  let fulfillments = [];
-  try {
-    fulfillments = JSON.parse(
-      fs.readFileSync(FULFILLMENTS_PATH, "utf8")
-    );
-  } catch {}
-
-  const record = fulfillments.find(f => f.sessionId === sessionId);
-
-  if (!record) {
-    return res.status(404).json({ error: "Instructions not found" });
-  }
-
-  // PHASE 1: logging only (email wiring later)
-  console.log("📧 Resend requested:", record);
-
-  res.json({ ok: true });
-});
 
 // =====================================================
 // WEBSITE ROUTE FALLBACK (SPA SUPPORT)

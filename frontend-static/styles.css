@@ -604,3 +604,19 @@ button:focus-visible,
     0 0 0 2px rgba(120,180,255,0.6),
     0 10px 30px rgba(0,0,0,0.4);
 }
+
+.account-results {
+  margin-top: 20px;
+  display: grid;
+  gap: 16px;
+}
+
+.account-card {
+  padding: 20px;
+}
+
+.account-actions {
+  margin-top: 12px;
+  display: flex;
+  gap: 10px;
+}
