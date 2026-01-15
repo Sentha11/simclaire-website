@@ -326,6 +326,7 @@ app.get("/api/web/esim/products", async (req, res) => {
         return {
           name: p.productName,
           sku: p.productSku,
+          productType: p.productType || p.type || p.productType,
           price: csv.finalPrice,
           data: p.productDataAllowance,
           validity: csv.validity || p.validity,
@@ -459,7 +460,7 @@ console.log("💷 Stripe unitAmount:", unitAmount);
       metadata: {
         planName: planName || "",
         productSku: productSku || "",
-        productType: "esim",
+        productType: String(productType || ""),
         data: data || "",
         validity: String(validity ?? ""),
         quantity: String(quantity ?? ""),
@@ -549,7 +550,7 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
           const payload = {
             items: [
               {
-                type: "esim",
+                type: Number(metadata.productType),
                 sku: metadata.productSku,
                 quantity: Number(metadata.quantity || 1),
                 mobileno: mobileno,
@@ -558,7 +559,10 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
             ],
           };
          
-
+          console.log("🧪 eSIM TYPE CHECK", {
+              sku: metadata.productSku,
+              productType: metadata.productType,
+            });
           console.log("📤 purchaseesim payload:", payload);
 
           const esimRes = await esimRequest("post", "/api/esim/purchaseesim", {
@@ -1063,6 +1067,7 @@ return res.send(twiml("📧 Enter your email address for the Stripe receipt:"));
         currency: "gbp",
         planName: p.productName,
         productSku: p.productSku,
+        productType: p.productType,
         data: p.productDataAllowance,
         validity: p.validity,
         country: session.country,
