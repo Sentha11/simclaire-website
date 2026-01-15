@@ -27,6 +27,26 @@ const { HttpsProxyAgent } = require("https-proxy-agent");
 const { SocksProxyAgent } = require("socks-proxy-agent");
 const twilio = require("twilio");
 const sgMail = require("@sendgrid/mail");
+
+// =====================================================
+// PHASE 1 – FULFILLMENT STORAGE (JSON)
+// =====================================================
+const FULFILLMENTS_PATH = path.join(__dirname, "data", "fulfillments.json");
+
+function saveFulfillment(entry) {
+  let existing = [];
+  try {
+    existing = JSON.parse(fs.readFileSync(FULFILLMENTS_PATH, "utf8"));
+  } catch {}
+
+  existing.push(entry);
+
+  fs.writeFileSync(
+    FULFILLMENTS_PATH,
+    JSON.stringify(existing, null, 2)
+  );
+}
+// =====================================================
 const WHATSAPP_FROM = `whatsapp:${process.env.TWILIO_WHATSAPP_FROM}`;
 
 const USERNAME = process.env.ESIM_USERNAME;
@@ -556,6 +576,20 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
           console.log("✅ eSIM purchased");
           console.log("📄 Transaction ID:", transactionId);
           console.log("🔑 Activation Code:", activationCode);
+
+          // =====================================================
+          // PHASE 1 – SAVE FULFILLMENT RECORD
+          // =====================================================
+          saveFulfillment({
+            email: metadata.email,
+            sessionId: session.id,
+            sku: metadata.productSku,
+            planName: metadata.planName,
+            country: metadata.country,
+            activationCode,
+            transactionId,
+            createdAt: new Date().toISOString()
+          });
 
           //if (!metadata?.acceptedTerms) {
            // return res.status(400).json({
@@ -1171,6 +1205,35 @@ app.get("/api/account/purchases", async (req, res) => {
     console.error("Account lookup error:", err);
     res.status(500).json({ error: "Failed to fetch account data" });
   }
+});
+
+// =====================================================
+// PHASE 1 – RESEND eSIM INSTRUCTIONS
+// =====================================================
+app.post("/api/account/resend", async (req, res) => {
+  const { sessionId } = req.body;
+
+  if (!sessionId) {
+    return res.status(400).json({ error: "sessionId required" });
+  }
+
+  let fulfillments = [];
+  try {
+    fulfillments = JSON.parse(
+      fs.readFileSync(FULFILLMENTS_PATH, "utf8")
+    );
+  } catch {}
+
+  const record = fulfillments.find(f => f.sessionId === sessionId);
+
+  if (!record) {
+    return res.status(404).json({ error: "Instructions not found" });
+  }
+
+  // PHASE 1: logging only (email wiring later)
+  console.log("📧 Resend requested:", record);
+
+  res.json({ ok: true });
 });
 
 // =====================================================
