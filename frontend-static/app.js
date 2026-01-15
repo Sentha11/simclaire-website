@@ -27,6 +27,7 @@ async function searchPlans() {
     document.getElementById("homepage-faq")?.classList.add("hidden");
 
     renderPlans(plans);
+    hideHomepageFAQ();
     resultsDiv.scrollIntoView({ behavior: "smooth" });
 
   } catch (err) {
@@ -192,23 +193,62 @@ if (window.innerWidth >= 768) {
 }
 
 function goHome() {
-  // Clear results
-  const resultsDiv = document.getElementById("results");
-  resultsDiv.innerHTML = "";
-
-  // Clear input
-  const input = document.getElementById("countryInput");
-  if (input) input.value = "";
-
-  // Reset sort
-  const sort = document.getElementById("priceSort");
-  if (sort) sort.value = "";
-
-  // Show FAQ again
-  document.getElementById("homepage-faq")?.classList.remove("hidden");
-
-  // Scroll back to hero
-  document.querySelector(".hero")?.scrollIntoView({
-    behavior: "smooth"
-  });
+  window.location.href = "/";
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+  const homeBtn = document.querySelector('.top-btn[href="#"]');
+
+  if (!homeBtn) return;
+
+  const isHome =
+    window.location.pathname === "/" ||
+    window.location.pathname.includes("index.html");
+
+  if (isHome) {
+    homeBtn.style.display = "none";
+  }
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+  const homeBtn = document.querySelector('.top-btn[href="#"]');
+
+  if (!homeBtn) return;
+
+  const isHome =
+    window.location.pathname === "/" ||
+    window.location.pathname.includes("index.html");
+
+  if (isHome) {
+    homeBtn.style.display = "none";
+  }
+});
+
+function hideHomepageFAQ() {
+  document.getElementById("homepage-faq")?.classList.add("hidden");
+}
+
+function showHomepageFAQ() {
+  document.getElementById("homepage-faq")?.classList.remove("hidden");
+}
+
+function autoHideHomeLink() {
+  const homeLink = document.querySelector('.top-btn[data-home]');
+  if (!homeLink) return;
+
+  const isHome =
+    location.pathname === "/" ||
+    location.pathname.endsWith("index.html");
+
+  if (isHome) {
+    homeLink.style.display = "none";
+  }
+}
+
+document.addEventListener("DOMContentLoaded", autoHideHomeLink);
+
+document.querySelectorAll(".top-btn").forEach(btn => {
+  if (btn.getAttribute("href") === window.location.pathname) {
+    btn.classList.add("active");
+  }
+});

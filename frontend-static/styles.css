@@ -473,16 +473,22 @@ iframe[src*="tawk.to"] {
   font-size: 14px;
 }
 
+/* ===============================
+   FAQ ANIMATION
+================================ */
+
 #homepage-faq {
-  max-width: 900px;
-  margin: 80px auto;
-  padding: 0 20px;
-  transition: opacity 0.4s ease, transform 0.4s ease;
+  transition:
+    opacity 0.5s ease,
+    transform 0.5s ease,
+    max-height 0.5s ease;
 }
 
 #homepage-faq.hidden {
   opacity: 0;
-  transform: translateY(40px);
+  transform: translateY(20px);
+  max-height: 0;
+  overflow: hidden;
   pointer-events: none;
 }
 
@@ -555,4 +561,52 @@ iframe[src*="tawk.to"] {
 
 #priceSort {
   padding-right: 32px;
+}
+
+/* ===============================
+   GLASS BUTTON INTERACTION
+================================ */
+
+.top-btn,
+button,
+.account-btn,
+#priceSort {
+  position: relative;
+  transition: 
+    background 0.25s ease,
+    box-shadow 0.25s ease,
+    transform 0.15s ease;
+}
+
+/* Hover */
+.top-btn:hover,
+button:hover,
+.account-btn:hover,
+#priceSort:hover {
+  background: rgba(255, 255, 255, 0.18);
+  box-shadow: 
+    0 8px 24px rgba(0, 0, 0, 0.35),
+    inset 0 0 0 1px rgba(255,255,255,0.25);
+  transform: translateY(-1px);
+}
+
+/* Active / Click */
+.top-btn:active,
+button:active,
+.account-btn:active,
+#priceSort:active {
+  transform: translateY(0);
+  box-shadow:
+    0 4px 14px rgba(0,0,0,0.4),
+    inset 0 0 0 1px rgba(255,255,255,0.35);
+}
+
+/* Focus (keyboard / accessibility) */
+.top-btn:focus-visible,
+button:focus-visible,
+#priceSort:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px rgba(120,180,255,0.6),
+    0 10px 30px rgba(0,0,0,0.4);
 }
