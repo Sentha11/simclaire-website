@@ -89,7 +89,7 @@ if (process.env.QUOTAGUARD_URL) {
 // =====================================================
 
 // Stripe webhook MUST see raw body (only on this route)
-app.use("/webhook/stripe", bodyParser.raw({ type: "application/json" }));
+//app.use("/webhook/stripe", bodyParser.raw({ type: "application/json" }));
 
 app.use(cors());
 // Twilio WhatsApp webhooks are x-www-form-urlencoded
@@ -383,6 +383,19 @@ async function loadPricingCSV() {
   });
 }
 
+console.log("🧪 CHECKOUT REQUEST BODY", req.body);
+
+if (!productType) {
+  console.error("❌ productType missing BEFORE Stripe session", {
+    productSku,
+    productType,
+    body: req.body
+  });
+  return res.status(400).json({
+    error: "productType is required"
+  });
+}
+
 // =====================================================
 // 7) STRIPE CHECKOUT SESSION (KEEP WORKING)
 // =====================================================
@@ -465,7 +478,7 @@ console.log("💷 Stripe unitAmount:", unitAmount);
       metadata: {
         planName: planName || "",
         productSku: productSku || "",
-        productType: productType,
+        productType: String(productType),
         data: data || "",
         validity: String(validity ?? ""),
         quantity: String(quantity ?? ""),
