@@ -65,6 +65,103 @@ const app = express();
 app.set("trust proxy", true);
 
 // =====================================================
+// CSV PRICING (PROD FINAL PRICES)
+// =====================================================
+const pricingMap = new Map();
+
+// =====================================================
+// 1) QUOTAGUARD PROXY (eSIM API only)
+// =====================================================
+let proxyAgent = null;
+
+if (process.env.QUOTAGUARD_URL) {
+  proxyAgent = new HttpsProxyAgent(process.env.QUOTAGUARD_URL);
+  console.log("🛡 Using QuotaGuard STATIC HTTP proxy");
+} else if (process.env.QUOTAGUARD_SOCKS_URL) {
+  proxyAgent = new SocksProxyAgent(process.env.QUOTAGUARD_SOCKS_URL);
+  console.log("🛡 Using QuotaGuard SOCKS5 proxy");
+} else {
+  console.log("🟡 No QuotaGuard proxy configured");
+}
+
+// =====================================================
+// 2) CORE MIDDLEWARE (ORDER MATTERS)
+// =====================================================
+
+// Stripe webhook MUST see raw body (only on this route)
+//app.use("/webhook/stripe", bodyParser.raw({ type: "application/json" }));
+
+app.use(cors());
+// Twilio WhatsApp webhooks are x-www-form-urlencoded
+app.use(express.urlencoded({ extended: false }));
+// Normal JSON APIs
+app.use(express.json());
+// =====================================================
+// STATIC WEBSITE (NO VITE / NO REACT)
+// =====================================================
+app.use(express.static(path.join(__dirname, "frontend-static")));
+
+// =====================================================
+// 3) CONFIG (DO NOT CHANGE ENV NAMES)
+// =====================================================
+//const ESIM_BASE_URL = (process.env.ESIM_BASE_URL || "").replace(/\/+$/, ""); // your env: https://uat.esim-api.com
+const ESIM_USERNAME = process.env.ESIM_USERNAME;
+const ESIM_PASSWORD = process.env.ESIM_PASSWORD;
+
+const APP_BASE_URL =
+  process.env.APP_BASE_URL || "https://simclaire-website-backend.onrender.com";
+const BACKEND_BASE_URL =
+  process.env.BACKEND_BASE_URL || "https://simclaire-website-backend.onrender.com";
+
+const STRIPE_SUCCESS_URL =
+  process.env.STRIPE_SUCCESS_URL || `${APP_BASE_URL}/success`;
+const STRIPE_CANCEL_URL =
+  process.env.STRIPE_CANCEL_URL || `${APP_BASE_URL}/cancel`;
+
+// =====================================================
+// 4) TWILIO INIT (API KEY/SECRET for GitGuardian friendliness)
+// =====================================================
+let twilioClient = null;
+
+try {
+  if (
+    process.env.TWILIO_ACCOUNT_SID &&
+    process.env.TWILIO_API_KEY &&
+    process.env.TWILIO_API_SECRET
+  ) {
+    // ✅ Preferred: API Key + Secret (no auth token committed)
+    twilioClient = require("twilio")(
+      process.env.TWILIO_API_KEY,
+      process.env.TWILIO_API_SECRET,
+      { accountSid: process.env.TWILIO_ACCOUNT_SID }
+    );
+    console.log("📞 Twilio enabled (API KEY/SECRET)");
+  } else if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
+    // Fallback (still works)
+    twilioClient = twilio(
+      process.env.TWILIO_ACCOUNT_SID,
+      process.env.TWILIO_AUTH_TOKEN
+    );
+    console.log("📞 Twilio enabled (AUTH TOKEN fallback)");
+  } else {
+    console.log("🟡 Twilio not configured (missing creds)");
+  }
+} catch (e) {
+  console.log("🔴 Twilio init failed:", e.message);
+}
+
+// =====================================================
+// 5) STRIPE INIT (KEEP AS-IS / WORKING)
+// =====================================================
+let stripe = null;
+if (process.env.STRIPE_SECRET_KEY) {
+  stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+  console.log("💳 Stripe enabled");
+} else {
+  console.log("🟡 Stripe not configured");
+}
+
+// =====================================================
 // STRIPE WEBHOOK – FULL eSIM FULFILLMENT
 // =====================================================
 if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
@@ -240,103 +337,6 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
       res.json({ received: true });
     }
   );
-}
-
-// =====================================================
-// CSV PRICING (PROD FINAL PRICES)
-// =====================================================
-const pricingMap = new Map();
-
-// =====================================================
-// 1) QUOTAGUARD PROXY (eSIM API only)
-// =====================================================
-let proxyAgent = null;
-
-if (process.env.QUOTAGUARD_URL) {
-  proxyAgent = new HttpsProxyAgent(process.env.QUOTAGUARD_URL);
-  console.log("🛡 Using QuotaGuard STATIC HTTP proxy");
-} else if (process.env.QUOTAGUARD_SOCKS_URL) {
-  proxyAgent = new SocksProxyAgent(process.env.QUOTAGUARD_SOCKS_URL);
-  console.log("🛡 Using QuotaGuard SOCKS5 proxy");
-} else {
-  console.log("🟡 No QuotaGuard proxy configured");
-}
-
-// =====================================================
-// 2) CORE MIDDLEWARE (ORDER MATTERS)
-// =====================================================
-
-// Stripe webhook MUST see raw body (only on this route)
-//app.use("/webhook/stripe", bodyParser.raw({ type: "application/json" }));
-
-app.use(cors());
-// Twilio WhatsApp webhooks are x-www-form-urlencoded
-app.use(express.urlencoded({ extended: false }));
-// Normal JSON APIs
-app.use(express.json());
-// =====================================================
-// STATIC WEBSITE (NO VITE / NO REACT)
-// =====================================================
-app.use(express.static(path.join(__dirname, "frontend-static")));
-
-// =====================================================
-// 3) CONFIG (DO NOT CHANGE ENV NAMES)
-// =====================================================
-//const ESIM_BASE_URL = (process.env.ESIM_BASE_URL || "").replace(/\/+$/, ""); // your env: https://uat.esim-api.com
-const ESIM_USERNAME = process.env.ESIM_USERNAME;
-const ESIM_PASSWORD = process.env.ESIM_PASSWORD;
-
-const APP_BASE_URL =
-  process.env.APP_BASE_URL || "https://simclaire-website-backend.onrender.com";
-const BACKEND_BASE_URL =
-  process.env.BACKEND_BASE_URL || "https://simclaire-website-backend.onrender.com";
-
-const STRIPE_SUCCESS_URL =
-  process.env.STRIPE_SUCCESS_URL || `${APP_BASE_URL}/success`;
-const STRIPE_CANCEL_URL =
-  process.env.STRIPE_CANCEL_URL || `${APP_BASE_URL}/cancel`;
-
-// =====================================================
-// 4) TWILIO INIT (API KEY/SECRET for GitGuardian friendliness)
-// =====================================================
-let twilioClient = null;
-
-try {
-  if (
-    process.env.TWILIO_ACCOUNT_SID &&
-    process.env.TWILIO_API_KEY &&
-    process.env.TWILIO_API_SECRET
-  ) {
-    // ✅ Preferred: API Key + Secret (no auth token committed)
-    twilioClient = require("twilio")(
-      process.env.TWILIO_API_KEY,
-      process.env.TWILIO_API_SECRET,
-      { accountSid: process.env.TWILIO_ACCOUNT_SID }
-    );
-    console.log("📞 Twilio enabled (API KEY/SECRET)");
-  } else if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
-    // Fallback (still works)
-    twilioClient = twilio(
-      process.env.TWILIO_ACCOUNT_SID,
-      process.env.TWILIO_AUTH_TOKEN
-    );
-    console.log("📞 Twilio enabled (AUTH TOKEN fallback)");
-  } else {
-    console.log("🟡 Twilio not configured (missing creds)");
-  }
-} catch (e) {
-  console.log("🔴 Twilio init failed:", e.message);
-}
-
-// =====================================================
-// 5) STRIPE INIT (KEEP AS-IS / WORKING)
-// =====================================================
-let stripe = null;
-if (process.env.STRIPE_SECRET_KEY) {
-  stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
-  console.log("💳 Stripe enabled");
-} else {
-  console.log("🟡 Stripe not configured");
 }
 
 app.post("/api/checkout", async (req, res) => {
