@@ -65,6 +65,184 @@ const app = express();
 app.set("trust proxy", true);
 
 // =====================================================
+// STRIPE WEBHOOK – FULL eSIM FULFILLMENT
+// =====================================================
+if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
+  app.post(
+    "/webhook/stripe",
+    bodyParser.raw({ type: "application/json" }),
+    async (req, res) => {
+      const sig = req.headers["stripe-signature"];
+      let event;
+
+      try {
+        event = stripe.webhooks.constructEvent(
+          req.body,
+          sig,
+          process.env.STRIPE_WEBHOOK_SECRET
+        );
+      } catch (err) {
+        console.error("❌ Stripe signature verification failed:", err.message);
+        return res.status(400).send(`Webhook Error: ${err.message}`);
+      }
+
+      // -------------------------------------------------
+      // PAYMENT COMPLETED
+      // -------------------------------------------------
+      if (event.type === "checkout.session.completed") {
+        console.log("🚀 Stripe webhook reached checkout.session.completed");
+        const session = event.data.object;
+
+        console.log("✅ Stripe payment completed:", session.id);
+
+        const customerEmail = session.customer_details?.email;
+        const metadata = session.metadata || {};
+       // const whatsappTo =
+      // metadata.whatsappTo ||
+       // (metadata.mobileno ? `whatsapp:+${metadata.mobileno}` : null);
+
+        console.log("🧾 Metadata received:", metadata);
+
+         // ===============================
+          // SAFE / BULLETPROOF MOBILE FIX
+          // ===============================
+          // ✅ MOBILE NUMBER (DO NOT NORMALIZE)
+          const mobileno = String(metadata.mobileno || "").trim();
+
+          if (!mobileno) {
+            console.error("❌ Missing mobileno - cannot proceed with eSIM purchase");
+            throw new Error("mobileno is required for eSIM purchase");
+          }
+
+          console.log("📞 Using mobileno (exact):", mobileno);
+
+        try {
+          // =============================================
+          // ✅ FIX #2: PURCHASE eSIM - send items array with sku/quantity/destinationId
+          // =============================================
+          console.log("📡 Purchasing eSIM...");
+
+          if (!metadata.productType) {
+            console.error("❌ Missing productType", {
+              sku: metadata.productSku,
+              metadata,
+            });
+            throw new Error("Missing productType for eSIM purchase");
+          }
+
+          const payload = {
+            items: [
+              {
+                type: metadata.productType,
+                sku: metadata.productSku,
+                quantity: Number(metadata.quantity || 1),
+                mobileno: mobileno,
+                emailid: metadata.email,
+              },
+            ],
+          };
+         
+          console.log("🧪 eSIM TYPE CHECK", {
+              sku: metadata.productSku,
+              productType: metadata.productType,
+            });
+          console.log("📤 purchaseesim payload:", payload);
+
+          const esimRes = await esimRequest("post", "/api/esim/purchaseesim", {
+            data: payload,
+          });
+
+          console.log("✅ eSIM queued:", esimRes);
+
+          // Keep your original pattern (in case API nests data)
+          //const esim = esimRes?.data || esimRes || {};
+          const transactionId = esimRes.uniqueRefno;
+          const activationCode = esimRes.esims?.[0]?.activationcode;
+
+          console.log("✅ eSIM purchased");
+          console.log("📄 Transaction ID:", transactionId);
+          console.log("🔑 Activation Code:", activationCode);
+
+          // =====================================================
+          // PHASE 1 – SAVE FULFILLMENT RECORD
+          // =====================================================
+          saveFulfillment({
+            email: metadata.email,
+            sessionId: session.id,
+            sku: metadata.productSku,
+            planName: metadata.planName,
+            country: metadata.country,
+            activationCode,
+            transactionId,
+            createdAt: new Date().toISOString()
+          });
+
+          //if (!metadata?.acceptedTerms) {
+           // return res.status(400).json({
+            //  error: "Terms and Conditions must be accepted",
+            //});
+         // }
+          // ===============================
+          // FIX 4️⃣ – POST-PURCHASE THANK YOU WHATSAPP
+          // ===============================
+
+         // ✅ Build WhatsApp destination safely
+          let whatsappToFinal = null;
+
+          if (metadata.whatsappTo && metadata.whatsappTo.trim()) {
+            whatsappToFinal = metadata.whatsappTo.trim();
+          } else if (mobileno) {
+            whatsappToFinal = `whatsapp:+${mobileno}`;
+          }
+
+          console.log("📱 Final WhatsApp To:", whatsappToFinal);
+
+          const thankYouMessage =
+            "✅ Thank you for your purchase!\n\n" +
+            "📧 Your eSIM setup instructions have been sent to your email.\n\n" +
+            "📱 Need help? Reply support anytime.\n\n" +
+            "✈️ Safe travels!\n— SimClaire";
+
+          if (
+            twilioClient &&
+            WHATSAPP_FROM &&
+            whatsappToFinal &&
+            whatsappToFinal.startsWith("whatsapp:")
+          ) {
+            console.log("📤 WhatsApp send attempt", {
+            from: WHATSAPP_FROM,
+            to: whatsappToFinal,
+            });
+
+            await twilioClient.messages.create({
+              from: WHATSAPP_FROM,   // ✅ FIXED
+              to: whatsappToFinal,
+              body: thankYouMessage,
+            });
+          } else {
+            console.log("📵 WhatsApp skipped", {
+              from: WHATSAPP_FROM,
+              to: whatsappToFinal,
+            });
+          }
+          console.log("✅ Order completed end-to-end", {
+          transactionId,
+          activationCode,
+          email: metadata.email,
+          whatsappTo: whatsappToFinal,
+        });
+        
+        } catch (err) {
+          console.error("❌ Fulfillment error:", err.response?.data || err.message);
+        }
+      }
+
+      res.json({ received: true });
+    }
+  );
+}
+
+// =====================================================
 // CSV PRICING (PROD FINAL PRICES)
 // =====================================================
 const pricingMap = new Map();
@@ -540,183 +718,7 @@ console.log("💷 Stripe unitAmount:", unitAmount);
   }
 });
 
-// =====================================================
-// STRIPE WEBHOOK – FULL eSIM FULFILLMENT
-// =====================================================
-if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
-  app.post(
-    "/webhook/stripe",
-    bodyParser.raw({ type: "application/json" }),
-    async (req, res) => {
-      const sig = req.headers["stripe-signature"];
-      let event;
 
-      try {
-        event = stripe.webhooks.constructEvent(
-          req.body,
-          sig,
-          process.env.STRIPE_WEBHOOK_SECRET
-        );
-      } catch (err) {
-        console.error("❌ Stripe signature verification failed:", err.message);
-        return res.status(400).send(`Webhook Error: ${err.message}`);
-      }
-
-      // -------------------------------------------------
-      // PAYMENT COMPLETED
-      // -------------------------------------------------
-      if (event.type === "checkout.session.completed") {
-        console.log("🚀 Stripe webhook reached checkout.session.completed");
-        const session = event.data.object;
-
-        console.log("✅ Stripe payment completed:", session.id);
-
-        const customerEmail = session.customer_details?.email;
-        const metadata = session.metadata || {};
-       // const whatsappTo =
-      // metadata.whatsappTo ||
-       // (metadata.mobileno ? `whatsapp:+${metadata.mobileno}` : null);
-
-        console.log("🧾 Metadata received:", metadata);
-
-         // ===============================
-          // SAFE / BULLETPROOF MOBILE FIX
-          // ===============================
-          // ✅ MOBILE NUMBER (DO NOT NORMALIZE)
-          const mobileno = String(metadata.mobileno || "").trim();
-
-          if (!mobileno) {
-            console.error("❌ Missing mobileno - cannot proceed with eSIM purchase");
-            throw new Error("mobileno is required for eSIM purchase");
-          }
-
-          console.log("📞 Using mobileno (exact):", mobileno);
-
-        try {
-          // =============================================
-          // ✅ FIX #2: PURCHASE eSIM - send items array with sku/quantity/destinationId
-          // =============================================
-          console.log("📡 Purchasing eSIM...");
-
-          if (!metadata.productType) {
-            console.error("❌ Missing productType", {
-              sku: metadata.productSku,
-              metadata,
-            });
-            throw new Error("Missing productType for eSIM purchase");
-          }
-
-          const payload = {
-            items: [
-              {
-                type: metadata.productType,
-                sku: metadata.productSku,
-                quantity: Number(metadata.quantity || 1),
-                mobileno: mobileno,
-                emailid: metadata.email,
-              },
-            ],
-          };
-         
-          console.log("🧪 eSIM TYPE CHECK", {
-              sku: metadata.productSku,
-              productType: metadata.productType,
-            });
-          console.log("📤 purchaseesim payload:", payload);
-
-          const esimRes = await esimRequest("post", "/api/esim/purchaseesim", {
-            data: payload,
-          });
-
-          console.log("✅ eSIM queued:", esimRes);
-
-          // Keep your original pattern (in case API nests data)
-          //const esim = esimRes?.data || esimRes || {};
-          const transactionId = esimRes.uniqueRefno;
-          const activationCode = esimRes.esims?.[0]?.activationcode;
-
-          console.log("✅ eSIM purchased");
-          console.log("📄 Transaction ID:", transactionId);
-          console.log("🔑 Activation Code:", activationCode);
-
-          // =====================================================
-          // PHASE 1 – SAVE FULFILLMENT RECORD
-          // =====================================================
-          saveFulfillment({
-            email: metadata.email,
-            sessionId: session.id,
-            sku: metadata.productSku,
-            planName: metadata.planName,
-            country: metadata.country,
-            activationCode,
-            transactionId,
-            createdAt: new Date().toISOString()
-          });
-
-          //if (!metadata?.acceptedTerms) {
-           // return res.status(400).json({
-            //  error: "Terms and Conditions must be accepted",
-            //});
-         // }
-          // ===============================
-          // FIX 4️⃣ – POST-PURCHASE THANK YOU WHATSAPP
-          // ===============================
-
-         // ✅ Build WhatsApp destination safely
-          let whatsappToFinal = null;
-
-          if (metadata.whatsappTo && metadata.whatsappTo.trim()) {
-            whatsappToFinal = metadata.whatsappTo.trim();
-          } else if (mobileno) {
-            whatsappToFinal = `whatsapp:+${mobileno}`;
-          }
-
-          console.log("📱 Final WhatsApp To:", whatsappToFinal);
-
-          const thankYouMessage =
-            "✅ Thank you for your purchase!\n\n" +
-            "📧 Your eSIM setup instructions have been sent to your email.\n\n" +
-            "📱 Need help? Reply support anytime.\n\n" +
-            "✈️ Safe travels!\n— SimClaire";
-
-          if (
-            twilioClient &&
-            WHATSAPP_FROM &&
-            whatsappToFinal &&
-            whatsappToFinal.startsWith("whatsapp:")
-          ) {
-            console.log("📤 WhatsApp send attempt", {
-            from: WHATSAPP_FROM,
-            to: whatsappToFinal,
-            });
-
-            await twilioClient.messages.create({
-              from: WHATSAPP_FROM,   // ✅ FIXED
-              to: whatsappToFinal,
-              body: thankYouMessage,
-            });
-          } else {
-            console.log("📵 WhatsApp skipped", {
-              from: WHATSAPP_FROM,
-              to: whatsappToFinal,
-            });
-          }
-          console.log("✅ Order completed end-to-end", {
-          transactionId,
-          activationCode,
-          email: metadata.email,
-          whatsappTo: whatsappToFinal,
-        });
-        
-        } catch (err) {
-          console.error("❌ Fulfillment error:", err.response?.data || err.message);
-        }
-      }
-
-      res.json({ received: true });
-    }
-  );
-}
 
 // =====================================================
 // 9) WHATSAPP XML HELPERS
