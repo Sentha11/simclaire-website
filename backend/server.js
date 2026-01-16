@@ -79,7 +79,7 @@ if (process.env.STRIPE_SECRET_KEY) {
 // 🔴 STRIPE RAW BODY EXCEPTION (MUST BE FIRST)
 // =====================================================
 app.use((req, res, next) => {
-  if (req.originalUrl === "/webhook/stripe") {
+  if (req.originalUrl === "/api/webhook/stripe") {
     next(); // leave body untouched for Stripe
   } else {
     express.json()(req, res, next);
@@ -177,22 +177,21 @@ try {
 // =====================================================
 if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
   app.post(
-    "/webhook/stripe",
-    bodyParser.raw({ type: "application/json" }),
+    "/api/stripe/webhook",
+    express.raw({ type: "application/json" }),
     async (req, res) => {
-      const sig = req.headers["stripe-signature"];
+    const sig = req.headers['stripe-signature'];
       let event;
-
-      try {
-        event = stripe.webhooks.constructEvent(
-          req.body,
-          sig,
-          process.env.STRIPE_WEBHOOK_SECRET
-        );
-      } catch (err) {
-        console.error("❌ Stripe signature verification failed:", err.message);
-        return res.status(400).send(`Webhook Error: ${err.message}`);
-      }
+  try {
+      event = stripe.webhooks.constructEvent(
+        req.body, // <-- RAW BUFFER (this is the fix)
+        sig,
+        process.env.STRIPE_WEBHOOK_SECRET
+      );
+    } catch (err) {
+         console.error('❌ Stripe signature verification failed:', err.message);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
 
       // -------------------------------------------------
       // PAYMENT COMPLETED
