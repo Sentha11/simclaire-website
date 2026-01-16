@@ -383,18 +383,7 @@ async function loadPricingCSV() {
   });
 }
 
-console.log("🧪 CHECKOUT REQUEST BODY", req.body);
 
-if (!productType) {
-  console.error("❌ productType missing BEFORE Stripe session", {
-    productSku,
-    productType,
-    body: req.body
-  });
-  return res.status(400).json({
-    error: "productType is required"
-  });
-}
 
 // =====================================================
 // 7) STRIPE CHECKOUT SESSION (KEEP WORKING)
@@ -419,8 +408,19 @@ app.post("/api/payments/create-checkout-session", async (req, res) => {
       //whatsappTo,
       metadata,
     } = req.body;
+    
+    console.log("🧪 CHECKOUT REQUEST BODY", req.body);
 
-
+      if (!productType) {
+        console.error("❌ productType missing BEFORE Stripe session", {
+          productSku,
+          productType,
+          body: req.body
+        });
+        return res.status(400).json({
+          error: "productType is required"
+        });
+      }
 
           // 🔒 HARD BLOCK IF MOBILE IS MISSING
       if (!mobile) {
