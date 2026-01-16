@@ -65,6 +65,17 @@ const app = express();
 app.set("trust proxy", true);
 
 // =====================================================
+// 5) STRIPE INIT (KEEP AS-IS / WORKING)
+// =====================================================
+let stripe = null;
+if (process.env.STRIPE_SECRET_KEY) {
+  stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+  console.log("💳 Stripe enabled");
+} else {
+  console.log("🟡 Stripe not configured");
+}
+
+// =====================================================
 // 🔴 STRIPE RAW BODY EXCEPTION (MUST BE FIRST)
 // =====================================================
 app.use((req, res, next) => {
@@ -78,6 +89,7 @@ app.use((req, res, next) => {
 app.use(cors());
 // Twilio WhatsApp webhooks are x-www-form-urlencoded
 app.use(express.urlencoded({ extended: false }));
+app.use(express.json());
 // =====================================================
 // CSV PRICING (PROD FINAL PRICES)
 // =====================================================
@@ -105,7 +117,7 @@ if (process.env.QUOTAGUARD_URL) {
 // Stripe webhook MUST see raw body (only on this route)
 //app.use("/webhook/stripe", bodyParser.raw({ type: "application/json" }));
 // Normal JSON APIs
-//app.use(express.json());
+
 // =====================================================
 // STATIC WEBSITE (NO VITE / NO REACT)
 // =====================================================
@@ -158,17 +170,6 @@ try {
   }
 } catch (e) {
   console.log("🔴 Twilio init failed:", e.message);
-}
-
-// =====================================================
-// 5) STRIPE INIT (KEEP AS-IS / WORKING)
-// =====================================================
-let stripe = null;
-if (process.env.STRIPE_SECRET_KEY) {
-  stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
-  console.log("💳 Stripe enabled");
-} else {
-  console.log("🟡 Stripe not configured");
 }
 
 // =====================================================
