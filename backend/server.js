@@ -282,6 +282,33 @@ function extractArray(payload) {
 }
 
 // =====================================================
+// Resolve productType server-side (DO NOT TRUST FRONTEND)
+// =====================================================
+async function resolveProductType(destinationId, productSku) {
+  if (!destinationId || !productSku) return "";
+
+  try {
+    const prodRes = await esimRequest(
+      "get",
+      `/api/esim/products?destinationid=${encodeURIComponent(destinationId)}`
+    );
+
+    const products = extractArray(prodRes);
+
+    const match = products.find(
+      p => String(p.productSku || "").trim() === String(productSku || "").trim()
+    );
+
+    return match?.productType != null
+      ? String(match.productType).trim()
+      : "";
+  } catch (err) {
+    console.error("❌ resolveProductType failed", err.message);
+    return "";
+  }
+}
+
+// =====================================================
 // WEB: Browse eSIM products (same logic as WhatsApp)
 // =====================================================
 app.get("/api/web/esim/products", async (req, res) => {
@@ -409,18 +436,32 @@ app.post("/api/payments/create-checkout-session", async (req, res) => {
       metadata,
     } = req.body;
     
-    console.log("🧪 CHECKOUT REQUEST BODY", req.body);
+    // =====================================================
+    // ✅ Resolve productType BEFORE Stripe session
+    // =====================================================
+    let finalProductType = productType ? String(productType).trim() : "";
 
-      if (!productType) {
-        console.error("❌ productType missing BEFORE Stripe session", {
-          productSku,
-          productType,
-          body: req.body
-        });
-        return res.status(400).json({
-          error: "productType is required"
-        });
-      }
+    if (!finalProductType) {
+      finalProductType = await resolveProductType(destinationId, productSku);
+
+      console.log("🧠 productType resolved server-side", {
+        productSku,
+        destinationId,
+        finalProductType,
+      });
+    }
+
+    // Hard stop ONLY if resolution truly fails
+    if (!finalProductType) {
+      console.error("❌ productType could not be resolved", {
+        productSku,
+        destinationId,
+      });
+      return res.status(400).json({
+        error: "Unable to determine product type",
+      });
+    }
+
 
           // 🔒 HARD BLOCK IF MOBILE IS MISSING
       if (!mobile) {
@@ -478,7 +519,7 @@ console.log("💷 Stripe unitAmount:", unitAmount);
       metadata: {
         planName: planName || "",
         productSku: productSku || "",
-        productType: String(productType),
+        productType: finalProductType,
         data: data || "",
         validity: String(validity ?? ""),
         quantity: String(quantity ?? ""),
