@@ -1282,6 +1282,65 @@ app.get("/api/account/purchases", async (req, res) => {
   }
 });
 
+app.post("/api/account/send-instructions", async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ error: "Email is required" });
+    }
+
+    let records = [];
+    try {
+      records = JSON.parse(
+        fs.readFileSync(FULFILLMENTS_PATH, "utf8")
+      );
+    } catch {}
+
+    const purchases = records.filter(
+      r => r.email.toLowerCase() === email.toLowerCase()
+    );
+
+    if (!purchases.length) {
+      return res.status(404).json({
+        error: "No purchases found for this email"
+      });
+    }
+
+    const instructions = purchases.map(p => ({
+      planName: p.planName,
+      country: p.country,
+      activationCode: p.activationCode,
+      transactionId: p.transactionId,
+      purchasedAt: p.createdAt
+    }));
+
+    // 📧 Send email if SendGrid is enabled
+    if (process.env.SENDGRID_API_KEY) {
+      await sgMail.send({
+        to: email,
+        from: "care@simclaire.com",
+        subject: "Your SimClaire eSIM Instructions",
+        text:
+          "Thank you for your purchase.\n\n" +
+          instructions.map(i =>
+            `📶 ${i.planName}\n` +
+            `🌍 ${i.country}\n` +
+            `🔑 Activation Code: ${i.activationCode}\n\n`
+          ).join("")
+      });
+    }
+
+    return res.json({
+      success: true,
+      instructions
+    });
+
+  } catch (err) {
+    console.error("Send instructions error:", err);
+    res.status(500).json({ error: "Failed to send instructions" });
+  }
+});
 
 // =====================================================
 // WEBSITE ROUTE FALLBACK (SPA SUPPORT)

@@ -54,3 +54,56 @@ async function resendInstructions(sessionId) {
 
   alert("Instructions resent (test mode).");
 }
+
+const emailInput = document.getElementById("emailInput");
+const confirmEmailInput = document.getElementById("confirmEmailInput");
+const sendBtn = document.getElementById("sendInstructionsBtn");
+const statusText = document.getElementById("accountStatus");
+
+function checkEmailMatch() {
+  if (
+    emailInput.value &&
+    confirmEmailInput.value &&
+    emailInput.value === confirmEmailInput.value
+  ) {
+    sendBtn.style.display = "block";
+    statusText.textContent = "✅ Email confirmed";
+  } else {
+    sendBtn.style.display = "none";
+    statusText.textContent = "";
+  }
+}
+
+emailInput?.addEventListener("input", checkEmailMatch);
+confirmEmailInput?.addEventListener("input", checkEmailMatch);
+
+sendBtn?.addEventListener("click", async () => {
+  const email = emailInput.value.trim();
+
+  statusText.textContent = "📡 Sending instructions...";
+
+  try {
+    const res = await fetch(
+      `${BACKEND_URL}/api/account/send-instructions`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email })
+      }
+    );
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      statusText.textContent = data.error || "Failed to send instructions";
+      return;
+    }
+
+    statusText.textContent =
+      "✅ Instructions sent! Check your email.";
+
+  } catch (err) {
+    console.error(err);
+    statusText.textContent = "❌ Error sending instructions";
+  }
+});

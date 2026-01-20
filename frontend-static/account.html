@@ -7,19 +7,20 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 
-<!--Start of Tawk.to Script-->
+<!-- Start of Tawk.to Script -->
 <script type="text/javascript">
 var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
 (function(){
-var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
-s1.async=true;
-s1.src='https://embed.tawk.to/69681541047e961985040f8e/1jev96275';
-s1.charset='UTF-8';
-s1.setAttribute('crossorigin','*');
-s0.parentNode.insertBefore(s1,s0);
+  var s1=document.createElement("script"),
+      s0=document.getElementsByTagName("script")[0];
+  s1.async=true;
+  s1.src='https://embed.tawk.to/69681541047e961985040f8e/1jev96275';
+  s1.charset='UTF-8';
+  s1.setAttribute('crossorigin','*');
+  s0.parentNode.insertBefore(s1,s0);
 })();
 </script>
-<!--End of Tawk.to Script-->
+<!-- End of Tawk.to Script -->
 
 <body>
 
@@ -29,14 +30,48 @@ s0.parentNode.insertBefore(s1,s0);
 
   <div class="glass-card account-card">
     <a href="/" class="top-btn">← Back to Home</a>
+
     <h1>My Account</h1>
-    <p>View your eSIMs and purchases</p>
+    <p>Look up your eSIM purchases and resend instructions</p>
 
-    <input id="emailInput" placeholder="Enter your email address" />
-    <button onclick="loadAccount()">View Account</button>
-    <div id="account-results" class="account-results hidden"></div>
+    <!-- =========================
+         ACCOUNT LOOKUP
+    ========================== -->
+    <div id="account-lookup">
+      <input
+        id="emailInput"
+        type="email"
+        placeholder="Enter your purchase email"
+        required
+      />
+      <button onclick="loadAccount()">View Purchases</button>
+    </div>
 
-    <div id="accountResults"></div>
+    <!-- =========================
+         LOOKUP RESULTS
+    ========================== -->
+    <div
+      id="accountResults"
+      class="account-results hidden"
+    ></div>
+
+    <!-- =========================
+         SUCCESS / ACTION
+    ========================== -->
+    <div
+      id="accountSuccess"
+      class="account-success hidden"
+    >
+      <p>✅ Purchase found for this email.</p>
+
+      <button
+        id="sendInstructionsBtn"
+        onclick="sendInstructions()"
+      >
+        📩 Send My eSIM Instructions
+      </button>
+    </div>
+
   </div>
 </div>
 
