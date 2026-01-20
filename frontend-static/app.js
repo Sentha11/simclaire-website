@@ -1,3 +1,4 @@
+console.log("app.js loaded");
 const BACKEND_URL = "https://simclaire-website-backend.onrender.com";
 let currentPlans = [];
 
