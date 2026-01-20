@@ -65,6 +65,17 @@ const app = express();
 app.set("trust proxy", true);
 
 // =====================================================
+// JSON BODY PARSER (SAFE WITH STRIPE WEBHOOK)
+// =====================================================
+app.use((req, res, next) => {
+  if (req.originalUrl === "/api/webhook/stripe") {
+    return next(); // Stripe needs raw body
+  }
+  express.json()(req, res, next);
+});
+
+
+// =====================================================
 // 5) STRIPE INIT (KEEP AS-IS / WORKING)
 // =====================================================
 let stripe = null;
