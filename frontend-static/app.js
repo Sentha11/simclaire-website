@@ -8,7 +8,9 @@ const sortWrapper = document.getElementById("sortWrapper");
    SEARCH + LOAD PLANS
 ========================= */
 async function searchPlans() {
+  console.log("Browse Plans Clicked");
   const country = document.getElementById("countryInput")?.value.trim();
+  console.log("🌍 Country input value:", country);
   const resultsDiv = document.getElementById("results");
 
   if (!country) {
@@ -20,6 +22,7 @@ async function searchPlans() {
 
   try {
     const res = await fetch(
+      
       `${BACKEND_URL}/api/web/esim/products?country=${encodeURIComponent(country)}`
     );
 
@@ -48,7 +51,15 @@ async function searchPlans() {
    CHECKOUT
 ========================= */
 async function checkout(
-  sku, name, price, country, destinationId, productType) {
+  sku, name, price, country, destinationId, productType
+) {
+  console.log("🧪 WEBSITE CHECKOUT PAYLOAD", {
+    sku,
+    productType,
+    destinationId,
+    country,
+    price
+  });
   const email = prompt("Enter your email for receipt:");
   const mobile = prompt("Enter your mobile number:");
 
@@ -79,7 +90,7 @@ async function checkout(
 }
 
 /* =========================
-   RENDER PLANS
+   RENDER PLANS (SAFE)
 ========================= */
 function renderPlans(plans) {
   const resultsDiv = document.getElementById("results");
@@ -101,14 +112,26 @@ function renderPlans(plans) {
       <p>📶 Data: ${p.data}</p>
       <p>📅 Validity: ${p.validity} days</p>
       <p>💷 Price: £${p.price}</p>
-     <button onclick="checkout(
-        '${p.sku}',
-        '${p.name}',
-        '${p.price}',
-        '${p.country}',
-        '${p.destinationId}',
-        '${p.productType}'
-      )">Buy Now</button>`;
+      <button class="buy-btn">Buy Now</button>
+    `;
+
+    // ✅ SAFE EVENT BINDING (NO INLINE JS)
+    div.querySelector(".buy-btn").addEventListener("click", () => {
+      console.log("🛒 Buy clicked", {
+        sku: p.sku,
+        productType: p.productType,
+        destinationId: p.destinationId
+      });
+
+      checkout(
+        p.sku,
+        p.name,
+        p.price,
+        p.country,
+        p.destinationId,
+        p.productType
+      );
+    });
 
     resultsDiv.appendChild(div);
   });
@@ -145,6 +168,7 @@ const input = document.getElementById("countryInput");
 const suggestions = document.getElementById("suggestions");
 
 if (input && suggestions) {
+  console.log("✅ Autocomplete wired", { input, suggestions });
   input.addEventListener("input", () => {
     const val = input.value.toLowerCase();
     suggestions.innerHTML = "";
@@ -264,57 +288,3 @@ document.querySelectorAll(".top-btn").forEach(btn => {
     btn.classList.add("active");
   }
 });
-
-//async function startStripeCheckout(payload) {
-
-  console.log("🧪 CHECKOUT PAYLOAD", {
-  sku: plan.sku,
-  productType: plan.productType,
-  typeof: typeof plan.productType
-});
-
-  try {
-    const res = await fetch(
-      `${BACKEND_URL}/api/payments/create-checkout-session`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          quantity: 1,
-          price: plan.price,
-          currency: "gbp",
-          planName: plan.name,
-          productSku: plan.sku,
-          productType: plan.productType, // ✅ REAL VALUE ONLY
-          data: plan.data,
-          validity: plan.validity,
-          country: plan.country,
-          destinationId: plan.destinationId,
-          mobile
-        })
-      }
-    );
-
-    const data = await res.json();
-    window.location.href = data.url; // ✅ THIS STAYS
-
-
-    if (!productType) {
-      console.error("❌ BLOCKED: Missing productType", req.body);
-      return res.status(400).json({
-        error: "productType missing – checkout blocked"
-      });
-    }
-
-    if (!data.url) {
-      alert("Stripe checkout failed");
-      console.error(data);
-      return;
-    }
-
-  } catch (err) {
-    console.error("Checkout error", err);
-    alert("Unable to start checkout");
-  }
-//}
