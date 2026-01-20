@@ -1057,6 +1057,9 @@ if (!session.products?.[realIndex]) {
   return res.send(twiml("❌ Invalid selection. Reply with a plan number shown."));
 }
 
+// 🔍 ADD THIS LINE
+console.log("🧪 SELECTED PRODUCT RAW", session.products[realIndex]);
+
 session.selectedProduct = session.products[realIndex];
 session.step = "EMAIL";
 
