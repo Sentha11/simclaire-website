@@ -594,6 +594,12 @@ async function loadPricingCSV() {
 // 7) STRIPE CHECKOUT SESSION (KEEP WORKING)
 // =====================================================
 app.post("/api/payments/create-checkout-session", async (req, res) => {
+
+  console.log(
+    "🌐 WEBSITE CHECKOUT PAYLOAD RECEIVED:",
+    JSON.stringify(req.body, null, 2)
+  );
+
   try {
     if (!stripe) return res.status(500).json({ error: "Stripe not configured" });
 
