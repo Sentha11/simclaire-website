@@ -109,8 +109,8 @@ function renderPlans(plans) {
 
     div.innerHTML = `
       <h3>${p.name}</h3>
-      <p>📶 Data: ${p.data}</p>
-      <p>📅 Validity: ${p.validity} days</p>
+      <p>📶 Data: ${p.data} GB</p>
+      <p>📅 Validity: ${p.validity} </p>
       <p>💷 Price: £${p.price}</p>
       <button class="buy-btn">Buy Now</button>
     `;
