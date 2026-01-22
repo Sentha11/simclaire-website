@@ -107,14 +107,20 @@ function renderPlans(plans) {
     const div = document.createElement("div");
     div.className = "plan";
 
-    div.innerHTML = `
-      <h3>${p.name}</h3>
-      <p>📶 Data: ${p.data} GB</p>
-      <p>📅 Validity: ${p.validity} </p>
-      <p>💷 Price: £${p.price}</p>
-      <button class="buy-btn">Buy Now</button>
-    `;
+   div.innerHTML = `
+  <h3 class="plan-title">${p.name}</h3>
 
+  <div class="plan-meta">
+    <span class="meta-item">📶 <strong>${p.data} GB</strong></span>
+    <span class="meta-item">📅 <strong>${String(p.validity)}</strong></span>
+  </div>
+
+  <div class="plan-price">
+    £${p.price}
+  </div>
+
+  <button class="buy-btn">Buy Now</button>
+`;
     // ✅ SAFE EVENT BINDING (NO INLINE JS)
     div.querySelector(".buy-btn").addEventListener("click", () => {
       console.log("🛒 Buy clicked", {
