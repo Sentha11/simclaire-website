@@ -241,15 +241,41 @@ html, body {
 }
 
 .plan {
-  background: rgba(255,255,255,0.05);
-  border-radius: 18px;
-  padding: 22px;
-  margin-bottom: 18px;
+  max-width: 520px;
+  margin: 14px auto;
+  padding: 16px 18px;
+
+  border-radius: 14px;
+  background: linear-gradient(180deg, #0f172a, #020617);
+
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+  border: 1px solid rgba(255,255,255,0.06);
+
   display: flex;
   flex-direction: column;
+  gap: 8px;
 
-  border: 1px solid rgba(255,255,255,0.08);
-  backdrop-filter: blur(12px);
+  opacity: 0;
+  transform: translateY(12px);
+  animation: fadeUp 0.5s ease forwards;
+
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.plan h3 {
+  font-size: 18px;
+  margin-bottom: 4px;
+}
+
+.plan p {
+  font-size: 14px;
+  opacity: 0.85;
+  margin: 0;
+}
+
+.plan:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 40px rgba(59,130,246,0.25);
 }
 
 .plan-meta {
@@ -273,10 +299,6 @@ html, body {
   gap: 6px;
 }
 
-.plan:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 18px 50px rgba(0,0,0,0.4);
-}
 
 /* ===============================
    ACCOUNT PAGE
@@ -762,11 +784,6 @@ button:focus-visible,
    PLAN CARD ANIMATION
 ========================= */
 
-.plan {
-  opacity: 0;
-  transform: translateY(12px);
-  animation: fadeUp 0.5s ease forwards;
-}
 
 .plan:nth-child(1) { animation-delay: 0.05s; }
 .plan:nth-child(2) { animation-delay: 0.1s; }
@@ -797,6 +814,7 @@ button:focus-visible,
   .buy-btn {
     font-size: 15px;
     padding: 14px;
+    margin: 10px auto 0;
   }
 }
 
