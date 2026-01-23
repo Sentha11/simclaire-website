@@ -652,6 +652,21 @@ app.post("/api/payments/create-checkout-session", async (req, res) => {
       metadata,
     } = req.body;
     
+    // 🔒 LEGAL ENFORCEMENT — NO REFUND ACCEPTANCE
+    // =====================================================
+    if (req.body.acceptedNoRefund !== true) {
+      console.error("❌ Checkout blocked: no-refund terms not accepted", {
+        productSku,
+        email,
+        ip: req.ip,
+      });
+
+      return res.status(400).json({
+        error:
+          "You must confirm device compatibility and accept the no-refund policy before checkout.",
+      });
+    }
+
     // =====================================================
     // ✅ Resolve productType BEFORE Stripe session
     // =====================================================
@@ -745,6 +760,9 @@ console.log("💷 Stripe unitAmount:", unitAmount);
         destinationId: String(destinationId ?? ""), // ✅ FIX #1
         //whatsappTo: whatsappTo || "",
         flagEmoji: metadata?.flagEmoji || "",
+        acceptedNoRefund: "true",
+        acceptedAt: new Date().toISOString(),
+        acceptedIp: req.ip,
       },
     });
 
