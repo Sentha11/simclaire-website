@@ -9,11 +9,15 @@ require("dotenv").config();
 
 const ESIM_BASE_URL = process.env.ESIM_BASE_URL;
 
+const isUAT =
+  process.env.ESIM_BASE_URL?.toLowerCase().includes("uat") ||
+  process.env.NODE_ENV !== "production";
+
 if (!ESIM_BASE_URL) {
   throw new Error("❌ ESIM_BASE_URL is missing");
 }
 
-const isUAT = ESIM_BASE_URL.includes("uat");
+//const isUAT = ESIM_BASE_URL.includes("uat");
 
 console.log("🌍 eSIM Environment:", isUAT ? "UAT" : "PRODUCTION");
 const express = require("express");
@@ -533,24 +537,41 @@ app.get("/api/web/esim/products", async (req, res) => {
 
     const products = extractArray(prodRes);
 
-    // 3️⃣ Filter + map using CSV (same as WhatsApp)
-    const results = products
-      .filter(p => p.productSku && pricingMap.has(p.productSku))
-      .map(p => {
-        const csv = pricingMap.get(p.productSku);
+   let results;
 
-        return {
-          name: p.productName,
-          sku: p.productSku,
-          productType: String(
-            p.productType ?? ""),
-          data: p.productDataAllowance,
-          validity: csv.validity || p.validity,
-          price: csv.finalPrice,
-          country: match.destinationName || match.name,
-          destinationId
-        };
-      });
+if (isUAT) {
+  console.log("🧪 UAT MODE — returning ALL products");
+
+  results = products.map(p => ({
+    name: p.productName,
+    sku: p.productSku,
+    productType: String(p.productType ?? ""),
+    data: p.productDataAllowance,
+    validity: p.validity,
+    price: p.productPrice || p.price || 0,
+    country: match.destinationName || match.name,
+    destinationId
+  }));
+} else {
+  console.log("🚀 PROD MODE — using CSV pricing map");
+
+  results = products
+    .filter(p => p.productSku && pricingMap.has(p.productSku))
+    .map(p => {
+      const csv = pricingMap.get(p.productSku);
+
+      return {
+        name: p.productName,
+        sku: p.productSku,
+        productType: String(p.productType ?? ""),
+        data: p.productDataAllowance,
+        validity: csv.validity || p.validity,
+        price: csv.finalPrice,
+        country: match.destinationName || match.name,
+        destinationId
+      };
+    });
+}
 
       console.log("🧪 SAMPLE PRODUCT", products[0]);
 
