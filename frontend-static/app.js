@@ -51,7 +51,7 @@ async function searchPlans() {
    CHECKOUT
 ========================= */
 async function checkout(
-  sku, name, price, country, destinationId, productType
+  sku, name, price, country, destinationId, productType, acceptedNoRefund
 ) {
   console.log("🧪 WEBSITE CHECKOUT PAYLOAD", {
     sku,
@@ -80,7 +80,8 @@ async function checkout(
         productType,
         country,
         destinationId,
-        mobile
+        mobile,
+        acceptedNoRefund
       })
     }
   );
@@ -119,29 +120,44 @@ function renderPlans(plans) {
     £${p.price}
   </div>
 
-  <button class="buy-btn">Buy Now</button>
+ <div class="refund-check">
+    <label>
+      <input type="checkbox" class="refund-checkbox" />
+      <span>
+        I confirm my device is <strong>eSIM compatible & unlocked</strong>.
+        I understand this is a <strong>digital product</strong> and is
+        <strong>non-refundable once delivered</strong>.
+      </span>
+    </label>
+  </div>
+
+  <button class="buy-btn" disabled>Buy Now</button>
 `;
     // ✅ SAFE EVENT BINDING (NO INLINE JS)
     div.querySelector(".buy-btn").addEventListener("click", () => {
-      console.log("🛒 Buy clicked", {
-        sku: p.sku,
-        productType: p.productType,
-        destinationId: p.destinationId
-      });
+    const accepted = div.querySelector(".refund-checkbox")?.checked;
 
-      checkout(
-        p.sku,
-        p.name,
-        p.price,
-        p.country,
-        p.destinationId,
-        p.productType
+    if (!accepted) {
+      alert(
+        "You must confirm eSIM compatibility and acknowledge the no-refund policy before continuing."
       );
-    });
+      return;
+    }
 
-    resultsDiv.appendChild(div);
+    checkout(
+      p.sku,
+      p.name,
+      p.price,
+      p.country,
+      p.destinationId,
+      p.productType,
+      true // acceptedNoRefund
+    );
   });
-}
+
+      resultsDiv.appendChild(div);
+    });
+  }
 
 /* =========================
    SORT PLANS
@@ -189,6 +205,12 @@ if (input && suggestions) {
       .slice(0, 6)
       .forEach(country => {
         const div = document.createElement("div");
+        const checkbox = div.querySelector(".refund-checkbox");
+        const buyBtn = div.querySelector(".buy-btn");
+
+        checkbox.addEventListener("change", () => {
+          buyBtn.disabled = !checkbox.checked;
+        });
         div.className = "suggestion-item";
         div.textContent = country;
         div.onclick = () => {
