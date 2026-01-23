@@ -852,3 +852,45 @@ button:focus-visible,
 .buy-btn:active {
   transform: scale(0.97);
 }
+
+/* =========================
+   LEGAL PAGES (Airalo-style)
+========================= */
+.legal-page {
+  max-width: 820px;
+  margin: 120px auto;
+  padding: 0 20px;
+  color: #e5e7eb;
+}
+
+.legal-page h1 {
+  font-size: 2.4rem;
+  margin-bottom: 10px;
+}
+
+.legal-updated {
+  font-size: 0.9rem;
+  opacity: 0.7;
+  margin-bottom: 30px;
+}
+
+.legal-page section {
+  margin-bottom: 28px;
+}
+
+.legal-page h2 {
+  font-size: 1.2rem;
+  margin-bottom: 8px;
+  color: #ffffff;
+}
+
+.legal-page p,
+.legal-page li {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  opacity: 0.9;
+}
+
+.legal-page ul {
+  padding-left: 18px;
+}
