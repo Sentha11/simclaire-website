@@ -1,10 +1,10 @@
-{
-  "name": "simclaire-backend",
+{"name": "simclaire-backend",
   "version": "1.0.0",
-  "main": "server.js",
+  "type": "module",
   "scripts": {
-    "start": "node server.js"
+    "start": "node backend/server.js"
   },
+
   "dependencies": {
     "@sendgrid/mail": "^8.1.6",
     "axios": "^1.13.2",
@@ -14,8 +14,24 @@
     "express": "^4.22.1",
     "hpagent": "^1.2.0",
     "https-proxy-agent": "^7.0.6",
+    "socks-proxy-agent": "^8.0.5",
+     "pg": "^8.17.2",
     "pdfkit": "^0.17.2",
     "stripe": "^20.0.0",
     "twilio": "^5.10.7"
-  }
+  },
+
+  "description": "",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Sentha11/simclaire-website.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Sentha11/simclaire-website/issues"
+  },
+  "homepage": "https://github.com/Sentha11/simclaire-website#readme"
 }
