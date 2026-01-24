@@ -10,5 +10,19 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "stripe": "^14.0.0"
-  }
+  },
+  "description": "",
+  "main": "index.js",
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Sentha11/simclaire-website.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Sentha11/simclaire-website/issues"
+  },
+  "homepage": "https://github.com/Sentha11/simclaire-website#readme"
 }

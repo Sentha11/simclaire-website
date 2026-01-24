@@ -6,6 +6,7 @@
 // =====================================================
 
 require("dotenv").config();
+const { Pool } = require("pg");
 
 const ESIM_BASE_URL = process.env.ESIM_BASE_URL;
 
@@ -32,24 +33,17 @@ const { SocksProxyAgent } = require("socks-proxy-agent");
 const twilio = require("twilio");
 const sgMail = require("@sendgrid/mail");
 
-// =====================================================
-// PHASE 1 – FULFILLMENT STORAGE (JSON)
-// =====================================================
-const FULFILLMENTS_PATH = path.join(__dirname, "data", "fulfillments.json");
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === "production"
+    ? { rejectUnauthorized: false }
+    : false
+});
 
-function saveFulfillment(entry) {
-  let existing = [];
-  try {
-    existing = JSON.parse(fs.readFileSync(FULFILLMENTS_PATH, "utf8"));
-  } catch {}
+pool.on("connect", () => {
+  console.log("🗄️ Connected to Postgres");
+});
 
-  existing.push(entry);
-
-  fs.writeFileSync(
-    FULFILLMENTS_PATH,
-    JSON.stringify(existing, null, 2)
-  );
-}
 // =====================================================
 const WHATSAPP_FROM = `whatsapp:${process.env.TWILIO_WHATSAPP_FROM}`;
 
@@ -89,6 +83,7 @@ if (process.env.STRIPE_SECRET_KEY) {
 } else {
   console.log("🟡 Stripe not configured");
 }
+
 
 app.use(cors());
 // Twilio WhatsApp webhooks are x-www-form-urlencoded
@@ -274,20 +269,7 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
           console.log("📄 Transaction ID:", transactionId);
           console.log("🔑 Activation Code:", activationCode);
 
-          // =====================================================
-          // PHASE 1 – SAVE FULFILLMENT RECORD
-          // =====================================================
-          saveFulfillment({
-            email: metadata.email,
-            sessionId: session.id,
-            sku: metadata.productSku,
-            planName: metadata.planName,
-            country: metadata.country,
-            activationCode,
-            transactionId,
-            createdAt: new Date().toISOString()
-          });
-
+          
           //if (!metadata?.acceptedTerms) {
            // return res.status(400).json({
             //  error: "Terms and Conditions must be accepted",
@@ -1290,47 +1272,6 @@ app.get("/success", (req, res) => {
   `);
 });
 
-// =====================================================
-// ACCOUNT LOOKUP – EMAIL → PURCHASES
-// =====================================================
-app.get("/api/account/purchases", async (req, res) => {
-  try {
-    const { email } = req.query;
-
-    if (!email) {
-      return res.status(400).json({
-        error: "Email is required"
-      });
-    }
-
-    // TEMP (Phase 1): JSON storage
-    let records = [];
-    try {
-      records = JSON.parse(
-        fs.readFileSync(FULFILLMENTS_PATH, "utf8")
-      );
-    } catch {
-      records = [];
-    }
-
-    const purchases = records.filter(
-      r => r.email.toLowerCase() === email.toLowerCase()
-    );
-
-    return res.json({
-      email,
-      found: purchases.length > 0,
-      totalPurchases: purchases.length,
-      purchases
-    });
-
-  } catch (err) {
-    console.error("❌ Account lookup failed:", err.message);
-    return res.status(500).json({
-      error: "Account lookup failed"
-    });
-  }
-});
 
 app.get("/api/account/purchases", async (req, res) => {
   try {
