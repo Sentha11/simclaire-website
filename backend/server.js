@@ -33,17 +33,28 @@ const { SocksProxyAgent } = require("socks-proxy-agent");
 const twilio = require("twilio");
 const sgMail = require("@sendgrid/mail");
 
+const { Pool } = require("pg");
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === "production"
-    ? { rejectUnauthorized: false }
-    : false
+  ssl: { rejectUnauthorized: false },
 });
 
-pool.on("connect", () => {
-  console.log("🗄️ Connected to Postgres");
+app.get("/test-db", async (req, res) => {
+  try {
+    const result = await pool.query("SELECT NOW()");
+    res.json({
+      ok: true,
+      dbTime: result.rows[0].now,
+    });
+  } catch (err) {
+    console.error("DB TEST FAILED:", err.message);
+    res.status(500).json({
+      ok: false,
+      error: err.message,
+    });
+  }
 });
-
 // =====================================================
 const WHATSAPP_FROM = `whatsapp:${process.env.TWILIO_WHATSAPP_FROM}`;
 
