@@ -133,6 +133,13 @@ function renderPlans(plans) {
 
   <button class="buy-btn" disabled>Buy Now</button>
 `;
+
+   const checkbox = div.querySelector(".refund-checkbox");
+   const buyBtn = div.querySelector(".buy-btn");
+
+   checkbox.addEventListener("change", () => {
+   buyBtn.disabled = !checkbox.checked;
+  });
     // ✅ SAFE EVENT BINDING (NO INLINE JS)
     div.querySelector(".buy-btn").addEventListener("click", () => {
     const accepted = div.querySelector(".refund-checkbox")?.checked;
@@ -205,12 +212,7 @@ if (input && suggestions) {
       .slice(0, 6)
       .forEach(country => {
         const div = document.createElement("div");
-        const checkbox = div.querySelector(".refund-checkbox");
-        const buyBtn = div.querySelector(".buy-btn");
-
-        checkbox.addEventListener("change", () => {
-          buyBtn.disabled = !checkbox.checked;
-        });
+     
         div.className = "suggestion-item";
         div.textContent = country;
         div.onclick = () => {

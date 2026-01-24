@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>How to Install Your eSIM | SimClaire</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="index, follow" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+
+<div class="legal-page">
+  <a href="/" class="top-btn">← Back to Home</a>
+
+  <h1>How to Install Your eSIM</h1>
+  <p class="legal-updated">
+    Install in minutes. No physical SIM required.
+  </p>
+
+  <!-- DEVICE TABS -->
+  <div class="install-tabs">
+    <button class="tab-btn active" onclick="showTab('iphone')">📱 iPhone</button>
+    <button class="tab-btn" onclick="showTab('samsung')">📱 Samsung</button>
+    <button class="tab-btn" onclick="showTab('pixel')">📱 Google Pixel</button>
+  </div>
+
+  <!-- iPhone -->
+  <div class="install-content active" id="iphone">
+    <h2>Install on iPhone</h2>
+    <ol>
+      <li>Go to <strong>Settings → Cellular</strong></li>
+      <li>Tap <strong>Add eSIM</strong></li>
+      <li>Select <strong>Use QR Code</strong></li>
+      <li>Scan the QR code from your SimClaire email</li>
+      <li>Follow on-screen steps to finish setup</li>
+    </ol>
+    <p class="install-note">
+      📍 We recommend installing before travel and activating upon arrival.
+    </p>
+  </div>
+
+  <!-- Samsung -->
+  <div class="install-content" id="samsung">
+    <h2>Install on Samsung</h2>
+    <ol>
+      <li>Go to <strong>Settings → Connections</strong></li>
+      <li>Tap <strong>SIM Manager</strong></li>
+      <li>Select <strong>Add eSIM</strong></li>
+      <li>Scan the QR code from your SimClaire email</li>
+      <li>Enable mobile data for the eSIM</li>
+    </ol>
+  </div>
+
+  <!-- Pixel -->
+  <div class="install-content" id="pixel">
+    <h2>Install on Google Pixel</h2>
+    <ol>
+      <li>Go to <strong>Settings → Network & Internet</strong></li>
+      <li>Tap <strong>SIMs → Add SIM</strong></li>
+      <li>Select <strong>Download a SIM instead</strong></li>
+      <li>Scan the QR code from your SimClaire email</li>
+      <li>Confirm and activate</li>
+    </ol>
+  </div>
+
+  <section>
+    <h2>Need Help?</h2>
+    <p>
+      📧 support@simclaire.com<br />
+      💬 Live chat available on our website
+    </p>
+  </section>
+</div>
+
+<script>
+function showTab(tabId) {
+  document.querySelectorAll(".install-content").forEach(el => {
+    el.classList.remove("active");
+  });
+  document.querySelectorAll(".tab-btn").forEach(btn => {
+    btn.classList.remove("active");
+  });
+
+  document.getElementById(tabId).classList.add("active");
+  event.target.classList.add("active");
+}
+</script>
+
+</body>
+</html>

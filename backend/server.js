@@ -90,7 +90,6 @@ if (process.env.STRIPE_SECRET_KEY) {
   console.log("🟡 Stripe not configured");
 }
 
-
 app.use(cors());
 // Twilio WhatsApp webhooks are x-www-form-urlencoded
 app.use(express.urlencoded({ extended: false }));
@@ -1291,6 +1290,48 @@ app.get("/success", (req, res) => {
   `);
 });
 
+// =====================================================
+// ACCOUNT LOOKUP – EMAIL → PURCHASES
+// =====================================================
+app.get("/api/account/purchases", async (req, res) => {
+  try {
+    const { email } = req.query;
+
+    if (!email) {
+      return res.status(400).json({
+        error: "Email is required"
+      });
+    }
+
+    // TEMP (Phase 1): JSON storage
+    let records = [];
+    try {
+      records = JSON.parse(
+        fs.readFileSync(FULFILLMENTS_PATH, "utf8")
+      );
+    } catch {
+      records = [];
+    }
+
+    const purchases = records.filter(
+      r => r.email.toLowerCase() === email.toLowerCase()
+    );
+
+    return res.json({
+      email,
+      found: purchases.length > 0,
+      totalPurchases: purchases.length,
+      purchases
+    });
+
+  } catch (err) {
+    console.error("❌ Account lookup failed:", err.message);
+    return res.status(500).json({
+      error: "Account lookup failed"
+    });
+  }
+});
+
 app.get("/api/account/purchases", async (req, res) => {
   try {
     const { email } = req.query;
@@ -1402,12 +1443,21 @@ app.get("*", (req, res) => {
 // =====================================================
 const PORT = process.env.PORT || 10000;
 
-loadPricingCSV().then(() => {
+if (!isUAT) {
+  loadPricingCSV().then(startServer);
+} else {
+  console.log("🧪 UAT MODE — skipping CSV pricing");
+  startServer();
+}
+
+function startServer() {
   app.listen(PORT, () => {
-    console.log(`🔥 Backend running on port ${PORT} (SimClaire OPTION C)`);
+    console.log(`🔥 Backend running on port ${PORT}`);
     console.log(`➡️ APP_BASE_URL: ${APP_BASE_URL}`);
     console.log(`➡️ BACKEND_BASE_URL: ${BACKEND_BASE_URL}`);
     console.log(`➡️ STRIPE_SUCCESS_URL: ${STRIPE_SUCCESS_URL}`);
     console.log(`➡️ STRIPE_CANCEL_URL: ${STRIPE_CANCEL_URL}`);
   });
-});
+}
+
+  

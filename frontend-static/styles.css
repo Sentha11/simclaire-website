@@ -894,3 +894,70 @@ button:focus-visible,
 .legal-page ul {
   padding-left: 18px;
 }
+
+/* =========================
+   INSTALL GUIDE
+========================= */
+.install-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 30px;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+  font-weight: 600;
+}
+
+.tab-btn.active {
+  background: linear-gradient(135deg, #6366f1, #a855f7);
+}
+
+.install-content {
+  display: none;
+}
+
+.install-content.active {
+  display: block;
+}
+
+.install-content ol {
+  padding-left: 20px;
+}
+
+.install-content li {
+  margin-bottom: 10px;
+}
+
+.install-note {
+  margin-top: 15px;
+  opacity: 0.85;
+}
+
+.legal-container {
+  max-width: 900px;
+  margin: 60px auto;
+  padding: 0 20px;
+  line-height: 1.7;
+}
+
+.legal-container h2,
+.legal-container h3 {
+  margin-top: 30px;
+}
+
+.legal-container ul {
+  padding-left: 20px;
+}
+
+.legal-note {
+  margin-top: 25px;
+  opacity: 0.8;
+  font-size: 0.95rem;
+}
