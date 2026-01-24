@@ -6,7 +6,7 @@
 // =====================================================
 
 require("dotenv").config();
-const { Pool } = require("pg");
+//const { Pool } = require("pg");
 
 const ESIM_BASE_URL = process.env.ESIM_BASE_URL;
 
