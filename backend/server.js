@@ -187,7 +187,7 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
       if (event.type === "checkout.session.completed") {
         console.log("🚀 Stripe webhook reached checkout.session.completed");
         const session = event.data.object;
-
+        const metadata = session.metadata || {};
         const orderResult = await pool.query(
           `
           INSERT INTO orders (
@@ -226,7 +226,7 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
         console.log("✅ Stripe payment completed:", session.id);
 
         const customerEmail = session.customer_details?.email;
-        const metadata = session.metadata || {};
+        
        // const whatsappTo =
       // metadata.whatsappTo ||
        // (metadata.mobileno ? `whatsapp:+${metadata.mobileno}` : null);
