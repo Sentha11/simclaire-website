@@ -214,7 +214,8 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
         `,
         [
           session.id,
-          customerEmail, // ✅ FIXED
+          session.customer_details?.email, // ✅ FIXED
+          session.customer_details?.email || null,
           metadata.productSku || null,
           metadata.productType || null,
           Number(metadata.quantity || 1),
