@@ -199,6 +199,7 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
         `
         INSERT INTO orders (
           stripe_session_id,
+          email,
           customer_email,
           product_sku,
           product_type,
@@ -209,13 +210,14 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
           mobileno,
           payment_status
         )
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+        ON_CONFLICT (stripe_session_id) DO NOTHING
         RETURNING id
         `,
         [
           session.id,
-          session.customer_details?.email, // ✅ FIXED
-          session.customer_details?.email || null,
+          session.customer_details?.email || metadata.email,
+          session.customer_details?.email || metadata.email,
           metadata.productSku || null,
           metadata.productType || null,
           Number(metadata.quantity || 1),
