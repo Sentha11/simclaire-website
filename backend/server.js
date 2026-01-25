@@ -1295,59 +1295,101 @@ app.post("/api/account/lookup", async (req, res) => {
 // =====================================================
 // ACCOUNT — RESEND eSIM INSTRUCTIONS
 // =====================================================
-app.post("/api/account/send-instructions", async (req, res) => {
-  const { email } = req.body;
 
-  if (!email) {
-    return res.status(400).json({ error: "Email is required" });
-  }
+app.get("/api/account/purchases", async (req, res) => {
+  try {
+    const { email } = req.query;
 
-  const result = await pool.query(
-    `
-    SELECT
-      o.product_sku,
-      o.country,
-      o.created_at,
-      e.activation_code,
-      e.transaction_id
-    FROM orders o
-    JOIN esims e ON e.order_id = o.id
-    WHERE o.email = $1
-      AND e.esim_status = 'issued'
-    ORDER BY o.created_at DESC
-    `,
-    [email.toLowerCase()]
-  );
+    if (!email) {
+      return res.status(400).json({ error: "Email is required" });
+    }
 
-  if (result.rows.length === 0) {
-    return res.status(404).json({
-      error: "No issued eSIMs found for this email"
+    const result = await pool.query(
+      `
+      SELECT
+        o.id,
+        o.email,
+        o.product_sku,
+        o.amount,
+        o.currency,
+        o.created_at,
+        e.transaction_id,
+        e.activation_code,
+        e.esim_status
+      FROM orders o
+      LEFT JOIN esims e ON e.order_id = o.id
+      WHERE LOWER(o.email) = LOWER($1)
+      ORDER BY o.created_at DESC
+      LIMIT 10
+      `,
+      [email]
+    );
+
+    return res.json({
+      email,
+      purchases: result.rows,
     });
+  } catch (err) {
+    console.error("❌ Account lookup error:", err);
+    return res.status(500).json({ error: "Failed to fetch purchases" });
   }
+});
 
-  const emailBody = result.rows
-    .map(r =>
-      `📶 Plan: ${r.product_sku}
-🌍 Country: ${r.country}
+app.post("/api/account/send-instructions", async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ error: "Email is required" });
+    }
+
+    const result = await pool.query(
+      `
+      SELECT
+        o.product_sku,
+        o.created_at,
+        e.transaction_id,
+        e.activation_code
+      FROM orders o
+      JOIN esims e ON e.order_id = o.id
+      WHERE LOWER(o.email) = LOWER($1)
+      ORDER BY o.created_at DESC
+      `,
+      [email]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        error: "No issued eSIMs found for this email",
+      });
+    }
+
+    const emailBody = result.rows
+      .map(r =>
+`📶 Plan: ${r.product_sku}
 🔑 Activation Code: ${r.activation_code}
 🧾 Transaction ID: ${r.transaction_id}
 📅 Purchased: ${new Date(r.created_at).toDateString()}`
-    )
-    .join("\n\n---\n\n");
+      )
+      .join("\n\n---\n\n");
 
-  if (process.env.SENDGRID_API_KEY) {
-    await sgMail.send({
-      to: email,
-      from: "care@simclaire.com",
-      subject: "Your SimClaire eSIM Instructions",
-      text:
-        "Here are your eSIM details:\n\n" +
-        emailBody +
-        "\n\n— SimClaire Support"
-    });
+    if (process.env.SENDGRID_API_KEY) {
+      await sgMail.send({
+        to: email,
+        from: "care@simclaire.com",
+        subject: "Your SimClaire eSIM Instructions",
+        text:
+          "Here are your eSIM details:\n\n" +
+          emailBody +
+          "\n\n— SimClaire Support",
+      });
+    }
+
+    return res.json({ success: true });
+  } catch (err) {
+    console.error("❌ Send instructions error:", err);
+    return res.status(500).json({ error: "Failed to send instructions" });
   }
-
-  res.json({ success: true });
 });
 
 // =====================================================
