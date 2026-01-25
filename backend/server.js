@@ -188,44 +188,50 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
         console.log("🚀 Stripe webhook reached checkout.session.completed");
         const session = event.data.object;
         const metadata = session.metadata || {};
-        const orderResult = await pool.query(
-          `
-          INSERT INTO orders (
-            stripe_session_id,
-            customer_email,
-            product_sku,
-            product_type,
-            quantity,
-            amount,
-            currency,
-            country,
-            mobileno,
-            payment_status
-          )
-          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
-          RETURNING id
-          `,
-          [
-            session.id,
-            session.customer_details?.email || null,
-            metadata.productSku || null,
-            metadata.productType || null,
-            Number(metadata.quantity || 1),
-            session.amount_total ? session.amount_total / 100 : null,
-            session.currency || null,
-            metadata.country || null,
-            metadata.mobileno || null,
-            "paid"
-          ]
-        );
+        
+        const customerEmail =
+        session.customer_details?.email ||
+        session.customer_email ||
+        metadata.email ||
+        "unknown@simclaire.com";
 
+      const orderResult = await pool.query(
+        `
+        INSERT INTO orders (
+          stripe_session_id,
+          customer_email,
+          product_sku,
+          product_type,
+          quantity,
+          amount,
+          currency,
+          country,
+          mobileno,
+          payment_status
+        )
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+        RETURNING id
+        `,
+        [
+          session.id,
+          customerEmail, // ✅ FIXED
+          metadata.productSku || null,
+          metadata.productType || null,
+          Number(metadata.quantity || 1),
+          session.amount_total ? session.amount_total / 100 : null,
+          session.currency || "gbp",
+          metadata.country || null,
+          metadata.mobileno || null,
+          "paid"
+        ]
+      );
         const orderId = orderResult.rows[0].id;
 
         console.log("🧾 Order saved:", orderId);
 
         console.log("✅ Stripe payment completed:", session.id);
 
-        const customerEmail = session.customer_details?.email;
+       // const customerEmail = session.customer_details?.email;
         
        // const whatsappTo =
       // metadata.whatsappTo ||
