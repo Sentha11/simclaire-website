@@ -188,6 +188,41 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
         console.log("🚀 Stripe webhook reached checkout.session.completed");
         const session = event.data.object;
 
+        const orderResult = await pool.query(
+          `
+          INSERT INTO orders (
+            stripe_session_id,
+            customer_email,
+            product_sku,
+            product_type,
+            quantity,
+            amount,
+            currency,
+            country,
+            mobileno,
+            payment_status
+          )
+          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+          RETURNING id
+          `,
+          [
+            session.id,
+            session.customer_details?.email || null,
+            metadata.productSku || null,
+            metadata.productType || null,
+            Number(metadata.quantity || 1),
+            session.amount_total ? session.amount_total / 100 : null,
+            session.currency || null,
+            metadata.country || null,
+            metadata.mobileno || null,
+            "paid"
+          ]
+        );
+
+        const orderId = orderResult.rows[0].id;
+
+        console.log("🧾 Order saved:", orderId);
+
         console.log("✅ Stripe payment completed:", session.id);
 
         const customerEmail = session.customer_details?.email;
@@ -253,6 +288,26 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
           //const esim = esimRes?.data || esimRes || {};
           const transactionId = esimRes.uniqueRefno;
           const activationCode = esimRes.esims?.[0]?.activationcode;
+
+          await pool.query(
+            `
+            INSERT INTO esims (
+              order_id,
+              transaction_id,
+              activation_code,
+              esim_status
+            )
+            VALUES ($1,$2,$3,$4)
+            `,
+            [
+              orderId,
+              transactionId || null,
+              activationCode || null,
+              "issued"
+            ]
+          );
+
+          console.log("📶 eSIM stored for order:", orderId);
 
           console.log("✅ eSIM purchased");
           console.log("📄 Transaction ID:", transactionId);
