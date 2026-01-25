@@ -190,45 +190,51 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
         const metadata = session.metadata || {};
         
         const customerEmail =
-        session.customer_details?.email ||
-        session.customer_email ||
-        metadata.email ||
+        session.customer_details?.email?.trim() ||
+        session.customer_email?.trim() ||
+        metadata.email?.trim() ||
         "unknown@simclaire.com";
 
       const orderResult = await pool.query(
-        `
-        INSERT INTO orders (
-          stripe_session_id,
-          email,
-          customer_email,
-          product_sku,
-          product_type,
-          quantity,
-          amount,
-          currency,
-          country,
-          mobileno,
-          payment_status
-        )
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
-        ON_CONFLICT (stripe_session_id) DO NOTHING
-        RETURNING id
-        `,
-        [
-          session.id,
-          session.customer_details?.email || metadata.email,
-          session.customer_details?.email || metadata.email,
-          metadata.productSku || null,
-          metadata.productType || null,
-          Number(metadata.quantity || 1),
-          session.amount_total ? session.amount_total / 100 : null,
-          session.currency || "gbp",
-          metadata.country || null,
-          metadata.mobileno || null,
-          "paid"
-        ]
-      );
-        const orderId = orderResult.rows[0].id;
+  `
+  INSERT INTO orders (
+    stripe_session_id,
+    email,
+    customer_email,
+    product_sku,
+    product_type,
+    quantity,
+    amount,
+    currency,
+    country,
+    mobileno,
+    payment_status
+  )
+  VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+  ON CONFLICT (stripe_session_id) DO NOTHING
+  RETURNING id
+  `,
+  [
+    session.id,
+    customerEmail,            // ✅ NEVER NULL
+    customerEmail,            // ✅ NEVER NULL
+    metadata.productSku || "",
+    metadata.productType || "",
+    Number(metadata.quantity || 1),
+    session.amount_total ? session.amount_total / 100 : 0,
+    session.currency || "gbp",
+    metadata.country || "",
+    metadata.mobileno || "",
+    "paid"
+  ]
+);
+
+if (!orderResult.rows.length) {
+  console.log("⚠️ Duplicate Stripe webhook ignored:", session.id);
+  return res.json({ received: true });
+}
+
+const orderId = orderResult.rows[0].id;
 
         console.log("🧾 Order saved:", orderId);
 
@@ -248,10 +254,13 @@ if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
           // ✅ MOBILE NUMBER (DO NOT NORMALIZE)
           const mobileno = String(metadata.mobileno || "").trim();
 
-          if (!mobileno) {
-            console.error("❌ Missing mobileno - cannot proceed with eSIM purchase");
-            throw new Error("mobileno is required for eSIM purchase");
-          }
+        if (!mobileno) {
+          console.error("❌ Missing mobileno — order saved but fulfillment skipped", {
+            orderId,
+            sessionId: session.id
+          });
+          return res.json({ received: true });
+        }
 
           console.log("📞 Using mobileno (exact):", mobileno);
 
