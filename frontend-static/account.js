@@ -1,86 +1,71 @@
 const BACKEND_URL = "https://simclaire-website-backend.onrender.com";
 
+const emailInput = document.getElementById("emailInput");
+const resultsDiv = document.getElementById("accountResults");
+const actionsDiv = document.getElementById("accountActions");
+const statusText = document.getElementById("accountStatus");
+
+// ===============================
+// LOAD ACCOUNT PURCHASES
+// ===============================
 async function loadAccount() {
-  const email = document.getElementById("emailInput").value.trim();
-  const results = document.getElementById("account-results");
+  const email = emailInput.value.trim();
 
   if (!email) return;
 
-  results.classList.remove("hidden");
-  results.innerHTML = "Loading purchases…";
+  resultsDiv.classList.remove("hidden");
+  resultsDiv.innerHTML = "🔍 Looking up purchases…";
+  actionsDiv.classList.add("hidden");
+  statusText.textContent = "";
 
   try {
     const res = await fetch(
       `${BACKEND_URL}/api/account/purchases?email=${encodeURIComponent(email)}`
     );
+
     const data = await res.json();
 
-    if (!data.purchases || data.purchases.length === 0) {
-      results.innerHTML = "<p>No purchases found for this email.</p>";
+    if (!res.ok || !data.purchases || data.purchases.length === 0) {
+      resultsDiv.innerHTML =
+        "<p>❌ No purchases found for this email.</p>";
       return;
     }
 
+    // Sort newest first
     const purchases = data.purchases
-      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
       .slice(0, 10);
 
-    results.innerHTML = purchases
+    resultsDiv.innerHTML = purchases
       .map(p => `
         <div class="glass-card account-card">
-          <h3>${p.planName}</h3>
-          <p>🌍 ${p.country}</p>
-          <p>💷 ${p.price} ${p.currency}</p>
-          <p>📅 ${new Date(p.date).toLocaleString()}</p>
-
-          <div class="account-actions">
-            <button disabled>View Instructions</button>
-            <button onclick="resendInstructions('${p.id}')"> Resend Instructions</button>
-          </div>
+          <h3>${p.product_sku || "eSIM Plan"}</h3>
+          <p>🌍 ${p.country || "—"}</p>
+          <p>💷 ${p.amount} ${p.currency}</p>
+          <p>📅 ${new Date(p.created_at).toLocaleString()}</p>
+          <p>📶 Status: ${p.payment_status}</p>
         </div>
       `)
       .join("");
 
+    // ✅ Purchases exist → enable resend
+    actionsDiv.classList.remove("hidden");
+
   } catch (err) {
-    results.innerHTML = "<p>Error loading account data.</p>";
+    console.error(err);
+    resultsDiv.innerHTML =
+      "<p>⚠️ Error loading account data.</p>";
   }
 }
 
-async function resendInstructions(sessionId) {
-  await fetch("/api/account/resend", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ sessionId })
-  });
-
-  alert("Instructions resent (test mode).");
-}
-
-const emailInput = document.getElementById("emailInput");
-const confirmEmailInput = document.getElementById("confirmEmailInput");
-const sendBtn = document.getElementById("sendInstructionsBtn");
-const statusText = document.getElementById("accountStatus");
-
-function checkEmailMatch() {
-  if (
-    emailInput.value &&
-    confirmEmailInput.value &&
-    emailInput.value === confirmEmailInput.value
-  ) {
-    sendBtn.style.display = "block";
-    statusText.textContent = "✅ Email confirmed";
-  } else {
-    sendBtn.style.display = "none";
-    statusText.textContent = "";
-  }
-}
-
-emailInput?.addEventListener("input", checkEmailMatch);
-confirmEmailInput?.addEventListener("input", checkEmailMatch);
-
-sendBtn?.addEventListener("click", async () => {
+// ===============================
+// SEND eSIM INSTRUCTIONS
+// ===============================
+async function sendInstructions() {
   const email = emailInput.value.trim();
+  if (!email) return;
 
-  statusText.textContent = "📡 Sending instructions...";
+  statusText.textContent = "📡 Sending instructions…";
 
   try {
     const res = await fetch(
@@ -95,15 +80,17 @@ sendBtn?.addEventListener("click", async () => {
     const data = await res.json();
 
     if (!res.ok) {
-      statusText.textContent = data.error || "Failed to send instructions";
+      statusText.textContent =
+        data.error || "❌ Failed to send instructions";
       return;
     }
 
     statusText.textContent =
-      "✅ Instructions sent! Check your email.";
+      "✅ Instructions sent! Please check your email.";
 
   } catch (err) {
     console.error(err);
-    statusText.textContent = "❌ Error sending instructions";
+    statusText.textContent =
+      "❌ Error sending instructions";
   }
-});
+}

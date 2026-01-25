@@ -56,20 +56,20 @@ var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
     ></div>
 
     <!-- =========================
-         SUCCESS / ACTION
+         ACTIONS (shown only if purchases exist)
     ========================== -->
     <div
-      id="accountSuccess"
-      class="account-success hidden"
+      id="accountActions"
+      class="hidden"
     >
-      <p>✅ Purchase found for this email.</p>
-
       <button
         id="sendInstructionsBtn"
         onclick="sendInstructions()"
       >
         📩 Send My eSIM Instructions
       </button>
+
+      <p id="accountStatus" class="status-text"></p>
     </div>
 
   </div>

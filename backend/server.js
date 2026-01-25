@@ -747,7 +747,7 @@ app.post("/api/payments/create-checkout-session", async (req, res) => {
 
       console.log("📞 Checkout mobile received:", mobile);
 
-      // ===============================
+// ===============================
 // 💰 FINAL PRICE ENFORCEMENT (CSV)
 // ===============================
 const rawPrice = price; // ← this IS finalPrice from CSV
@@ -1253,6 +1253,101 @@ return res.send(twiml("📧 Enter your email address for the Stripe receipt:"));
     console.log("🔴 WhatsApp webhook error:", err.message);
     return res.send(twiml("⚠️ Something broke. Type menu to restart."));
   }
+});
+
+// =====================================================
+// ACCOUNT LOOKUP — VIEW PURCHASES BY EMAIL
+// =====================================================
+app.post("/api/account/lookup", async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ error: "Email is required" });
+  }
+
+  const result = await pool.query(
+    `
+    SELECT
+      o.id,
+      o.product_sku,
+      o.amount,
+      o.currency,
+      o.created_at,
+      e.esim_status
+    FROM orders o
+    LEFT JOIN esims e ON e.order_id = o.id
+    WHERE o.email = $1
+    ORDER BY o.created_at DESC
+    `,
+    [email.toLowerCase()]
+  );
+
+  if (result.rows.length === 0) {
+    return res.json({ found: false });
+  }
+
+  res.json({
+    found: true,
+    purchases: result.rows
+  });
+});
+
+// =====================================================
+// ACCOUNT — RESEND eSIM INSTRUCTIONS
+// =====================================================
+app.post("/api/account/send-instructions", async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ error: "Email is required" });
+  }
+
+  const result = await pool.query(
+    `
+    SELECT
+      o.product_sku,
+      o.country,
+      o.created_at,
+      e.activation_code,
+      e.transaction_id
+    FROM orders o
+    JOIN esims e ON e.order_id = o.id
+    WHERE o.email = $1
+      AND e.esim_status = 'issued'
+    ORDER BY o.created_at DESC
+    `,
+    [email.toLowerCase()]
+  );
+
+  if (result.rows.length === 0) {
+    return res.status(404).json({
+      error: "No issued eSIMs found for this email"
+    });
+  }
+
+  const emailBody = result.rows
+    .map(r =>
+      `📶 Plan: ${r.product_sku}
+🌍 Country: ${r.country}
+🔑 Activation Code: ${r.activation_code}
+🧾 Transaction ID: ${r.transaction_id}
+📅 Purchased: ${new Date(r.created_at).toDateString()}`
+    )
+    .join("\n\n---\n\n");
+
+  if (process.env.SENDGRID_API_KEY) {
+    await sgMail.send({
+      to: email,
+      from: "care@simclaire.com",
+      subject: "Your SimClaire eSIM Instructions",
+      text:
+        "Here are your eSIM details:\n\n" +
+        emailBody +
+        "\n\n— SimClaire Support"
+    });
+  }
+
+  res.json({ success: true });
 });
 
 // =====================================================
