@@ -4,6 +4,11 @@ let currentPlans = [];
 
 const sortWrapper = document.getElementById("sortWrapper");
 
+const savedTheme = localStorage.getItem("theme");
+if (savedTheme === "light") {
+  document.documentElement.setAttribute("data-theme", "light");
+}
+
 /* =========================
    SEARCH + LOAD PLANS
 ========================= */
@@ -60,7 +65,7 @@ async function checkout(
     country,
     price
   });
-  
+
   const email = prompt("Enter your email for receipt:");
   const mobile = prompt("Enter your mobile number:");
 
@@ -360,3 +365,21 @@ window.addEventListener("scroll", () => {
 
   lastScrollY = currentScrollY;
 });
+
+const toggleBtn = document.getElementById("themeToggle");
+
+if (toggleBtn) {
+  toggleBtn.addEventListener("click", () => {
+    const currentTheme = document.documentElement.getAttribute("data-theme");
+    
+    if (currentTheme === "light") {
+      document.documentElement.removeAttribute("data-theme");
+      localStorage.setItem("theme", "dark");
+      toggleBtn.textContent = "🌙";
+    } else {
+      document.documentElement.setAttribute("data-theme", "light");
+      localStorage.setItem("theme", "light");
+      toggleBtn.textContent = "☀️";
+    }
+  });
+}

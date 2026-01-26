@@ -1,6 +1,42 @@
+/* ============================= */
+/* THEME VARIABLES */
+/* ============================= */
+
+:root {
+  --bg: #0b0b0f;
+  --card: #14141a;
+  --text: #ffffff;
+  --text-soft: rgba(255,255,255,0.75);
+  --muted: #b3b3b3;
+  --border: rgba(255,255,255,0.14);
+  --glass: rgba(255,255,255,0.08);
+  --glass-border: rgba(255,255,255,0.18);
+
+  /* BRAND ORANGE */
+  --accent: #ff7a1a;
+  --accent-soft: rgba(255,122,26,0.18);
+
+  --button-text: #ffffff;
+}
+
+[data-theme="light"] {
+  --bg: #ffffff;
+  --card: #f6f6f9;
+  --text: #111111;
+  --text-soft: rgba(0,0,0,0.7);
+  --muted: #555555;
+  --border: #e1e1e8;
+  --glass: rgba(0,0,0,0.04);
+  --glass-border: rgba(0,0,0,0.08);
+
+  --accent: #ff7a1a;
+  --accent-soft: rgba(255,122,26,0.18);
+}
+
 /* ===============================
    RESET & BASE
 ================================ */
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -11,1235 +47,52 @@ html, body {
   height: 100%;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
                Roboto, Inter, Helvetica, Arial, sans-serif;
-  background: #000;
-  color: #fff;
+  background: var(--bg);
+  color: var(--text);
   overflow-x: hidden;
 }
 
 /* ===============================
-   HERO CONTAINER
+   HERO / VIDEO / STARS
 ================================ */
+
 .hero {
-  position: relative;
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
   text-align: center;
-  overflow: hidden;
+  padding-top: 80px;
+  position: relative;
 }
 
-/* ===============================
-   MP4 SKY VIDEO BACKGROUND
-================================ */
 .sky-video {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  z-index: 0;
   opacity: 0.7;
-  filter: brightness(0.7) contrast(1);
+  z-index: 0;
 }
 
-/* ===============================
-   STAR LAYERS
-================================ */
 .stars {
   position: absolute;
   inset: 0;
   pointer-events: none;
   z-index: 1;
-  background-repeat: repeat;
 }
 
-/* Small stars */
-.stars-small {
-  background-image:
-    radial-gradient(1px 1px at 20px 30px, #fff, transparent),
-    radial-gradient(1px 1px at 120px 90px, #fff, transparent),
-    radial-gradient(1px 1px at 220px 140px, #fff, transparent);
-  background-size: 400px 400px;
-  animation: driftStars 140s linear infinite;
-  opacity: 0.35;
-}
-
-/* Large stars */
-.stars-large {
-  background-image:
-    radial-gradient(2px 2px at 80px 60px, #fff, transparent),
-    radial-gradient(2px 2px at 280px 180px, #fff, transparent);
-  background-size: 600px 600px;
-  animation: driftStarsReverse 200s linear infinite;
-  opacity: 0.22;
-}
-
-@keyframes driftStars {
-  from { transform: translateY(0); }
-  to   { transform: translateY(-800px); }
-}
-
-@keyframes driftStarsReverse {
-  from { transform: translateY(0); }
-  to   { transform: translateY(800px); }
-}
-
-/* ===============================
-   HERO CONTENT
-================================ */
 .hero-content {
   position: relative;
-  z-index: 3;
+  z-index: 5;
   max-width: 720px;
   padding: 40px 20px;
-  animation: heroFadeUp 1.2s ease forwards;
-  opacity: 0;
-}
-
-@keyframes heroFadeUp {
-  from {
-    opacity: 0;
-    transform: translateY(18px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  animation: fadeUp 0.9s ease forwards;
 }
 
 /* ===============================
-   FLOATING TOP NAV (NO HEADER)
-================================ */
-
-.top-links {
-  position: absolute;
-  top: 22px;
-  right: 28px;
-  z-index: 10;
-
-  display: flex;
-  gap: 12px;
-}
-
-.top-btn {
-  padding: 8px 14px;
-  border-radius: 999px;
-
-  background: rgba(255,255,255,0.12);
-  border: 1px solid rgba(255,255,255,0.25);
-
-  color: #fff;
-  text-decoration: none;
-  font-size: 13px;
-  font-weight: 500;
-
-  backdrop-filter: blur(8px);
-  transition: all 0.25s ease;
-}
-  
-
-/* Hover */
-.top-btn:hover {
-  background: rgba(255,255,255,0.22);
-  border-color: rgba(255,255,255,0.45);
-}
-
-/* Active / Primary (Account) */
-.top-btn.primary {
-  background: rgba(255,255,255,0.32);
-  color: #000;
-  border-color: rgba(255,255,255,0.55);
-}
-
-/* ===============================
-   HEADINGS
-================================ */
-.hero-content h1 {
-  font-size: 64px;
-  font-weight: 600;
-  letter-spacing: -0.03em;
-  margin-bottom: 14px;
-}
-
-.hero-content p {
-  font-size: 18px;
-  font-weight: 400;
-  opacity: 0.85;
-  margin-bottom: 34px;
-}
-
-/* ===============================
-   SEARCH BOX
-================================ */
-.search-box {
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-  flex-wrap: wrap;
-  position: relative;
-}
-
-.search-box input {
-  width: 340px;
-  max-width: 90vw;
-  padding: 14px 18px;
-  border-radius: 14px;
-  border: none;
-  font-size: 15px;
-  outline: none;
-}
-
-.search-box button {
-  padding: 14px 24px;
-  border-radius: 14px;
-  border: none;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  background: #fff;
-  color: #000;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-
-.search-box button:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 8px 26px rgba(0,0,0,0.35);
-}
-
-/* ===============================
-   AUTOCOMPLETE DROPDOWN
-================================ */
-.suggestions {
-  position: absolute;
-  top: 60px;
-  background: rgba(15,15,20,0.95);
-  backdrop-filter: blur(14px);
-  border-radius: 14px;
-  width: 340px;
-  max-width: 90vw;
-  overflow: hidden;
-  z-index: 20;
-}
-
-.suggestion-item {
-  padding: 12px 16px;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-
-.suggestion-item:hover {
-  background: rgba(255,255,255,0.08);
-}
-
-/* ===============================
-   RESULTS SECTION
-================================ */
-#results {
-  padding: 70px 20px 120px;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.plan {
-  max-width: 520px;
-  margin: 14px auto;
-  padding: 16px 18px;
-
-  border-radius: 14px;
-  background: linear-gradient(180deg, #0f172a, #020617);
-
-  box-shadow: 0 10px 30px rgba(0,0,0,0.35);
-  border: 1px solid rgba(255,255,255,0.06);
-
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-
-  opacity: 0;
-  transform: translateY(12px);
-  animation: fadeUp 0.5s ease forwards;
-
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
-}
-
-.plan h3 {
-  font-size: 18px;
-  margin-bottom: 4px;
-}
-
-.plan p {
-  font-size: 14px;
-  opacity: 0.85;
-  margin: 0;
-}
-
-.plan:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 18px 40px rgba(59,130,246,0.25);
-}
-
-.plan-meta {
-  display: flex;
-  gap: 18px;
-  margin-top: 12px;
-  color: #cbd5e1;
-  font-size: 14px;
-}
-
-.plan-price {
-  margin-top: 14px;
-  font-size: 22px;
-  font-weight: 700;
-  color: #f8fafc;
-}
-
-.meta-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-
-/* ===============================
-   ACCOUNT PAGE
-================================ */
-.account-hero {
-  min-height: 100vh;
-}
-
-.account-card {
-  background: rgba(255,255,255,0.08);
-  backdrop-filter: blur(14px);
-  border-radius: 18px;
-  padding: 26px;
-  max-width: 420px;
-  margin: 30px auto;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.45);
-}
-
-.account-card input {
-  width: 100%;
-  padding: 14px;
-  border-radius: 12px;
-  border: none;
-  margin-bottom: 14px;
-  font-size: 16px;
-}
-
-.account-card button {
-  width: 100%;
-  padding: 14px;
-  border-radius: 12px;
-  border: none;
-  background: #ffffff;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-#accountResults {
-  max-width: 1000px;
-  margin: 50px auto;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 22px;
-}
-
-.account-order {
-  background: rgba(255,255,255,0.07);
-  padding: 22px;
-  border-radius: 16px;
-  backdrop-filter: blur(12px);
-}
-
-/* ===============================
-   VIDEO-BLENDED HEADER
-================================ */
-
-.site-header {
-  position: fixed;
-  top: 0;
-  width: 100%;
-  height: 64px;
-  z-index: 1000;
-
-  /* Blend into video */
-  background:
-    linear-gradient(
-      to bottom,
-      rgba(0,0,0,0.55),
-      rgba(0,0,0,0.25),
-      rgba(0,0,0,0.05),
-      rgba(0,0,0,0)
-    );
-
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-
-  border-bottom: 1px solid rgba(255,255,255,0.06);
-}
-
-/* Header inner layout */
-.header-inner {
-  height: 64px;
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 0 24px;
-
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-/* ===============================
-   NAV LINKS
-================================ */
-
-.nav-links {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-}
-
-.nav-links a {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 36px;
-  padding: 0 14px;
-  border-radius: 999px;
-  line-height: 1;
-
-  color: rgba(255,255,255,0.85);
-  text-decoration: none;
-  font-size: 14px;
-
-  transition: all 0.25s ease;
-}
-
-/* Hover = soft glow */
-.nav-links a:hover {
-  background: rgba(255,255,255,0.14);
-  color: #fff;
-}
-
-/* Active / Account */
-.account-btn {
-  background: rgba(255,255,255,0.18);
-  border: 1px solid rgba(255,255,255,0.28);
-  color: #fff;
-}
-
-/* ===============================
-   HERO OFFSET
-================================ */
-
-.hero,
-.account-hero {
-  padding-top: 64px;
-}
-
-.faq-card, .support-card {
-  max-width: 700px;
-  margin: auto;
-  padding: 30px;
-}
-
-.faq-item {
-  margin-top: 20px;
-}
-
-.support-btn {
-  display: block;
-  margin: 16px 0;
-  padding: 14px;
-  text-align: center;
-  background: rgba(255,255,255,0.12);
-  border-radius: 12px;
-  text-decoration: none;
-  color: #fff;
-}
-
-.support-btn:hover {
-  background: rgba(255,255,255,0.2);
-}
-
-.support-note {
-  opacity: 0.7;
-  font-size: 14px;
-  margin-top: 12px;
-}
-
-/* Chat CTA pulse */
-@keyframes chatPulse {
-  0%   { box-shadow: 0 0 0 0 rgba(255,255,255,0.35); }
-  70%  { box-shadow: 0 0 0 12px rgba(255,255,255,0); }
-  100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); }
-}
-
-/* Target Tawk widget iframe */
-iframe[src*="tawk.to"] {
-  animation: none !important;
-}
-
-.support-options {
-  text-align: center;
-  padding: 80px 20px;
-}
-
-.support-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 20px;
-  max-width: 700px;
-  margin: 40px auto 0;
-}
-
-.support-card {
-  background: rgba(255,255,255,0.08);
-  backdrop-filter: blur(12px);
-  border-radius: 16px;
-  padding: 24px;
-  color: white;
-  text-decoration: none;
-  border: 1px solid rgba(255,255,255,0.12);
-  transition: transform 0.2s ease, background 0.2s ease;
-}
-
-.support-card:hover {
-  transform: translateY(-3px);
-  background: rgba(255,255,255,0.12);
-}
-
-.support-card span {
-  display: block;
-  opacity: 0.8;
-  margin-top: 6px;
-  font-size: 14px;
-}
-
-/* ===============================
-   FAQ ANIMATION
-================================ */
-
-#homepage-faq {
-  transition:
-    opacity 0.5s ease,
-    transform 0.5s ease,
-    max-height 0.5s ease;
-}
-
-#homepage-faq.hidden {
-  opacity: 0;
-  transform: translateY(20px);
-  max-height: 0;
-  overflow: hidden;
-  pointer-events: none;
-}
-
-.faq-item {
-  background: rgba(255,255,255,0.06);
-  backdrop-filter: blur(10px);
-  border-radius: 14px;
-  padding: 20px;
-  margin-bottom: 14px;
-}
-
-.hidden {
-  display: none !important;
-}
-
-.page-bg {
-  min-height: 100vh;
-  background:
-    radial-gradient(circle at top, rgba(80,120,255,0.15), transparent 55%),
-    linear-gradient(to bottom, #0b1220, #02040a);
-}
-
-.account-card,
-.support-card,
-.faq-item {
-  background: rgba(255,255,255,0.1);
-  border: 1px solid rgba(255,255,255,0.18);
-}
-
-.back-pill {
-  display: inline-block;
-  margin-bottom: 22px;
-  padding: 8px 16px;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.12);
-  backdrop-filter: blur(10px);
-  color: #fff;
-  text-decoration: none;
-  font-size: 13px;
-  border: 1px solid rgba(255,255,255,0.25);
-  transition: all 0.25s ease;
-}
-
-.back-pill:hover {
-  background: rgba(255,255,255,0.2);
-  transform: translateX(-2px);
-}
-
-/* ===============================
-   SORT DROPDOWN
-================================ */
-
-.sort-wrapper {
-  transition: opacity 0.3s ease, transform 0.3s ease;
-}
-
-.sort-wrapper.hidden {
-  opacity: 0;
-  transform: translateY(6px);
-  pointer-events: none;
-}
-
-#priceSort {
-  width: fit-content;
-  min-width: 120px;
-  padding: 8px 12px;
-}
-
-/* ===============================
-   GLASS BUTTON INTERACTION
-================================ */
-
-.top-btn,
-button,
-.account-btn,
-#priceSort {
-  position: relative;
-  transition: 
-    background 0.25s ease,
-    box-shadow 0.25s ease,
-    transform 0.15s ease;
-}
-
-/* Hover */
-.top-btn:hover,
-button:hover,
-.account-btn:hover {
-  background: rgba(255,255,255,0.16);
-  box-shadow: 0 6px 18px rgba(0,0,0,0.3);
-}
-
-/* Active / Click */
-.top-btn:active,
-button:active,
-.account-btn:active,
-#priceSort:active {
-  transform: translateY(0);
-  box-shadow:
-    0 4px 14px rgba(0,0,0,0.4),
-    inset 0 0 0 1px rgba(255,255,255,0.35);
-}
-
-/* Focus (keyboard / accessibility) */
-.top-btn:focus-visible,
-button:focus-visible,
-#priceSort:focus-visible {
-  outline: none;
-  box-shadow:
-    0 0 0 2px rgba(120,180,255,0.6),
-    0 10px 30px rgba(0,0,0,0.4);
-}
-
-.account-results {
-  margin-top: 20px;
-  display: grid;
-  gap: 16px;
-}
-
-.account-card {
-  padding: 20px;
-}
-
-.account-actions {
-  margin-top: 12px;
-  display: flex;
-  gap: 10px;
-}
-
-/* =========================
-   FAQ – AIRALO STYLE
-========================= */
-
-.faq-container {
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 10px;
-}
-
-.faq-subtitle {
-  opacity: 0.8;
-  margin-bottom: 25px;
-}
-
-.faq-item {
-  background: rgba(255,255,255,0.08);
-  border-radius: 12px;
-  margin-bottom: 14px;
-  overflow: hidden;
-}
-
-.faq-question {
-  width: 100%;
-  padding: 16px 18px;
-  background: none;
-  border: none;
-  color: white;
-  font-size: 16px;
-  font-weight: 600;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  cursor: pointer;
-}
-
-.faq-question span {
-  font-size: 20px;
-  transition: transform 0.2s ease;
-}
-
-.faq-answer {
-  max-height: 0;
-  overflow: hidden;
-  padding: 0 18px;
-  transition: max-height 0.25s ease;
-}
-
-.faq-answer p {
-  margin: 12px 0 18px;
-  opacity: 0.85;
-  font-size: 14px;
-}
-
-.faq-item.active .faq-answer {
-  max-height: 300px;
-}
-
-.faq-item.active .faq-question span {
-  transform: rotate(45deg);
-}
-
-/* =========================
-   SUPPORT – AIRALO STYLE
-========================= */
-
-.support-container {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 10px;
-  text-align: center;
-}
-
-.support-subtitle {
-  opacity: 0.8;
-  margin-bottom: 30px;
-}
-
-.support-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 16px; /* was probably too big */
-  padding: 16px;
-}
-
-.support-card {
-  background: rgba(255, 255, 255, 0.06);
-  border-radius: 16px;
-  padding: 18px 16px;   /* reduced vertical padding */
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;            /* controls spacing inside card */
-}
-
-.support-card h3 {
-  font-size: 1.05rem;
-  margin: 0;
-}
-
-.support-card p {
-  font-size: 0.9rem;
-  opacity: 0.85;
-  margin: 0;
-}
-
-.support-btn {
-  display: inline-block;
-  padding: 10px 16px;
-  border-radius: 10px;
-  background: #7c3aed;
-  color: white;
-  text-decoration: none;
-  font-weight: 600;
-}
-
-.support-card .btn {
-  margin-top: 6px;
-  padding: 10px 18px;
-  font-size: 0.95rem;
-  border-radius: 999px; /* pill style */
-  width: fit-content;
-  align-self: center;
-}
-
-.support-card .icon {
-  font-size: 1.4rem;
-  margin-bottom: 4px;
-}
-
-.support-btn:hover {
-  opacity: 0.9;
-}
-
-@media (hover: hover) {
-  .support-card:hover {
-    transform: translateY(-2px);
-    transition: transform 0.2s ease;
-  }
-}
-
-/* =========================
-   PLAN CARD ANIMATION
-========================= */
-
-
-.plan:nth-child(1) { animation-delay: 0.05s; }
-.plan:nth-child(2) { animation-delay: 0.1s; }
-.plan:nth-child(3) { animation-delay: 0.15s; }
-.plan:nth-child(4) { animation-delay: 0.2s; }
-
-@keyframes fadeUp {
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@media (max-width: 640px) {
-  .plan {
-    padding: 18px;
-  }
-
-  .plan-meta {
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .plan-price {
-    font-size: 20px;
-  }
-
-}
-
-.plan:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 16px 40px rgba(0,0,0,0.35);
-}
-
-.buy-btn {
-  background: var(--accent);
-  box-shadow: 0 8px 24px rgba(59,130,246,0.35);
-}
-
-.buy-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 12px 30px rgba(59,130,246,0.45);
-}
-
-.buy-btn:active {
-  transform: scale(0.97);
-}
-
-/* =========================
-   LEGAL PAGES (Airalo-style)
-========================= */
-.legal-page {
-  max-width: 820px;
-  margin: 120px auto;
-  padding: 0 20px;
-  color: #e5e7eb;
-}
-
-.legal-page h1 {
-  font-size: 2.4rem;
-  margin-bottom: 10px;
-}
-
-.legal-updated {
-  font-size: 0.9rem;
-  opacity: 0.7;
-  margin-bottom: 30px;
-}
-
-.legal-page section {
-  margin-bottom: 28px;
-}
-
-.legal-page h2 {
-  font-size: 1.2rem;
-  margin-bottom: 8px;
-  color: #ffffff;
-}
-
-.legal-page p,
-.legal-page li {
-  font-size: 0.95rem;
-  line-height: 1.6;
-  opacity: 0.9;
-}
-
-.legal-page ul {
-  padding-left: 18px;
-}
-
-/* =========================
-   INSTALL GUIDE
-========================= */
-.install-tabs {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 30px;
-}
-
-.tab-btn {
-  flex: 1;
-  padding: 12px;
-  border-radius: 10px;
-  border: none;
-  cursor: pointer;
-  background: rgba(255,255,255,0.08);
-  color: #fff;
-  font-weight: 600;
-}
-
-.tab-btn.active {
-  background: linear-gradient(135deg, #6366f1, #a855f7);
-}
-
-.install-content {
-  display: none;
-}
-
-.install-content.active {
-  display: block;
-}
-
-.install-content ol {
-  padding-left: 20px;
-}
-
-.install-content li {
-  margin-bottom: 10px;
-}
-
-.install-note {
-  margin-top: 15px;
-  opacity: 0.85;
-}
-
-.legal-container {
-  max-width: 900px;
-  margin: 60px auto;
-  padding: 0 20px;
-  line-height: 1.7;
-}
-
-.legal-container h2,
-.legal-container h3 {
-  margin-top: 30px;
-}
-
-.legal-container ul {
-  padding-left: 20px;
-}
-
-.legal-note {
-  margin-top: 25px;
-  opacity: 0.8;
-  font-size: 0.95rem;
-}
-
-/* ===============================
-   BRAND OVERRIDES (MINIMAL)
-================================ */
-
-:root {
-  --accent: #3b82f6;
-  --accent-soft: rgba(59,130,246,0.18);
-  --glass: rgba(255,255,255,0.08);
-  --glass-border: rgba(255,255,255,0.14);
-  --text-soft: rgba(255,255,255,0.75);
-}
-
-.account-card,
-.support-card,
-.faq-item,
-.plan,
-.account-order {
-  background: var(--glass);
-  border: 1px solid var(--glass-border);
-}
-
-.site-footer,
-footer {
-  padding: 50px 20px;
-  text-align: center;
-  border-top: 1px solid rgba(255,255,255,0.08);
-  color: rgba(255,255,255,0.6);
-}
-
-.site-footer a,
-footer a,
-.legal-page a {
-  color: rgba(255,255,255,0.7);
-  text-decoration: none;
-}
-
-.site-footer a:hover,
-footer a:hover,
-.legal-page a:hover {
-  color: #fff;
-}
-
-section {
-  padding: 80px 20px;
-}
-
-section h2 {
-  font-size: 32px;
-  margin-bottom: 18px;
-}
-
-section p {
-  color: var(--text-soft);
-}
-
-/* ======================================================
-   NEW – HOMEPAGE GLASS SECTIONS (APPEND ONLY)
-   Safe to add – does NOT override existing pages
-====================================================== */
-
-/* Shared glass section wrapper */
-.home-section {
-  max-width: 1100px;
-  margin: 80px auto;
-  padding: 36px;
-  border-radius: 22px;
-
-  background: rgba(255,255,255,0.08);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-
-  border: 1px solid rgba(255,255,255,0.18);
-  box-shadow:
-    0 20px 50px rgba(0,0,0,0.45),
-    inset 0 0 0 1px rgba(255,255,255,0.05);
-}
-
-/* Section titles */
-.home-section h2 {
-  font-size: 34px;
-  margin-bottom: 18px;
-  letter-spacing: -0.02em;
-}
-
-.home-section p {
-  font-size: 16px;
-  opacity: 0.85;
-}
-
-/* =====================================
-   HOW IT WORKS – CARD GRID
-===================================== */
-
-.how-it-works-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 22px;
-  margin-top: 30px;
-}
-
-.how-card {
-  padding: 26px;
-  border-radius: 18px;
-
-  background: rgba(255,255,255,0.07);
-  backdrop-filter: blur(12px);
-
-  border: 1px solid rgba(255,255,255,0.16);
-  box-shadow: 0 14px 40px rgba(0,0,0,0.35);
-
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
-}
-
-.how-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 22px 60px rgba(0,0,0,0.45);
-}
-
-.how-card .icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 14px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  background: linear-gradient(135deg, #6366f1, #a855f7);
-  margin-bottom: 16px;
-  font-size: 26px;
-}
-
-.how-card h3 {
-  font-size: 18px;
-  margin-bottom: 6px;
-}
-
-.how-card p {
-  font-size: 14px;
-  opacity: 0.8;
-}
-
-/* =====================================
-   WHY SIMCLAIRE – GLASS LIST
-===================================== */
-
-.why-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 18px;
-  margin-top: 26px;
-}
-
-.why-item {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-
-  padding: 18px 20px;
-  border-radius: 16px;
-
-  background: rgba(255,255,255,0.06);
-  backdrop-filter: blur(10px);
-
-  border: 1px solid rgba(255,255,255,0.14);
-  transition: background 0.2s ease, transform 0.2s ease;
-}
-
-.why-item:hover {
-  background: rgba(255,255,255,0.1);
-  transform: translateY(-2px);
-}
-
-.why-item span {
-  font-size: 22px;
-}
-
-/* =====================================
-   REMOVE FLAT BOTTOM FEEL
-===================================== */
-
-#homepage-faq {
-  margin-top: 90px;
-}
-
-/* Smooth fade-in on scroll (optional) */
-.home-section {
-  opacity: 0;
-  transform: translateY(18px);
-  animation: homeFadeUp 0.9s ease forwards;
-}
-
-@keyframes homeFadeUp {
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Mobile spacing polish */
-@media (max-width: 640px) {
-  .home-section {
-    margin: 50px 14px;
-    padding: 26px;
-  }
-
-  .home-section h2 {
-    font-size: 28px;
-  }
-}
-
-/* ===============================
-   AUTO-HIDE HEADER ON SCROLL
-================================ */
-
-.top-links {
-  position: fixed; /* was absolute */
-  top: 18px;
-  right: 28px;
-  z-index: 1000;
-
-  display: flex;
-  gap: 12px;
-
-  transition:
-    transform 0.35s ease,
-    opacity 0.35s ease,
-    backdrop-filter 0.35s ease;
-}
-
-/* Hidden state */
-.top-links.hide {
-  transform: translateY(-120%);
-  opacity: 0;
-}
-
-/* ===============================
-   TOP HEADER BAR (NOT FLOATING)
-================================ */
-.top-links{
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 1000;
-
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 12px;
-
-  padding: 14px 18px;
-
-  /* header feel */
-  background: rgba(0,0,0,0.35);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-
-  transition: transform 0.35s ease, opacity 0.35s ease;
-}
-
-/* Hidden state */
-.top-links.hide{
-  transform: translateY(-110%);
-  opacity: 0;
-}
-
-/* Make sure page content doesn't sit under header */
-.hero,
-.account-hero{
-  padding-top: 72px;
-}
-
-/* ===============================
-   AIRALO-STYLE HAMBURGER HEADER
+   TOP HEADER / NAV
 ================================ */
 
 .top-header {
@@ -1252,40 +105,29 @@ section p {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 0 20px;
 
-  padding: 0 24px;
-
-  background: linear-gradient(
-    to bottom,
-    rgba(0,0,0,0.6),
-    rgba(0,0,0,0.25),
-    rgba(0,0,0,0)
-  );
-
-  backdrop-filter: blur(10px);
+  background: rgba(0,0,0,0.4);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
 }
 
 .brand {
-  font-size: 18px;
   font-weight: 600;
-  color: white;
   text-decoration: none;
+  color: var(--text);
 }
 
-/* ☰ Menu Button */
 .menu-btn {
   width: 42px;
   height: 42px;
   border-radius: 12px;
-  border: 1px solid rgba(255,255,255,0.25);
-  background: rgba(255,255,255,0.12);
-  backdrop-filter: blur(10px);
-
+  border: 1px solid var(--border);
+  background: var(--glass);
   display: flex;
   flex-direction: column;
   justify-content: center;
   gap: 4px;
-
   padding: 10px;
   cursor: pointer;
 }
@@ -1293,20 +135,8 @@ section p {
 .menu-btn span {
   height: 2px;
   width: 100%;
-  background: white;
+  background: var(--text);
   border-radius: 2px;
-  transition: transform 0.25s ease, opacity 0.25s ease;
-}
-
-/* Active (X icon) */
-.menu-btn.active span:nth-child(1) {
-  transform: translateY(6px) rotate(45deg);
-}
-.menu-btn.active span:nth-child(2) {
-  opacity: 0;
-}
-.menu-btn.active span:nth-child(3) {
-  transform: translateY(-6px) rotate(-45deg);
 }
 
 /* ===============================
@@ -1316,264 +146,161 @@ section p {
 .menu-panel {
   position: fixed;
   top: 72px;
-  right: 20px;
+  right: 16px;
   width: 260px;
-  z-index: 1000;
-
-  background: rgba(20,20,30,0.9);
+  background: rgba(20,20,30,0.95);
   backdrop-filter: blur(18px);
   border-radius: 18px;
   padding: 14px;
-
   display: flex;
   flex-direction: column;
   gap: 6px;
-
-  box-shadow: 0 20px 50px rgba(0,0,0,0.45);
-  border: 1px solid rgba(255,255,255,0.15);
+  border: 1px solid var(--border);
+  z-index: 1000;
 }
 
 .menu-panel a {
   padding: 12px 14px;
   border-radius: 12px;
-  color: white;
+  color: var(--text);
   text-decoration: none;
-  font-size: 15px;
-  opacity: 0.9;
 }
 
 .menu-panel a:hover {
-  background: rgba(255,255,255,0.12);
-  opacity: 1;
+  background: var(--glass);
 }
 
 .menu-panel.hidden {
   display: none;
 }
 
-/* Push hero content down */
-.hero,
-.account-hero {
-  padding-top: 80px;
+/* ===============================
+   SEARCH
+================================ */
+
+.search-box {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
 }
 
-/* --- FIX SEARCH DROPDOWN OVERLAP --- */
-.search-container,
-.search-wrapper,
-.autocomplete-container {
-  position: relative;
-  z-index: 50;
+.search-box input {
+  width: 340px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  border: none;
 }
 
-/* Dropdown list */
-.search-dropdown,
-.autocomplete-results,
-.plan-dropdown {
-  position: absolute;
-  z-index: 9999;
-  background: rgba(20, 20, 25, 0.95);
-  backdrop-filter: blur(12px);
-  border-radius: 12px;
-  overflow: hidden;
+.search-box button {
+  padding: 14px 26px;
+  border-radius: 14px;
+  background: var(--accent);
+  color: var(--button-text);
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
 }
 
-/* Prevent parent sections from clipping dropdown */
-.hero,
-.hero-section,
-.main-content {
-  overflow: visible !important;
+/* ===============================
+   PLAN CARDS
+================================ */
+
+.plan {
+  max-width: 520px;
+  margin: 16px auto;
+  padding: 20px;
+  border-radius: 16px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(14px);
+  animation: fadeUp 0.6s ease forwards;
 }
 
-/* --- BUY NOW PILL BUTTON --- */
-.buy-button,
-button.buy-now {
+.plan h3 {
+  font-size: 18px;
+}
+
+.plan-price {
+  margin-top: 12px;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+/* BUY BUTTON (PILL) */
+.buy-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-
-  width: auto;              /* NOT full width */
   min-width: 160px;
   height: 44px;
-
-  margin: 14px auto 0;      /* center horizontally */
-  padding: 0 28px;
-
-  border-radius: 999px;     /* pill shape */
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
-  color: #ffffff;
-
-  font-size: 15px;
-  font-weight: 600;
-  letter-spacing: 0.2px;
-
-  border: none;
-  cursor: pointer;
-
-  box-shadow: 0 8px 22px rgba(59, 130, 246, 0.35);
-  transition: all 0.2s ease;
-}
-
-/* Hover */
-.buy-button:hover,
-button.buy-now:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 12px 30px rgba(59, 130, 246, 0.45);
-}
-
-/* Disabled (if checkbox not checked) */
-.buy-button:disabled,
-button.buy-now:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
-.plan-card .buy-button,
-.plan-card button.buy-now {
-  align-self: center;
-}
-
-/* --- FIX DARK OVERLAY BLOCKING UI --- */
-.background-overlay,
-.hero-overlay {
-  z-index: 1;
-}
-
-.hero-content,
-.plan-cards,
-.search-container {
-  position: relative;
-  z-index: 10;
-}
-
-.autocomplete-results div {
-  padding: 12px 16px;
-  cursor: pointer;
-}
-
-.autocomplete-results div:hover {
-  background: rgba(255, 255, 255, 0.08);
-}
-
-/* ===============================
-   FORCE BUY NOW PILL (FINAL FIX)
-================================ */
-
-/* Target the actual plan button */
-.buy-btn {
-  display: inline-flex !important;
-  align-items: center;
-  justify-content: center;
-
-  width: auto !important;
-  min-width: 160px;
-  height: 44px;
-
   margin: 16px auto 0;
   padding: 0 28px;
-
-  border-radius: 999px !important; /* pill */
-  background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
-  color: #ffffff !important;
-
-  font-size: 15px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--button-text);
   font-weight: 600;
-  letter-spacing: 0.2px;
-
-  border: none !important;
+  border: none;
   cursor: pointer;
-
-  box-shadow: 0 8px 22px rgba(59,130,246,0.35);
-  transition: all 0.2s ease;
+  box-shadow: 0 10px 26px rgba(0,0,0,0.35);
 }
 
-/* Hover */
-.buy-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 12px 30px rgba(59,130,246,0.45);
-}
-
-/* Disabled */
 .buy-btn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
-  box-shadow: none;
 }
 
-/* TRUST BAR */
-.trust-bar {
-  margin-top: 26px;
+/* ===============================
+   SUPPORT PAGE
+================================ */
+
+.support-container {
+  max-width: 900px;
+  margin: auto;
+  padding: 20px;
+  text-align: center;
+}
+
+.support-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+.support-card {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 18px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  align-items: center;
-  text-align: center;
+  gap: 10px;
 }
 
-.trust-text {
-  font-size: 14px;
-  opacity: 0.9;
+.support-card h3 {
+  font-size: 1.05rem;
 }
 
-.trust-badges {
-  font-size: 13px;
-  opacity: 0.85;
-}
-
-.payment-logos {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-.payment-logos img {
-  height: 22px;
-  opacity: 0.85;
-}
-
-.secure-checkout {
+.support-btn {
   margin-top: 8px;
-  font-size: 12px;
-  opacity: 0.75;
-  text-align: center;
-}
-
-/* ===============================
-   BUY BUTTON TRUST (UNDER BUTTON)
-================================ */
-.buy-trust {
-  margin-top: 10px;
-  text-align: center;
-  opacity: 0.9;
-}
-
-.buy-trust .trust-row {
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-  flex-wrap: wrap;
-
-  font-size: 12px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--button-text);
+  text-decoration: none;
   font-weight: 600;
-  color: rgba(255,255,255,0.85);
-}
-
-.buy-trust .trust-sub {
-  margin-top: 6px;
-  font-size: 12px;
-  color: rgba(255,255,255,0.65);
-  line-height: 1.3;
 }
 
 /* ===============================
-   ACCOUNT – UX UPGRADE
+   ACCOUNT PAGE
 ================================ */
 
-.account-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
+.account-card {
+  max-width: 420px;
+  margin: 30px auto;
+  padding: 26px;
+  background: var(--glass);
+  border-radius: 18px;
+  border: 1px solid var(--glass-border);
 }
 
 .status-badge {
@@ -1585,70 +312,37 @@ button.buy-now:disabled {
 
 .status-active {
   background: rgba(34,197,94,0.18);
-  color: #22c55e;
 }
 
 .status-delivered {
   background: rgba(59,130,246,0.18);
-  color: #3b82f6;
 }
 
 .status-expired {
   background: rgba(239,68,68,0.18);
-  color: #ef4444;
 }
 
-.activation-box {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 12px 0;
+/* ===============================
+   FOOTER
+================================ */
+
+footer {
+  padding: 50px 20px;
+  text-align: center;
+  border-top: 1px solid var(--border);
 }
 
-.activation-box code {
-  padding: 10px 12px;
-  border-radius: 8px;
-  background: rgba(255,255,255,0.1);
-  font-size: 13px;
-  word-break: break-all;
-}
+/* ===============================
+   ANIMATIONS
+================================ */
 
-.copy-btn {
-  padding: 8px 12px;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-  background: rgba(255,255,255,0.16);
-  color: white;
-  font-size: 13px;
-}
-
-.copy-btn:hover {
-  background: rgba(255,255,255,0.25);
-}
-
-.account-actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 14px;
-}
-
-.account-actions button {
-  flex: 1;
-  padding: 10px;
-  border-radius: 10px;
-  border: none;
-  cursor: pointer;
-  background: rgba(255,255,255,0.18);
-  color: white;
-  font-weight: 600;
-}
-
-.account-actions button:hover {
-  background: rgba(255,255,255,0.28);
-}
-
-.muted {
-  opacity: 0.6;
-  font-size: 13px;
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
