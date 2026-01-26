@@ -111,7 +111,9 @@ function renderPlans(plans) {
    div.innerHTML = `
   <!-- 🔥 PLAN BADGES -->
   <div class="plan-badges">
-    ${p.popular ? <span class="badge popular">🔥 Most Popular</span> : ``}
+    ${p.popular 
+      ? <span class="badge popular">🔥 Most Popular</span> 
+      : ``}
     <span class="badge network">📶 ${p.network || "Vodafone"}</span>
   </div>
 
@@ -140,6 +142,16 @@ function renderPlans(plans) {
 
   <div class="secure-note">
     🔒 Secure checkout · SSL encrypted · Instant delivery via WhatsApp & Email
+  </div>
+
+  <div class="buy-trust">
+    <div class="trust-row">
+      <span>🔒 SSL Secure Checkout</span>
+      <span>⚡ Instant Delivery</span>
+    </div>
+    <div class="trust-sub">
+      Payments are encrypted and protected.
+    </div>
   </div>
 
   <button class="buy-btn" disabled>Buy Now</button>
