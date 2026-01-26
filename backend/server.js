@@ -1046,17 +1046,23 @@ app.post("/webhook/whatsapp", async (req, res) => {
         `/api/esim/products?destinationid=${session.destinationId}`
       );
 
-      const products = extractArray(prodRes);
+     const products = extractArray(prodRes);
 
-      // ✅ ADD THIS FILTER
-      const destinationProducts = products.filter(p =>
-        p.productSku &&
-        pricingMap.has(p.productSku)
-      );
+let destinationProducts;
 
-      session.products = destinationProducts;
+if (isUAT) {
+  // 🧪 UAT MODE — show ALL products (no CSV filtering)
+  destinationProducts = products;
+} else {
+  // 🚀 PROD MODE — only show priced SKUs
+  destinationProducts = products.filter(
+    p => p.productSku && pricingMap.has(p.productSku)
+  );
+}
 
-      // 🔐 OPTIONAL SAFETY LOG (SAFE TO KEEP IN PROD)
+session.products = destinationProducts;
+
+// 🔐 OPTIONAL SAFETY LOG (SAFE TO KEEP IN PROD)
       console.log("📦 DESTINATION PRODUCT CHECK", {
         country: session.country,
         destinationId: session.destinationId,
@@ -1064,12 +1070,12 @@ app.post("/webhook/whatsapp", async (req, res) => {
         skus: destinationProducts.map(p => p.productSku),
       });
 
-      if (!products.length) {
-        return res.send(
-          twiml(`😕 No plans available for *${session.country}*.\nType *menu* to restart.`)
-        );
-      }
-
+// ✅ IMPORTANT: validate the filtered list
+if (!destinationProducts.length) {
+  return res.send(
+    twiml(`😕 No plans available for *${session.country}*.\nType *menu* to restart.`)
+  );
+}
       if (text === "faq") {
         return res.send(
           twiml(
@@ -1471,96 +1477,6 @@ app.get("/success", (req, res) => {
   `);
 });
 
-
-app.get("/api/account/purchases", async (req, res) => {
-  try {
-    const { email } = req.query;
-    if (!email) {
-      return res.status(400).json({ error: "Email is required" });
-    }
-
-    let records = [];
-    try {
-      records = JSON.parse(
-        fs.readFileSync(FULFILLMENTS_PATH, "utf8")
-      );
-    } catch {}
-
-    const purchases = records.filter(
-      r => r.email.toLowerCase() === email.toLowerCase()
-    );
-
-    res.json({
-      email,
-      totalPurchases: purchases.length,
-      purchases
-    });
-
-  } catch (err) {
-    console.error("Account lookup error:", err);
-    res.status(500).json({ error: "Failed to fetch account data" });
-  }
-});
-
-app.post("/api/account/send-instructions", async (req, res) => {
-  try {
-    const { email } = req.body;
-
-    if (!email) {
-      return res.status(400).json({ error: "Email is required" });
-    }
-
-    let records = [];
-    try {
-      records = JSON.parse(
-        fs.readFileSync(FULFILLMENTS_PATH, "utf8")
-      );
-    } catch {}
-
-    const purchases = records.filter(
-      r => r.email.toLowerCase() === email.toLowerCase()
-    );
-
-    if (!purchases.length) {
-      return res.status(404).json({
-        error: "No purchases found for this email"
-      });
-    }
-
-    const instructions = purchases.map(p => ({
-      planName: p.planName,
-      country: p.country,
-      activationCode: p.activationCode,
-      transactionId: p.transactionId,
-      purchasedAt: p.createdAt
-    }));
-
-    // 📧 Send email if SendGrid is enabled
-    if (process.env.SENDGRID_API_KEY) {
-      await sgMail.send({
-        to: email,
-        from: "care@simclaire.com",
-        subject: "Your SimClaire eSIM Instructions",
-        text:
-          "Thank you for your purchase.\n\n" +
-          instructions.map(i =>
-            `📶 ${i.planName}\n` +
-            `🌍 ${i.country}\n` +
-            `🔑 Activation Code: ${i.activationCode}\n\n`
-          ).join("")
-      });
-    }
-
-    return res.json({
-      success: true,
-      instructions
-    });
-
-  } catch (err) {
-    console.error("Send instructions error:", err);
-    res.status(500).json({ error: "Failed to send instructions" });
-  }
-});
 
 // =====================================================
 // WEBSITE ROUTE FALLBACK (SPA SUPPORT)
