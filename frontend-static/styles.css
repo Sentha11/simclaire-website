@@ -1690,3 +1690,86 @@ button.buy-now:disabled {
 .theme-toggle:hover {
   opacity: 0.8;
 }
+
+/* ===============================
+   SAFE THEME OVERRIDES (APPEND ONLY)
+   Does NOT override existing styles
+================================ */
+
+:root {
+  --theme-bg: #0b0b0f;
+  --theme-card: rgba(255,255,255,0.08);
+  --theme-border: rgba(255,255,255,0.18);
+  --theme-text: #ffffff;
+}
+
+[data-theme="light"] {
+  --theme-bg: #ffffff;
+  --theme-card: rgba(0,0,0,0.04);
+  --theme-border: rgba(0,0,0,0.1);
+  --theme-text: #111111;
+}
+
+/* Optional usage (ONLY if class exists) */
+.theme-bg {
+  background: var(--theme-bg);
+  color: var(--theme-text);
+}
+
+.theme-card {
+  background: var(--theme-card);
+  border: 1px solid var(--theme-border);
+}
+
+/* ===============================
+   LIGHT MODE FIXES (OVERRIDES ONLY)
+================================ */
+
+[data-theme="light"] .top-links {
+  background: rgba(255,255,255,0.85);
+  border-bottom: 1px solid var(--border);
+}
+
+[data-theme="light"] .top-btn {
+  background: rgba(0,0,0,0.04);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+[data-theme="light"] .top-btn:hover {
+  background: rgba(0,0,0,0.08);
+}
+
+/* Hamburger menu panel */
+[data-theme="light"] .menu-panel {
+  background: rgba(255,255,255,0.95);
+  border: 1px solid var(--border);
+}
+
+[data-theme="light"] .menu-panel a {
+  color: var(--text);
+}
+
+[data-theme="light"] .menu-panel a:hover {
+  background: rgba(0,0,0,0.06);
+}
+
+[data-theme="light"] .account-card,
+[data-theme="light"] .support-card,
+[data-theme="light"] .faq-item,
+[data-theme="light"] .plan,
+[data-theme="light"] .account-order {
+  background: var(--card);
+  border: 1px solid var(--border);
+}
+
+[data-theme="light"] button,
+[data-theme="light"] .buy-btn,
+[data-theme="light"] .account-actions button {
+  background: var(--accent);
+  color: var(--button-text);
+}
+
+[data-theme="light"] button:hover {
+  opacity: 0.9;
+}
