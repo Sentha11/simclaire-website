@@ -2018,3 +2018,14 @@ button.buy-now:disabled {
 .page-bg {
   padding-top: 80px;
 }
+
+.menu-panel {
+  position: fixed;
+  top: 64px;
+  right: 16px;
+  width: 240px;
+  background: rgba(20,20,20,0.95);
+  border-radius: 14px;
+  padding: 14px;
+  z-index: 3000;
+}

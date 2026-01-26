@@ -366,3 +366,26 @@ window.addEventListener("scroll", () => {
   lastScrollY = currentScrollY;
 });
 
+/* =========================
+   HAMBURGER MENU (MOBILE)
+========================= */
+document.addEventListener("DOMContentLoaded", () => {
+  const menuBtn = document.getElementById("menuBtn");
+  const menuPanel = document.getElementById("menuPanel");
+
+  if (!menuBtn || !menuPanel) {
+    console.warn("Hamburger menu elements not found");
+    return;
+  }
+
+  menuBtn.addEventListener("click", () => {
+    menuPanel.classList.toggle("hidden");
+  });
+
+  // Optional: close menu when clicking a link
+  menuPanel.querySelectorAll("a").forEach(link => {
+    link.addEventListener("click", () => {
+      menuPanel.classList.add("hidden");
+    });
+  });
+});
