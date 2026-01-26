@@ -39,8 +39,8 @@ html, body {
   height: 100%;
   object-fit: cover;
   z-index: 0;
-  opacity: 0.85;
-  filter: brightness(0.85) contrast(1.05);
+  opacity: 0.7;
+  filter: brightness(0.7) contrast(1);
 }
 
 /* ===============================
@@ -478,8 +478,7 @@ html, body {
 
 /* Target Tawk widget iframe */
 iframe[src*="tawk.to"] {
-  animation: chatPulse 3.5s infinite;
-  border-radius: 50% !important;
+  animation: none !important;
 }
 
 .support-options {
@@ -620,13 +619,9 @@ button,
 /* Hover */
 .top-btn:hover,
 button:hover,
-.account-btn:hover,
-#priceSort:hover {
-  background: rgba(255, 255, 255, 0.18);
-  box-shadow: 
-    0 8px 24px rgba(0, 0, 0, 0.35),
-    inset 0 0 0 1px rgba(255,255,255,0.25);
-  transform: translateY(-1px);
+.account-btn:hover {
+  background: rgba(255,255,255,0.16);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.3);
 }
 
 /* Active / Click */
@@ -811,11 +806,6 @@ button:focus-visible,
     font-size: 20px;
   }
 
-  .buy-btn {
-    font-size: 15px;
-    padding: 14px;
-    margin: 10px auto 0;
-  }
 }
 
 .plan:hover {
@@ -824,29 +814,13 @@ button:focus-visible,
 }
 
 .buy-btn {
-  display: inline-flex;
-  justify-content: center;
-  align-items: center;
-
-  margin: 16px auto 0;
-  padding: 10px 28px;
-
-  border-radius: 10px;
-  border: none;
-
-  font-size: 15px;
-  font-weight: 600;
-  color: #fff;
-
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
-  cursor: pointer;
-
-  transition: all 0.25s ease;
+  background: var(--accent);
+  box-shadow: 0 8px 24px rgba(59,130,246,0.35);
 }
 
 .buy-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 8px 20px rgba(37,99,235,0.35);
+  box-shadow: 0 12px 30px rgba(59,130,246,0.45);
 }
 
 .buy-btn:active {
@@ -960,4 +934,59 @@ button:focus-visible,
   margin-top: 25px;
   opacity: 0.8;
   font-size: 0.95rem;
+}
+
+/* ===============================
+   BRAND OVERRIDES (MINIMAL)
+================================ */
+
+:root {
+  --accent: #3b82f6;
+  --accent-soft: rgba(59,130,246,0.18);
+  --glass: rgba(255,255,255,0.08);
+  --glass-border: rgba(255,255,255,0.14);
+  --text-soft: rgba(255,255,255,0.75);
+}
+
+.account-card,
+.support-card,
+.faq-item,
+.plan,
+.account-order {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+}
+
+.site-footer,
+footer {
+  padding: 50px 20px;
+  text-align: center;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.6);
+}
+
+.site-footer a,
+footer a,
+.legal-page a {
+  color: rgba(255,255,255,0.7);
+  text-decoration: none;
+}
+
+.site-footer a:hover,
+footer a:hover,
+.legal-page a:hover {
+  color: #fff;
+}
+
+section {
+  padding: 80px 20px;
+}
+
+section h2 {
+  font-size: 32px;
+  margin-bottom: 18px;
+}
+
+section p {
+  color: var(--text-soft);
 }
