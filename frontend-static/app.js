@@ -108,12 +108,10 @@ function renderPlans(plans) {
     const div = document.createElement("div");
     div.className = "plan";
 
-   div.innerHTML = `
+div.innerHTML = `
   <!-- 🔥 PLAN BADGES -->
   <div class="plan-badges">
-    ${p.popular 
-      ? `<span class="badge popular">🔥 Most Popular</span>` 
-      : ``}
+    ${p.popular ? `<span class="badge popular">🔥 Most Popular</span>` : ""}
     <span class="badge network">📶 ${p.network || "Vodafone"}</span>
   </div>
 
@@ -121,13 +119,11 @@ function renderPlans(plans) {
 
   <div class="plan-meta">
     <span class="meta-item">📶 <strong>${p.data} GB</strong></span>
-    <span class="meta-item">📅 <strong>${String(p.validity)}</strong></span>
+    <span class="meta-item">📅 <strong>${p.validity} days</strong></span>
     <span class="meta-item">⚡ Activates instantly</span>
   </div>
 
-  <div class="plan-price">
-    £${p.price}
-  </div>
+  <div class="plan-price">£${p.price}</div>
 
   <div class="refund-check">
     <label>
@@ -140,33 +136,19 @@ function renderPlans(plans) {
     </label>
   </div>
 
-  <div class="secure-note">
-    🔒 Secure checkout · SSL encrypted · Instant delivery via WhatsApp & Email
-  </div>
+  <button class="buy-btn" disabled>Buy Now</button>
 
+  <!-- 🔐 TRUST UNDER BUY -->
   <div class="buy-trust">
     <div class="trust-row">
       <span>🔒 SSL Secure Checkout</span>
-      <span>⚡ Instant Delivery</span>
+      <span>📲 Instant delivery</span>
     </div>
     <div class="trust-sub">
       Payments are encrypted and protected.
     </div>
   </div>
-
-  <button class="buy-btn" disabled>Buy Now</button>
 `;
-
-<div class="buy-trust">
-  <div class="trust-row">
-    <span>🔒 SSL Secure Checkout</span>
-    <span>✅ Instant delivery</span>
-  </div>
-  <div class="trust-sub">
-    Your payment details are encrypted and protected.
-  </div>
-</div>
-
    const checkbox = div.querySelector(".refund-checkbox");
    const buyBtn = div.querySelector(".buy-btn");
    const trustBox = div.querySelector(".buy-trust");
