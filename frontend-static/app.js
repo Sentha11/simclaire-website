@@ -366,26 +366,29 @@ window.addEventListener("scroll", () => {
   lastScrollY = currentScrollY;
 });
 
-const toggleBtn = document.getElementById("themeToggle");
+(function () {
+  const root = document.documentElement;
+  const btn = document.getElementById("themeToggle");
 
-if (toggleBtn) {
-  toggleBtn.addEventListener("click", () => {
-    const currentTheme = document.documentElement.getAttribute("data-theme");
-    
-    if (currentTheme === "light") {
-      document.documentElement.removeAttribute("data-theme");
-      localStorage.setItem("theme", "dark");
-      toggleBtn.textContent = "🌙";
-    } else {
-      document.documentElement.setAttribute("data-theme", "light");
-      localStorage.setItem("theme", "light");
-      toggleBtn.textContent = "☀️";
-    }
-  });
-}
+  // Load saved theme (default: dark)
+  const saved = localStorage.getItem("theme");
+  if (saved === "light") root.setAttribute("data-theme", "light");
 
-function toggleTheme() {
-  const html = document.documentElement;
-  const next = html.getAttribute("data-theme") === "light" ? "dark" : "light";
-  html.setAttribute("data-theme", next);
-}
+  function syncLabel() {
+    if (!btn) return;
+    const isLight = root.getAttribute("data-theme") === "light";
+    const label = btn.querySelector(".switch-label");
+    if (label) label.textContent = isLight ? "Light" : "Dark";
+  }
+
+  syncLabel();
+
+  if (btn) {
+    btn.addEventListener("click", () => {
+      const isLight = root.getAttribute("data-theme") === "light";
+      root.setAttribute("data-theme", isLight ? "dark" : "light");
+      localStorage.setItem("theme", isLight ? "dark" : "light");
+      syncLabel();
+    });
+  }
+})();
