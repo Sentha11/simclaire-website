@@ -25,23 +25,26 @@ var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
 <body>
 
 <!-- TOP HEADER -->
-<div class="top-header">
-  <a href="/" class="brand">SimClaire</a>
-  <div class="right-actions">
-  <div class="header-actions">
-    <button id="themeToggle" class="theme-switch">
-      <div class="switch-track">
-        <div class="switch-thumb"></div>
-      </div>
+<header class="top-header">
+  <div class="header-left">
+    <a href="/" class="brand">SimClaire</a>
+  </div>
+
+  <div class="header-right">
+    <button id="themeToggle" class="theme-switch" type="button">
+      <span class="switch-track">
+        <span class="switch-thumb"></span>
+      </span>
       <span class="switch-label">Dark</span>
     </button>
-    <button id="menuToggle" class="menu-btn" aria-label="Menu">
+
+    <button class="menu-btn" id="menuBtn">
       <span></span>
       <span></span>
       <span></span>
     </button>
-    </div>
-</div>
+  </div>
+</header>
 
 <!-- SLIDE MENU -->
 <div id="menuPanel" class="menu-panel hidden">

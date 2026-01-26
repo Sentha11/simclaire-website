@@ -1923,3 +1923,98 @@ button.buy-now:disabled {
   align-items:center;
   gap:10px;
 }
+
+.top-header {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  height: 68px;
+  z-index: 1000;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  padding: 0 20px;
+
+  background: linear-gradient(
+    to bottom,
+    rgba(0,0,0,0.6),
+    rgba(0,0,0,0.25),
+    rgba(0,0,0,0)
+  );
+
+  backdrop-filter: blur(12px);
+}
+
+/* Left side */
+.header-left {
+  display: flex;
+  align-items: center;
+}
+
+/* Right side */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Brand */
+.brand {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.theme-switch{
+  display:flex;
+  align-items:center;
+  gap:8px;
+
+  padding: 6px 10px;
+  border-radius: 999px;
+
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.22);
+
+  color: var(--text);
+  cursor:pointer;
+  backdrop-filter: blur(10px);
+}
+
+.switch-track{
+  width: 36px;
+  height: 20px;
+  border-radius: 999px;
+  position: relative;
+  background: rgba(255,255,255,0.2);
+}
+
+.switch-thumb{
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  position:absolute;
+  top: 2px;
+  left: 2px;
+  background: white;
+  transition: left 0.2s ease;
+}
+
+[data-theme="light"] .switch-thumb{
+  left: 18px;
+}
+
+.switch-label{
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+.hero,
+.account-hero,
+.page-bg {
+  padding-top: 80px;
+}
