@@ -1172,3 +1172,41 @@ section p {
   transform: translateY(-120%);
   opacity: 0;
 }
+
+/* ===============================
+   TOP HEADER BAR (NOT FLOATING)
+================================ */
+.top-links{
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+
+  padding: 14px 18px;
+
+  /* header feel */
+  background: rgba(0,0,0,0.35);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+
+  transition: transform 0.35s ease, opacity 0.35s ease;
+}
+
+/* Hidden state */
+.top-links.hide{
+  transform: translateY(-110%);
+  opacity: 0;
+}
+
+/* Make sure page content doesn't sit under header */
+.hero,
+.account-hero{
+  padding-top: 72px;
+}
