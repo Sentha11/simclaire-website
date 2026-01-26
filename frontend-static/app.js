@@ -60,6 +60,7 @@ async function checkout(
     country,
     price
   });
+  
   const email = prompt("Enter your email for receipt:");
   const mobile = prompt("Enter your mobile number:");
 

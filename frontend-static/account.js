@@ -49,18 +49,20 @@ async function loadAccount() {
         <p>🌍 ${p.country || "—"}</p>
         <p>📅 ${new Date(p.created_at).toLocaleString()}</p>
 
-        ${
-          p.activation_code
-            ? `
-              <div class="activation-box">
-                <code id="code-${p.id}">${p.activation_code}</code>
-                <button class="copy-btn" onclick="copyCode('code-${p.id}')">
-                  📋 Copy
-                </button>
-              </div>
-            `
-            : <p class="muted">Activation code not issued yet</p>
-        }
+       ${
+  p.activation_code
+    ? `
+      <div class="activation-box">
+        <code id="code-${p.id}">${p.activation_code}</code>
+        <button class="copy-btn" onclick="copyCode('code-${p.id}')">
+          📋 Copy
+        </button>
+      </div>
+    `
+    : `
+      <p class="muted">Activation code not issued yet</p>
+    `
+}
 
         <div class="account-actions">
           <button onclick="resendEmail('${p.id}')">📩 Email</button>
