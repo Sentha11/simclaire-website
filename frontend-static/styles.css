@@ -1433,7 +1433,7 @@ button.buy-now:disabled {
 ================================ */
 
 /* Target the actual plan button */
-.plan button {
+.buy-btn {
   display: inline-flex !important;
   align-items: center;
   justify-content: center;
@@ -1461,13 +1461,13 @@ button.buy-now:disabled {
 }
 
 /* Hover */
-.plan button:hover {
+.buy-btn:hover {
   transform: translateY(-1px);
   box-shadow: 0 12px 30px rgba(59,130,246,0.45);
 }
 
 /* Disabled */
-.plan button:disabled {
+.buy-btn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
   box-shadow: none;
