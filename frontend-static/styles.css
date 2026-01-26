@@ -1400,3 +1400,52 @@ button.buy-now:hover {
 .autocomplete-results div:hover {
   background: rgba(255, 255, 255, 0.08);
 }
+
+/* --- BUY NOW PILL BUTTON --- */
+.buy-button,
+button.buy-now {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  width: auto;              /* NOT full width */
+  min-width: 160px;
+  height: 44px;
+
+  margin: 14px auto 0;      /* center horizontally */
+  padding: 0 28px;
+
+  border-radius: 999px;     /* pill shape */
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: #ffffff;
+
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+
+  border: none;
+  cursor: pointer;
+
+  box-shadow: 0 8px 22px rgba(59, 130, 246, 0.35);
+  transition: all 0.2s ease;
+}
+
+/* Hover */
+.buy-button:hover,
+button.buy-now:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 30px rgba(59, 130, 246, 0.45);
+}
+
+/* Disabled (if checkbox not checked) */
+.buy-button:disabled,
+button.buy-now:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.plan-card .buy-button,
+.plan-card button.buy-now {
+  align-self: center;
+}
