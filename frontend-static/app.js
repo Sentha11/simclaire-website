@@ -112,7 +112,7 @@ function renderPlans(plans) {
   <!-- 🔥 PLAN BADGES -->
   <div class="plan-badges">
     ${p.popular 
-      ? <span class="badge popular">🔥 Most Popular</span> 
+      ? `<span class="badge popular">🔥 Most Popular</span>` 
       : ``}
     <span class="badge network">📶 ${p.network || "Vodafone"}</span>
   </div>
