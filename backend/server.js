@@ -1574,7 +1574,7 @@ app.get("*", (req, res) => {
     return res.status(404).json({ error: "Not found" });
   }
 
-  res.sendFile(path.join(__dirname, "frontend-static", "index.html"));
+  res.sendFile(path.join(__dirname, "frontend-static/index.html"));
 });
 
 
