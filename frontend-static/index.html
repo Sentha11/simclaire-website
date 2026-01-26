@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>SimClaire eSIM – Travel Connected Instantly</title>
+  <title>SimClaire eSIM – Travel Connected</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 
-<!-- Start of Tawk.to -->
+<!-- Start of Tawk.to Script -->
 <script type="text/javascript">
 var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
 (function(){
@@ -20,25 +20,22 @@ var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
   s0.parentNode.insertBefore(s1,s0);
 })();
 </script>
-<!-- End of Tawk.to -->
+<!-- End of Tawk.to Script -->
 
 <body>
 
-<!-- ======================
- TOP NAV
-====================== -->
+<!-- Floating Top Nav -->
 <div class="top-links">
   <a href="/" class="top-btn primary">Home</a>
-  <a href="#how-it-works" class="top-btn">How it works</a>
+  <a href="/how-it-works.html" class="top-btn">How it works</a>
   <a href="/faq.html" class="top-btn">FAQ</a>
   <a href="/support.html" class="top-btn">Support</a>
   <a href="/account.html" class="top-btn">Account</a>
-  <a href="/refund-policy.html" class="top-btn">Refund Policy</a>
 </div>
 
-<!-- ======================
- HERO
-====================== -->
+<!-- =========================
+     HERO
+========================= -->
 <div class="hero">
 
   <video class="sky-video" autoplay muted loop playsinline>
@@ -48,9 +45,12 @@ var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
   <div class="stars stars-small"></div>
   <div class="stars stars-large"></div>
 
-  <div class="hero-content animate-in">
-    <h1>SimClaire</h1>
-    <p>Instant travel eSIMs. No roaming. No physical SIM.</p>
+  <div class="hero-content">
+    <h1>Stay connected anywhere in the world</h1>
+    <p>
+      Instant travel eSIMs. No roaming fees. No physical SIMs.
+      Just fast, secure mobile data when you land.
+    </p>
 
     <div class="search-box">
       <input
@@ -62,76 +62,69 @@ var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
       <button onclick="searchPlans()">Browse Plans</button>
     </div>
 
-    <p class="hero-subtext">
-      📧 Delivered instantly by email • 📱 Easy setup • 💬 WhatsApp support
-    </p>
+    <div class="sort-wrapper hidden">
+      <select id="priceSort" onchange="sortPlans()">
+        <option value="">Sort by</option>
+        <option value="low-high">Price: Low → High</option>
+        <option value="high-low">Price: High → Low</option>
+      </select>
+    </div>
   </div>
 </div>
 
-<section class="intro-section">
-  <h2>Stay connected anywhere in the world</h2>
-  <p>
-    SimClaire provides instant eSIM data plans for travelers.
-    No physical SIMs. No roaming fees. Just fast, secure mobile data
-    the moment you land.
-  </p>
+<!-- =========================
+     SEARCH RESULTS
+========================= -->
+<div id="results"></div>
 
-  <div class="intro-features">
-    <div>🌍 Global Coverage</div>
-    <div>⚡ Instant Activation</div>
-    <div>📶 No Physical SIM</div>
-    <div>🔒 Secure Payments</div>
-  </div>
-</section>
-
-<!-- ======================
- HOW IT WORKS
-====================== -->
-<section id="how-it-works" class="info-section">
+<!-- =========================
+     HOW IT WORKS
+========================= -->
+<section class="home-section">
   <h2>How it works</h2>
 
-  <div class="steps">
-    <div class="step">
-      <h3>1️⃣ Choose your destination</h3>
-      <p>Search for your country and select a data plan.</p>
+  <div class="how-it-works-grid">
+    <div class="how-card">
+      <div class="icon">📍</div>
+      <h3>Choose your destination</h3>
+      <p>Search your country and select the best data plan.</p>
     </div>
-    <div class="step">
-      <h3>2️⃣ Complete secure payment</h3>
-      <p>Pay safely with Stripe. No hidden fees.</p>
+
+    <div class="how-card">
+      <div class="icon">💳</div>
+      <h3>Confirm & pay</h3>
+      <p>Secure checkout with Stripe. No hidden fees.</p>
     </div>
-    <div class="step">
-      <h3>3️⃣ Install & activate</h3>
+
+    <div class="how-card">
+      <div class="icon">📲</div>
+      <h3>Install & activate</h3>
       <p>Receive your eSIM instantly by email and activate when you land.</p>
     </div>
   </div>
 </section>
 
-<!-- ======================
- WHY SIMCLAIRE
-====================== -->
-<section class="info-section dark">
+<!-- =========================
+     WHY SIMCLAIRE
+========================= -->
+<section class="home-section">
   <h2>Why SimClaire?</h2>
 
-  <div class="benefits">
-    <div>⚡ Instant delivery</div>
-    <div>🌍 Global coverage</div>
-    <div>📱 No physical SIM</div>
-    <div>💷 Transparent pricing</div>
-    <div>💬 WhatsApp support</div>
-    <div>🔒 Secure payments</div>
+  <div class="why-grid">
+    <div class="why-item"><span>⚡</span> Instant delivery</div>
+    <div class="why-item"><span>🌍</span> Global coverage</div>
+    <div class="why-item"><span>📶</span> No physical SIM</div>
+    <div class="why-item"><span>💬</span> WhatsApp support</div>
+    <div class="why-item"><span>🔒</span> Secure payments</div>
+    <div class="why-item"><span>💷</span> Transparent pricing</div>
   </div>
 </section>
 
-<!-- ======================
- RESULTS
-====================== -->
-<div id="results"></div>
-
-<!-- ======================
- FAQ PREVIEW
-====================== -->
-<section class="info-section">
-  <h2>Frequently Asked Questions</h2>
+<!-- =========================
+     HOMEPAGE FAQ PREVIEW
+========================= -->
+<section id="homepage-faq" class="home-section">
+  <h2>Frequently asked questions</h2>
 
   <div class="faq-item">
     <strong>What is an eSIM?</strong>
@@ -148,23 +141,10 @@ var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
     <p>Most modern iPhones, Samsung, and Pixel devices support eSIM.</p>
   </div>
 
-  <a href="/faq.html" class="top-btn">View all FAQs →</a>
+  <a href="/faq.html" class="back-pill">View all FAQs →</a>
 </section>
 
-<!-- ======================
- FOOTER
-====================== -->
-<footer class="site-footer">
-  <p>© 2026 SimClaire</p>
-
-  <div class="footer-links">
-    <a href="/faq.html">FAQ</a>
-    <a href="/support.html">Support</a>
-    <a href="/account.html">My Account</a>
-    <a href="/refund-policy.html">Refund Policy</a>
-  </div>
-</footer>
-
 <script src="app.js"></script>
+
 </body>
 </html>
