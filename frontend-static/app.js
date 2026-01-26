@@ -117,21 +117,14 @@ function renderPlans(plans) {
 
   <h3 class="plan-title">${p.name}</h3>
 
-  <p class="plan-sub">
-    ⏱️ Activates instantly · 🌍 Works in ${p.country || "1"} country
-  </p>
-
   <div class="plan-meta">
     <span class="meta-item">📶 <strong>${p.data} GB</strong></span>
     <span class="meta-item">📅 <strong>${String(p.validity)}</strong></span>
+    <span class="meta-item">⚡ Activates instantly</span>
   </div>
 
   <div class="plan-price">
     £${p.price}
-  </div>
-
-  <div class="secure-text">
-    🔒 Secure checkout · Instant delivery via WhatsApp & Email
   </div>
 
   <div class="refund-check">
@@ -139,10 +132,14 @@ function renderPlans(plans) {
       <input type="checkbox" class="refund-checkbox" />
       <span>
         I confirm my device is <strong>eSIM compatible & unlocked</strong>.
-        I understand this is a <strong>digital product</strong> and is
-        <strong>non-refundable once delivered</strong>.
+        This is a <strong>digital product</strong> and is
+        <strong>non-refundable</strong>.
       </span>
     </label>
+  </div>
+
+  <div class="secure-note">
+    🔒 Secure checkout · SSL encrypted · Instant delivery via WhatsApp & Email
   </div>
 
   <button class="buy-btn" disabled>Buy Now</button>
