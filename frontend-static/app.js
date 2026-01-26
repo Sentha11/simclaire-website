@@ -366,29 +366,3 @@ window.addEventListener("scroll", () => {
   lastScrollY = currentScrollY;
 });
 
-(function () {
-  const root = document.documentElement;
-  const btn = document.getElementById("themeToggle");
-
-  // Load saved theme (default: dark)
-  const saved = localStorage.getItem("theme");
-  if (saved === "light") root.setAttribute("data-theme", "light");
-
-  function syncLabel() {
-    if (!btn) return;
-    const isLight = root.getAttribute("data-theme") === "light";
-    const label = btn.querySelector(".switch-label");
-    if (label) label.textContent = isLight ? "Light" : "Dark";
-  }
-
-  syncLabel();
-
-  if (btn) {
-    btn.addEventListener("click", () => {
-      const isLight = root.getAttribute("data-theme") === "light";
-      root.setAttribute("data-theme", isLight ? "dark" : "light");
-      localStorage.setItem("theme", isLight ? "dark" : "light");
-      syncLabel();
-    });
-  }
-})();
