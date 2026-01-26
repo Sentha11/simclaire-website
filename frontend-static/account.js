@@ -43,10 +43,10 @@ async function loadAccount() {
           <p>🌍 ${p.country || "—"}</p>
           <p>💷 ${p.amount} ${p.currency}</p>
           <p>📅 ${new Date(p.created_at).toLocaleString()}</p>
-          <p>📶 Status: ${p.payment_status}</p>
+          <p>📶 Status: ${p.esim_status || "issued"}</p>
         </div>
       `)
-      .join("");
+      .join(""); 
 
     // ✅ Purchases exist → enable resend
     actionsDiv.classList.remove("hidden");
