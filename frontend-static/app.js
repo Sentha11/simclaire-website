@@ -318,3 +318,24 @@ document.querySelectorAll(".top-btn").forEach(btn => {
     btn.classList.add("active");
   }
 });
+
+// ===============================
+// AUTO-HIDE HEADER ON SCROLL
+// ===============================
+let lastScrollY = window.scrollY;
+const header = document.querySelector(".top-links");
+
+window.addEventListener("scroll", () => {
+  const currentScrollY = window.scrollY;
+
+  // Scroll down → hide
+  if (currentScrollY > lastScrollY && currentScrollY > 80) {
+    header?.classList.add("hide");
+  }
+  // Scroll up → show
+  else {
+    header?.classList.remove("hide");
+  }
+
+  lastScrollY = currentScrollY;
+});

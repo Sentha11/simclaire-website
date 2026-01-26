@@ -1146,3 +1146,28 @@ section p {
     font-size: 28px;
   }
 }
+
+/* ===============================
+   AUTO-HIDE HEADER ON SCROLL
+================================ */
+
+.top-links {
+  position: fixed; /* was absolute */
+  top: 18px;
+  right: 28px;
+  z-index: 1000;
+
+  display: flex;
+  gap: 12px;
+
+  transition:
+    transform 0.35s ease,
+    opacity 0.35s ease,
+    backdrop-filter 0.35s ease;
+}
+
+/* Hidden state */
+.top-links.hide {
+  transform: translateY(-120%);
+  opacity: 0;
+}
