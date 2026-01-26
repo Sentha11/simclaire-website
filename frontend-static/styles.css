@@ -1428,3 +1428,47 @@ button.buy-now:disabled {
   background: rgba(255, 255, 255, 0.08);
 }
 
+/* ===============================
+   FORCE BUY NOW PILL (FINAL FIX)
+================================ */
+
+/* Target the actual plan button */
+.plan button {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+
+  width: auto !important;
+  min-width: 160px;
+  height: 44px;
+
+  margin: 16px auto 0;
+  padding: 0 28px;
+
+  border-radius: 999px !important; /* pill */
+  background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+  color: #ffffff !important;
+
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+
+  border: none !important;
+  cursor: pointer;
+
+  box-shadow: 0 8px 22px rgba(59,130,246,0.35);
+  transition: all 0.2s ease;
+}
+
+/* Hover */
+.plan button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 30px rgba(59,130,246,0.45);
+}
+
+/* Disabled */
+.plan button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+}
