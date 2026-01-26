@@ -1773,3 +1773,66 @@ button.buy-now:disabled {
 [data-theme="light"] button:hover {
   opacity: 0.9;
 }
+
+/* ===============================
+   LIGHT MODE FIXES (BORDERS + TEXT)
+   APPEND ONLY — SAFE
+================================ */
+
+[data-theme="light"] {
+
+  /* Page background */
+  background: var(--bg);
+}
+
+/* Fix glass cards in light mode */
+[data-theme="light"] .account-card,
+[data-theme="light"] .support-card,
+[data-theme="light"] .faq-item,
+[data-theme="light"] .plan,
+[data-theme="light"] .account-order,
+[data-theme="light"] .home-section,
+[data-theme="light"] .how-card,
+[data-theme="light"] .why-item {
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+}
+
+/* Fix headings & body text contrast */
+[data-theme="light"] h1,
+[data-theme="light"] h2,
+[data-theme="light"] h3,
+[data-theme="light"] p,
+[data-theme="light"] span {
+  color: var(--text);
+}
+
+/* Kill opacity-based text in light mode */
+[data-theme="light"] .muted,
+[data-theme="light"] p,
+[data-theme="light"] span {
+  opacity: 1;
+}
+
+/* Fix top header / menu */
+[data-theme="light"] .top-header,
+[data-theme="light"] .top-links {
+  background: rgba(255,255,255,0.75);
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+}
+
+/* Fix menu panel */
+[data-theme="light"] .menu-panel {
+  background: rgba(255,255,255,0.95);
+  border: 1px solid rgba(0,0,0,0.1);
+}
+
+/* Fix buttons */
+[data-theme="light"] .top-btn,
+[data-theme="light"] button,
+[data-theme="light"] .account-btn {
+  background: rgba(0,0,0,0.04);
+  border: 1px solid rgba(0,0,0,0.12);
+  color: var(--text);
+}
