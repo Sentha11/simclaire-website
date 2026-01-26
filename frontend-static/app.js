@@ -109,7 +109,17 @@ function renderPlans(plans) {
     div.className = "plan";
 
    div.innerHTML = `
+  <!-- 🔥 PLAN BADGES -->
+  <div class="plan-badges">
+    ${p.popular ? <span class="badge popular">🔥 Most Popular</span> : ``}
+    <span class="badge network">📶 ${p.network || "Vodafone"}</span>
+  </div>
+
   <h3 class="plan-title">${p.name}</h3>
+
+  <p class="plan-sub">
+    ⏱️ Activates instantly · 🌍 Works in ${p.country || "1"} country
+  </p>
 
   <div class="plan-meta">
     <span class="meta-item">📶 <strong>${p.data} GB</strong></span>
@@ -120,7 +130,11 @@ function renderPlans(plans) {
     £${p.price}
   </div>
 
- <div class="refund-check">
+  <div class="secure-text">
+    🔒 Secure checkout · Instant delivery via WhatsApp & Email
+  </div>
+
+  <div class="refund-check">
     <label>
       <input type="checkbox" class="refund-checkbox" />
       <span>
@@ -134,12 +148,27 @@ function renderPlans(plans) {
   <button class="buy-btn" disabled>Buy Now</button>
 `;
 
+<div class="buy-trust">
+  <div class="trust-row">
+    <span>🔒 SSL Secure Checkout</span>
+    <span>✅ Instant delivery</span>
+  </div>
+  <div class="trust-sub">
+    Your payment details are encrypted and protected.
+  </div>
+</div>
+
    const checkbox = div.querySelector(".refund-checkbox");
    const buyBtn = div.querySelector(".buy-btn");
+   const trustBox = div.querySelector(".buy-trust");
 
    checkbox.addEventListener("change", () => {
-   buyBtn.disabled = !checkbox.checked;
-  });
+  buyBtn.disabled = !checkbox.checked;
+
+  if (trustBox) {
+    trustBox.style.opacity = checkbox.checked ? "1" : "0.55";
+  }
+});
     // ✅ SAFE EVENT BINDING (NO INLINE JS)
     div.querySelector(".buy-btn").addEventListener("click", () => {
     const accepted = div.querySelector(".refund-checkbox")?.checked;
