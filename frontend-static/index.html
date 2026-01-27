@@ -30,7 +30,7 @@ var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
     <a href="/" class="brand">SimClaire</a>
   </div>
 
-    <button class="menu-btn" id="menuBtn">
+    <button class="menuToggle" id="menu-toggle" aria-label="Menu">
       <span></span>
       <span></span>
       <span></span>
@@ -205,28 +205,30 @@ var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
 </html>
 
 <script>
-  const menuBtn = document.getElementById("menuToggle");
+  const menuToggle = document.getElementById("menuToggle");
   const menuPanel = document.getElementById("menuPanel");
 
-  menuBtn.addEventListener("click", () => {
-    menuBtn.classList.toggle("active");
+  menuToggle.addEventListener("click", (e) => {
+    e.stopPropagation();
+    menuToggle.classList.toggle("active");
     menuPanel.classList.toggle("hidden");
   });
 
-  // Close menu on link click
+  // Close on link click
   menuPanel.querySelectorAll("a").forEach(link => {
     link.addEventListener("click", () => {
-      menuBtn.classList.remove("active");
+      menuToggle.classList.remove("active");
       menuPanel.classList.add("hidden");
     });
   });
 
-  // Close on outside click
+  // Close when clicking outside
   document.addEventListener("click", (e) => {
-    if (!menuPanel.contains(e.target) && !menuBtn.contains(e.target)) {
-      menuBtn.classList.remove("active");
+    if (!menuPanel.contains(e.target) && !menuToggle.contains(e.target)) {
+      menuToggle.classList.remove("active");
       menuPanel.classList.add("hidden");
     }
   });
+
 </script>
 

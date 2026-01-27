@@ -2917,3 +2917,42 @@ button.menu-btn span {
   line-height: 1.2;
   border-radius: 8px;
 }
+
+/* =========================
+   HAMBURGER MENU (CodePen)
+========================= */
+
+.menu-toggle {
+  width: 40px;
+  height: 32px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  z-index: 1001;
+}
+
+.menu-toggle span {
+  display: block;
+  height: 3px;
+  width: 100%;
+  background: #ffffff;
+  border-radius: 2px;
+  transition: all 0.35s ease;
+}
+
+/* Animate to X */
+.menu-toggle.active span:nth-child(1) {
+  transform: rotate(45deg) translate(6px, 6px);
+}
+
+.menu-toggle.active span:nth-child(2) {
+  opacity: 0;
+}
+
+.menu-toggle.active span:nth-child(3) {
+  transform: rotate(-45deg) translate(7px, -7px);
+}
