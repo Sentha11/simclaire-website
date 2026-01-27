@@ -10,55 +10,49 @@
 <body class="page-bg">
 
 <!-- HEADER -->
-<header class="site-header">
+<!-- (PASTE SHARED HEADER HERE) -->
+ <header class="site-header">
   <div class="header-inner">
     <a href="/" class="logo">SimClaire</a>
 
-    <button class="menu-btn" id="menuBtn">
+    <nav class="desktop-nav">
+      <a href="/">Home</a>
+      <a href="/#results">Browse Plans</a>
+      <a href="/install.html">How it works</a>
+      <a href="/faq.html">FAQ</a>
+      <a href="/support.html">Support</a>
+      <a href="/account.html">Account</a>
+    </nav>
+
+    <button class="menu-btn" id="menuBtn" aria-label="Open menu">
       <span></span><span></span><span></span>
     </button>
   </div>
 </header>
 
-<!-- MOBILE MENU -->
-<nav class="mobile-menu hidden" id="mobileMenu">
+<nav class="mobile-menu" id="mobileMenu">
   <a href="/">Home</a>
   <a href="/#results">Browse Plans</a>
-  <a href="/install.html">How it Works</a>
-  <a href="/faq.html" class="active">FAQ</a>
+  <a href="/install.html">How it works</a>
+  <a href="/faq.html">FAQ</a>
   <a href="/support.html">Support</a>
   <a href="/account.html">Account</a>
 </nav>
 
-<!-- FAQ CONTENT -->
-<main class="faq-container">
+<main class="page-container">
+  <section class="page-hero">
+    <h1>Frequently Asked Questions</h1>
+    <p>Quick answers to help you stay connected while traveling.</p>
+  </section>
 
-  <h1>Frequently Asked Questions</h1>
-  <p class="faq-subtitle">
-    Quick answers to help you stay connected while traveling.
-  </p>
-
-  <div class="faq-intro">
-    <p>
-      Buying an eSIM should be simple.  
-      Below are the most common questions travelers ask before getting started.
-    </p>
-  </div>
-
-  <!-- GROUP: GETTING STARTED -->
-  <div class="faq-group">
-    <h2>Getting Started</h2>
-
+  <section class="faq-container">
     <div class="faq-item">
       <button class="faq-question">
         What is an eSIM?
         <span>+</span>
       </button>
       <div class="faq-answer">
-        <p>
-          An eSIM is a digital SIM that lets you activate a mobile plan without
-          inserting a physical SIM card.
-        </p>
+        An eSIM is a digital SIM that lets you activate a mobile plan without a physical SIM card.
       </div>
     </div>
 
@@ -68,17 +62,9 @@
         <span>+</span>
       </button>
       <div class="faq-answer">
-        <p>
-          Your eSIM activates when you arrive at your destination
-          or when you enable it in your phone settings.
-        </p>
+        Activation happens when you arrive at your destination or when you enable the eSIM, depending on the plan.
       </div>
     </div>
-  </div>
-
-  <!-- GROUP: COMPATIBILITY -->
-  <div class="faq-group">
-    <h2>Compatibility & Devices</h2>
 
     <div class="faq-item">
       <button class="faq-question">
@@ -86,56 +72,47 @@
         <span>+</span>
       </button>
       <div class="faq-answer">
-        <p>
-          Most modern smartphones support eSIM.
-          Your device must be eSIM-compatible and unlocked.
-        </p>
+        Most modern iPhones, Samsung, and Google Pixel devices support eSIM.
       </div>
     </div>
-  </div>
-
+  </section>
 </main>
 
-<!-- FAQ TOGGLE -->
+<!-- FOOTER -->
+<!-- (PASTE SHARED FOOTER HERE) -->
+<footer class="site-footer">
+  <div class="footer-inner">
+    <h3>SimClaire</h3>
+    <p>Instant global eSIMs. No roaming surprises.</p>
+
+    <div class="footer-links">
+      <a href="/">Home</a>
+      <a href="/#results">Choose Destination</a>
+      <a href="/install.html">Why an eSIM?</a>
+      <a href="/support.html">Get Support</a>
+      <a href="/faq.html">FAQ</a>
+      <a href="/account.html">My Account</a>
+      <a href="/terms.html">Terms</a>
+      <a href="/privacy.html">Privacy</a>
+    </div>
+
+    <p class="copyright">
+      © 2026 SimClaire. All rights reserved.
+    </p>
+  </div>
+</footer>
+
 <script>
-document.addEventListener("DOMContentLoaded", () => {
-  document.querySelectorAll(".faq-question").forEach(btn => {
-    btn.addEventListener("click", () => {
-      btn.closest(".faq-item").classList.toggle("active");
-    });
-  });
-
-  // Hamburger
-  const menuBtn = document.getElementById("menuBtn");
-  const mobileMenu = document.getElementById("mobileMenu");
-
-  menuBtn.addEventListener("click", () => {
-    menuBtn.classList.toggle("active");
-    mobileMenu.classList.toggle("hidden");
+document.querySelectorAll(".faq-question").forEach(btn => {
+  btn.addEventListener("click", () => {
+    btn.parentElement.classList.toggle("active");
   });
 });
+
+document.getElementById("menuBtn").onclick = () => {
+  document.getElementById("mobileMenu").classList.toggle("open");
+};
 </script>
 
 </body>
-<footer class="site-footer">
-  <div class="footer-brand">
-    <h2>SimClaire</h2>
-    <p>Instant global eSIMs. No roaming surprises.</p>
-  </div>
-
-  <div class="footer-links">
-    <h4>Site Links</h4>
-    <a href="/">Home</a>
-    <a href="/#results">Choose Destination</a>
-    <a href="/faq.html">Why an eSIM?</a>
-    <a href="/support.html">Get Support</a>
-  </div>
-
-  <div class="footer-links">
-    <h4>Important</h4>
-    <a href="/terms.html">Terms</a>
-    <a href="/privacy.html">Privacy</a>
-    <a href="/refund-policy.html">Refund Policy</a>
-  </div>
-</footer>
 </html>

@@ -1,4 +1,32 @@
-<!DOCTYPE html>
+[10:27 PM, 1/26/2026] Sentha S: <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>FAQ – SimClaire</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body class="page-bg">
+
+<!-- HEADER -->
+<!-- (PASTE SHARED HEADER HERE) -->
+
+<main class="page-container">
+  <section class="page-hero">
+    <h1>Frequently Asked Questions</h1>
+    <p>Quick answers to help you stay connected while traveling.</p>
+  </section>
+
+  <section class="faq-container">
+    <div class="faq-item">
+      <button class="faq-question">
+        What is an eSIM?
+        <span>+</span>
+      </button>
+      <div class="faq-answer">
+        An eSIM is a digital SIM that lets you activate a mobile plan without a physic…
+[10:28 PM, 1/26/2026] Sentha S: <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -10,109 +38,91 @@
 <body class="page-bg">
 
 <!-- HEADER -->
-<header class="site-header">
+<!-- (PASTE SHARED HEADER HERE) -->
+ <header class="site-header">
   <div class="header-inner">
     <a href="/" class="logo">SimClaire</a>
 
-    <button class="menu-btn" id="menuBtn">
+    <nav class="desktop-nav">
+      <a href="/">Home</a>
+      <a href="/#results">Browse Plans</a>
+      <a href="/install.html">How it works</a>
+      <a href="/faq.html">FAQ</a>
+      <a href="/support.html">Support</a>
+      <a href="/account.html">Account</a>
+    </nav>
+
+    <button class="menu-btn" id="menuBtn" aria-label="Open menu">
       <span></span><span></span><span></span>
     </button>
   </div>
 </header>
 
-<!-- MOBILE MENU -->
-<nav class="mobile-menu hidden" id="mobileMenu">
+<nav class="mobile-menu" id="mobileMenu">
   <a href="/">Home</a>
   <a href="/#results">Browse Plans</a>
-  <a href="/install.html">How it Works</a>
+  <a href="/install.html">How it works</a>
   <a href="/faq.html">FAQ</a>
-  <a href="/support.html" class="active">Support</a>
+  <a href="/support.html">Support</a>
   <a href="/account.html">Account</a>
 </nav>
 
-<!-- SUPPORT CONTENT -->
-<main class="support-container">
+<main class="page-container">
+  <section class="page-hero">
+    <h1>Support</h1>
+    <p>Real support from real people — before and during your trip.</p>
+  </section>
 
-  <h1>Support</h1>
-  <p class="support-subtitle">
-    Real support from real people — before and during your trip.
-  </p>
-
-  <div class="support-grid">
-
-    <!-- PRIMARY -->
-    <div class="support-card primary">
+  <section class="support-grid">
+    <div class="support-card">
       <h3>💬 Live Chat</h3>
       <p>Fastest way to get help</p>
-      <a href="#" id="openLiveChat" class="support-btn">
-        Start Live Chat
-      </a>
+      <button onclick="Tawk_API.toggle()">Start Live Chat</button>
     </div>
 
     <div class="support-card">
       <h3>📱 WhatsApp</h3>
-      <p>Instant help while you’re traveling</p>
-      <a href="https://wa.me/14376056560" target="_blank" class="support-btn">
-        Chat on WhatsApp
-      </a>
+      <p>Instant help while traveling</p>
+      <a href="https://wa.me/14376056560" target="_blank">Chat on WhatsApp</a>
     </div>
 
     <div class="support-card">
       <h3>📧 Email Support</h3>
-      <p>Orders, receipts, and general support</p>
-      <a href="mailto:care@simclaire.com" class="support-btn">
-        Email Us
-      </a>
+      <p>Orders, setup, and billing</p>
+      <a href="mailto:care@simclaire.com">Email Us</a>
     </div>
-
-  </div>
-
+  </section>
 </main>
 
-<!-- HAMBURGER SCRIPT -->
+<!-- FOOTER -->
+<!-- (PASTE SHARED FOOTER HERE) -->
+ <footer class="site-footer">
+  <div class="footer-inner">
+    <h3>SimClaire</h3>
+    <p>Instant global eSIMs. No roaming surprises.</p>
+
+    <div class="footer-links">
+      <a href="/">Home</a>
+      <a href="/#results">Choose Destination</a>
+      <a href="/install.html">Why an eSIM?</a>
+      <a href="/support.html">Get Support</a>
+      <a href="/faq.html">FAQ</a>
+      <a href="/account.html">My Account</a>
+      <a href="/terms.html">Terms</a>
+      <a href="/privacy.html">Privacy</a>
+    </div>
+
+    <p class="copyright">
+      © 2026 SimClaire. All rights reserved.
+    </p>
+  </div>
+</footer>
+
 <script>
-document.addEventListener("DOMContentLoaded", () => {
-  const menuBtn = document.getElementById("menuBtn");
-  const mobileMenu = document.getElementById("mobileMenu");
-
-  menuBtn.addEventListener("click", () => {
-    menuBtn.classList.toggle("active");
-    mobileMenu.classList.toggle("hidden");
-  });
-});
-</script>
-
-<!-- TAWK CHAT -->
-<script type="text/javascript">
-var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
-(function(){
-var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
-s1.async=true;
-s1.src='https://embed.tawk.to/69681541047e961985040f8e/1jev96275';
-s1.charset='UTF-8';
-s1.setAttribute('crossorigin','*');
-s0.parentNode.insertBefore(s1,s0);
-})();
+document.getElementById("menuBtn").onclick = () => {
+  document.getElementById("mobileMenu").classList.toggle("open");
+};
 </script>
 
 </body>
-
-<footer class="site-footer">
-  <div class="footer-brand">
-    <h2>SimClaire</h2>
-    <p>Instant global eSIMs. No roaming surprises.</p>
-  </div>
-
-  <div class="footer-links">
-    <h4>Site Links</h4>
-    <a href="/">Home</a>
-    <a href="/#results">Choose Destination</a>
-    <a href="/faq.html">Why an eSIM?</a>
-    <a href="/support.html">Get Support</a>
-    <h4>Important</h4>
-    <a href="/terms.html">Terms</a>
-    <a href="/privacy.html">Privacy</a>
-    <a href="/refund-policy.html">Refund Policy</a>
-  </div>
-</footer>
 </html>
