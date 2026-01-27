@@ -11,20 +11,17 @@
 
 <!-- HEADER -->
 <header class="top-header">
-  <div class="header-left">
-    <a href="/" class="brand">SimClaire</a>
-  </div>
+  <a href="/" class="brand">SimClaire</a>
 
-    <button class="menu-btn" id="menuBtn">
-      <span></span>
-      <span></span>
-      <span></span>
-    </button>
-  </div>
+  <button class="menu-btn" id="menuBtn" aria-label="Menu">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
 </header>
 
 <!-- SLIDE MENU -->
-<div id="menuPanel" class="menu-panel hidden">
+<nav id="menuPanel" class="menu-panel hidden">
   <a href="/">Home</a>
   <a href="/index.html#results">Browse Plans</a>
   <a href="/install.html">How it works</a>
@@ -32,7 +29,7 @@
   <a href="/support.html">Support</a>
   <a href="/account.html">Account</a>
   <a href="/refund-policy.html">Refund Policy</a>
-</div>
+</nav>
 
 <!-- FAQ PAGE -->
 <main class="faq-page">
@@ -56,13 +53,15 @@
     <h2>📱 Device Compatibility</h2>
 
     <div class="faq-item">
-      <button class="faq-question">
+      <button class="faq-question" type="button">
         <span class="faq-text">Is my device eSIM compatible?</span>
         <span class="faq-icon">+</span>
       </button>
       <div class="faq-answer">
-        Most modern iPhones, Samsung, and Google Pixel devices support eSIM.
-        You can check your phone settings for “eSIM” or “Digital SIM”.
+        <p>
+          Most modern iPhones, Samsung, and Google Pixel devices support eSIM.
+          You can check your phone settings for “eSIM” or “Digital SIM”.
+        </p>
       </div>
     </div>
   </section>
@@ -72,13 +71,15 @@
     <h2>⚙️ Installation & Activation</h2>
 
     <div class="faq-item">
-      <button class="faq-question">
+      <button class="faq-question" type="button">
         <span class="faq-text">When does my eSIM activate?</span>
         <span class="faq-icon">+</span>
       </button>
       <div class="faq-answer">
-        Activation happens when you arrive at your destination or when you
-        enable the eSIM, depending on the plan.
+        <p>
+          Activation happens when you arrive at your destination or when you
+          enable the eSIM, depending on the plan.
+        </p>
       </div>
     </div>
   </section>
@@ -88,22 +89,24 @@
     <h2>💳 Billing & Refunds</h2>
 
     <div class="faq-item">
-      <button class="faq-question">
+      <button class="faq-question" type="button">
         <span class="faq-text">Can I get a refund?</span>
         <span class="faq-icon">+</span>
       </button>
       <div class="faq-answer">
-        Refunds are available for unused plans. Once the eSIM is activated,
-        refunds may not be possible.
+        <p>
+          Refunds are available for unused plans. Once the eSIM is activated,
+          refunds may not be possible.
+        </p>
       </div>
     </div>
   </section>
 
 </main>
 
-<!-- FAQ + MENU SCRIPT -->
+<!-- SCRIPTS -->
 <script>
-/* Accordion */
+/* FAQ Accordion */
 document.querySelectorAll(".faq-question").forEach(btn => {
   btn.addEventListener("click", () => {
     const item = btn.closest(".faq-item");
@@ -119,37 +122,25 @@ document.getElementById("faqSearch").addEventListener("input", e => {
   const value = e.target.value.toLowerCase();
 
   document.querySelectorAll(".faq-item").forEach(item => {
-    const text = item.innerText.toLowerCase();
-    item.style.display = text.includes(value) ? "block" : "none";
+    item.style.display =
+      item.innerText.toLowerCase().includes(value) ? "block" : "none";
   });
 });
 
-</script>
+/* Hamburger Menu */
+const menuBtn = document.getElementById("menuBtn");
+const menuPanel = document.getElementById("menuPanel");
 
-<script>
-  const menuBtn = document.getElementById("menuToggle");
-  const menuPanel = document.getElementById("menuPanel");
+menuBtn.addEventListener("click", e => {
+  e.stopPropagation();
+  menuPanel.classList.toggle("hidden");
+});
 
-  menuBtn.addEventListener("click", () => {
-    menuBtn.classList.toggle("active");
-    menuPanel.classList.toggle("hidden");
-  });
-
-  // Close menu on link click
-  menuPanel.querySelectorAll("a").forEach(link => {
-    link.addEventListener("click", () => {
-      menuBtn.classList.remove("active");
-      menuPanel.classList.add("hidden");
-    });
-  });
-
-  // Close on outside click
-  document.addEventListener("click", (e) => {
-    if (!menuPanel.contains(e.target) && !menuBtn.contains(e.target)) {
-      menuBtn.classList.remove("active");
-      menuPanel.classList.add("hidden");
-    }
-  });
+document.addEventListener("click", e => {
+  if (!menuPanel.contains(e.target) && !menuBtn.contains(e.target)) {
+    menuPanel.classList.add("hidden");
+  }
+});
 </script>
 
 <footer class="site-footer">
@@ -162,7 +153,7 @@ document.getElementById("faqSearch").addEventListener("input", e => {
     <h4>Site Links</h4>
     <a href="/">Home</a>
     <a href="/#results">Choose Destination</a>
-    <a href="/faq.html">Why an eSIM?</a>
+    <a href="/faq.html">FAQ</a>
     <a href="/support.html">Get Support</a>
   </div>
 
