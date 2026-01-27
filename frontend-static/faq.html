@@ -9,8 +9,7 @@
 
 <body class="page-bg">
 
-<!-- ================= HEADER ================= -->
-<!-- TOP HEADER -->
+<!-- HEADER -->
 <header class="top-header">
   <div class="header-left">
     <a href="/" class="brand">SimClaire</a>
@@ -35,109 +34,100 @@
   <a href="/refund-policy.html">Refund Policy</a>
 </div>
 
-<!-- ================= FAQ PAGE ================= -->
+<!-- FAQ PAGE -->
 <main class="faq-page">
 
-  <section class="faq-hero">
-    <h1>Frequently Asked Questions</h1>
-    <p>Quick answers to help you stay connected while traveling.</p>
+  <h1>Frequently Asked Questions</h1>
+  <p class="faq-subtitle">
+    Quick answers to help you stay connected while traveling.
+  </p>
+
+  <!-- SEARCH -->
+  <div class="faq-search">
+    <input
+      type="text"
+      id="faqSearch"
+      placeholder="Search for answers"
+    />
+  </div>
+
+  <!-- CATEGORY: DEVICE -->
+  <section class="faq-category">
+    <h2>📱 Device Compatibility</h2>
+
+    <div class="faq-item">
+      <button class="faq-question">
+        <span class="faq-text">Is my device eSIM compatible?</span>
+        <span class="faq-icon">+</span>
+      </button>
+      <div class="faq-answer">
+        Most modern iPhones, Samsung, and Google Pixel devices support eSIM.
+        You can check your phone settings for “eSIM” or “Digital SIM”.
+      </div>
+    </div>
   </section>
 
-  <section class="faq-list">
+  <!-- CATEGORY: INSTALL -->
+  <section class="faq-category">
+    <h2>⚙️ Installation & Activation</h2>
 
-    <!-- FAQ ITEM -->
     <div class="faq-item">
       <button class="faq-question">
-        <span>What is an eSIM?</span>
-        <span class="icon">+</span>
+        <span class="faq-text">When does my eSIM activate?</span>
+        <span class="faq-icon">+</span>
       </button>
       <div class="faq-answer">
-        <p>
-          An eSIM is a digital SIM that lets you activate a mobile plan without inserting a physical SIM card.
-        </p>
+        Activation happens when you arrive at your destination or when you
+        enable the eSIM, depending on the plan.
       </div>
     </div>
-
-    <!-- FAQ ITEM -->
-    <div class="faq-item">
-      <button class="faq-question">
-        <span>When does my eSIM activate?</span>
-        <span class="icon">+</span>
-      </button>
-      <div class="faq-answer">
-        <p>
-          Your eSIM activates when you arrive at your destination or when you enable it, depending on the plan.
-        </p>
-      </div>
-    </div>
-
-    <!-- FAQ ITEM -->
-    <div class="faq-item">
-      <button class="faq-question">
-        <span>Is my phone compatible?</span>
-        <span class="icon">+</span>
-      </button>
-      <div class="faq-answer">
-        <p>
-          Most modern iPhones, Samsung, and Google Pixel devices support eSIM.
-        </p>
-      </div>
-    </div>
-
   </section>
+
+  <!-- CATEGORY: BILLING -->
+  <section class="faq-category">
+    <h2>💳 Billing & Refunds</h2>
+
+    <div class="faq-item">
+      <button class="faq-question">
+        <span class="faq-text">Can I get a refund?</span>
+        <span class="faq-icon">+</span>
+      </button>
+      <div class="faq-answer">
+        Refunds are available for unused plans. Once the eSIM is activated,
+        refunds may not be possible.
+      </div>
+    </div>
+  </section>
+
 </main>
 
-<!-- ================= FOOTER ================= -->
-<footer class="site-footer">
-  <div class="footer-inner">
-
-    <div class="footer-brand">
-      <strong>SimClaire</strong>
-      <p>Instant global eSIMs. No roaming surprises.</p>
-    </div>
-
-    <div class="footer-links">
-      <a href="/">Home</a>
-      <a href="/#results">Choose Destination</a>
-      <a href="/faq.html">FAQ</a>
-      <a href="/support.html">Support</a>
-      <a href="/account.html">My Account</a>
-    </div>
-
-    <div class="footer-legal">
-      <a href="/terms.html">Terms</a>
-      <a href="/privacy.html">Privacy</a>
-    </div>
-
-    <p class="footer-copy">© 2026 SimClaire. All rights reserved.</p>
-
-  </div>
-</footer>
-
-<!-- ================= SCRIPTS ================= -->
+<!-- FAQ + MENU SCRIPT -->
 <script>
-/* Hamburger menu */
-const menuBtn = document.getElementById("menuBtn");
-const mobileMenu = document.getElementById("mobileMenu");
-
-menuBtn.addEventListener("click", () => {
-  mobileMenu.classList.toggle("open");
-  menuBtn.classList.toggle("open");
-});
-
-/* FAQ accordion */
-document.querySelectorAll(".faq-question").forEach(button => {
-  button.addEventListener("click", () => {
-    const item = button.closest(".faq-item");
-
-    // Close others (optional – remove if you want multiple open)
-    document.querySelectorAll(".faq-item").forEach(i => {
-      if (i !== item) i.classList.remove("active");
-    });
+/* Accordion */
+document.querySelectorAll(".faq-question").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const item = btn.closest(".faq-item");
+    const icon = btn.querySelector(".faq-icon");
 
     item.classList.toggle("active");
+    icon.textContent = item.classList.contains("active") ? "−" : "+";
   });
 });
+
+/* Search */
+document.getElementById("faqSearch").addEventListener("input", e => {
+  const value = e.target.value.toLowerCase();
+
+  document.querySelectorAll(".faq-item").forEach(item => {
+    const text = item.innerText.toLowerCase();
+    item.style.display = text.includes(value) ? "block" : "none";
+  });
+});
+
+/* Mobile menu */
+document.getElementById("menuBtn").onclick = () => {
+  document.getElementById("mobileMenu").classList.toggle("open");
+};
 </script>
 
 </body>
