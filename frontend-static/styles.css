@@ -2757,3 +2757,21 @@ body {
 .menu-btn span {
   transition: transform 0.25s ease, opacity 0.2s ease;
 }
+
+/* FORCE hamburger lines to render */
+button.menu-btn span {
+  display: block !important;
+  width: 22px !important;
+  height: 3px !important;
+  min-height: 3px !important;
+
+  background-color: #ffffff !important;
+  opacity: 1 !important;
+
+  border-radius: 3px !important;
+}
+
+button.menu-btn {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+}
