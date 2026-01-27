@@ -3132,3 +3132,55 @@ button.menu-btn span {
 .menuToggle.active span:nth-child(3) {
   transform: translateY(-9px) rotate(-45deg);
 }
+
+/* ===== HAMBURGER / X TOGGLE ===== */
+.menuToggle {
+  width: 36px;
+  height: 28px;
+  position: relative;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  z-index: 1002;
+}
+
+/* the 3 lines */
+.menuToggle span {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background-color: #fff;
+  border-radius: 3px;
+  transition: transform 0.3s ease, opacity 0.2s ease, top 0.3s ease;
+}
+
+/* top */
+.menuToggle span:nth-child(1) {
+  top: 4px;
+}
+
+/* middle */
+.menuToggle span:nth-child(2) {
+  top: 12px;
+}
+
+/* bottom */
+.menuToggle span:nth-child(3) {
+  top: 20px;
+}
+
+/* ===== ACTIVE → X ===== */
+.menuToggle.active span:nth-child(1) {
+  top: 12px;
+  transform: rotate(45deg);
+}
+
+.menuToggle.active span:nth-child(2) {
+  opacity: 0;
+}
+
+.menuToggle.active span:nth-child(3) {
+  top: 12px;
+  transform: rotate(-45deg);
+}
