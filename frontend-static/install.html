@@ -10,6 +10,31 @@
 
 <body>
 
+<!-- TOP HEADER -->
+<header class="top-header">
+  <div class="header-left">
+    <a href="/" class="brand">SimClaire</a>
+  </div>
+
+    <button id="menuToggle" class="menu-toggle" aria-label="Menu">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+  </div>
+</header>
+
+<!-- SLIDE MENU -->
+<div id="menuPanel" class="menu-panel">
+  <a href="/">Home</a>
+  <a href="/index.html#results">Browse Plans</a>
+  <a href="/install.html">How it works</a>
+  <a href="/faq.html">FAQ</a>
+  <a href="/support.html">Support</a>
+  <a href="/account.html">Account</a>
+  <a href="/refund-policy.html">Refund Policy</a>
+</div>
+
 <div class="legal-page">
   <a href="/" class="top-btn">← Back to Home</a>
 
@@ -85,6 +110,33 @@ function showTab(tabId) {
   document.getElementById(tabId).classList.add("active");
   event.target.classList.add("active");
 }
+
+
+  const menuToggle = document.getElementById("menuToggle");
+  const menuPanel = document.getElementById("menuPanel");
+
+  menuToggle.addEventListener("click", (e) => {
+    e.stopPropagation();
+    menuToggle.classList.toggle("active");
+    menuPanel.classList.toggle("open");
+  });
+
+  // Close on link click
+  menuPanel.querySelectorAll("a").forEach(link => {
+    link.addEventListener("click", () => {
+      menuToggle.classList.remove("active");
+      menuPanel.classList.remove("open");
+    });
+  });
+
+  // Close on outside click
+  document.addEventListener("click", (e) => {
+    if (!menuPanel.contains(e.target) && !menuToggle.contains(e.target)) {
+      menuToggle.classList.remove("active");
+      menuPanel.classList.remove("open");
+    }
+  });
+
 </script>
 
 </body>

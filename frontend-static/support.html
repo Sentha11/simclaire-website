@@ -10,19 +10,23 @@
 <body class="page-bg">
 
 <!-- HEADER -->
-<!-- (PASTE SHARED HEADER HERE) -->
-<header class="top-header">
-  <a href="/" class="brand">SimClaire</a>
 
-  <button class="menu-btn" id="menuBtn" aria-label="Menu">
-    <span></span>
-    <span></span>
-    <span></span>
-  </button>
+<!-- TOP HEADER -->
+<header class="top-header">
+  <div class="header-left">
+    <a href="/" class="brand">SimClaire</a>
+  </div>
+
+    <button id="menuToggle" class="menu-toggle" aria-label="Menu">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+  </div>
 </header>
 
 <!-- SLIDE MENU -->
-<nav id="menuPanel" class="menu-panel hidden">
+<div id="menuPanel" class="menu-panel">
   <a href="/">Home</a>
   <a href="/index.html#results">Browse Plans</a>
   <a href="/install.html">How it works</a>
@@ -30,8 +34,7 @@
   <a href="/support.html">Support</a>
   <a href="/account.html">Account</a>
   <a href="/refund-policy.html">Refund Policy</a>
-</nav>
-
+</div>
 <!-- =========================
      HOW IT WORKS
 ========================= -->
@@ -87,21 +90,30 @@
 </footer>
 
 <script>
-const menuBtn = document.getElementById("menuBtn");
-const menuPanel = document.getElementById("menuPanel");
+  const menuToggle = document.getElementById("menuToggle");
+  const menuPanel = document.getElementById("menuPanel");
 
-menuBtn.addEventListener("click", () => {
-  menuBtn.classList.toggle("active");
-  menuPanel.classList.toggle("hidden");
-});
-
-/* Close menu when clicking a link */
-menuPanel.querySelectorAll("a").forEach(link => {
-  link.addEventListener("click", () => {
-    menuBtn.classList.remove("active");
-    menuPanel.classList.add("hidden");
+  menuToggle.addEventListener("click", (e) => {
+    e.stopPropagation();
+    menuToggle.classList.toggle("active");
+    menuPanel.classList.toggle("open");
   });
-});
+
+  // Close on link click
+  menuPanel.querySelectorAll("a").forEach(link => {
+    link.addEventListener("click", () => {
+      menuToggle.classList.remove("active");
+      menuPanel.classList.remove("open");
+    });
+  });
+
+  // Close on outside click
+  document.addEventListener("click", (e) => {
+    if (!menuPanel.contains(e.target) && !menuToggle.contains(e.target)) {
+      menuToggle.classList.remove("active");
+      menuPanel.classList.remove("open");
+    }
+  });
 </script>
 
 </body>
