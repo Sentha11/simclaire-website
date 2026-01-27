@@ -2558,3 +2558,150 @@ body {
     margin-top: 22px;
   }
 }
+/* ================================
+   FAQ — Trvlpass-style cleanup
+================================ */
+
+/* Page container */
+.faq-page {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 28px 18px 50px;
+}
+
+/* Category spacing (tight + consistent) */
+.faq-category {
+  margin: 18px 0 0;
+}
+
+.faq-category h2 {
+  margin: 0 0 10px;
+  font-size: 16px;
+  font-weight: 700;
+  opacity: 0.9;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Search bar (clean + wide) */
+.faq-search {
+  margin: 14px 0 18px;
+}
+
+.faq-search input {
+  width: 100%;
+  padding: 14px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.06);
+  color: #fff;
+  outline: none;
+}
+
+.faq-search input::placeholder {
+  color: rgba(255,255,255,0.55);
+}
+
+/* FAQ item */
+.faq-item {
+  margin: 8px 0; /* THIS is the real spacing */
+}
+
+/* Button row */
+.faq-question {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* keeps + aligned */
+  gap: 12px;
+
+  padding: 16px 16px;
+  border-radius: 14px;
+  cursor: pointer;
+
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.06);
+  color: #fff;
+
+  transition: background 0.2s ease, border 0.2s ease, transform 0.1s ease;
+}
+
+.faq-question:hover {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.14);
+}
+
+.faq-text {
+  font-size: 16px;
+  font-weight: 650;
+  line-height: 1.25;
+  text-align: left;
+}
+
+/* Plus icon (perfect alignment + same size always) */
+.faq-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 18px;
+  font-weight: 800;
+
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.10);
+  flex: 0 0 34px; /* locks alignment */
+}
+
+/* Answer block: expand UNDER question */
+.faq-answer {
+  margin-top: 8px;
+  padding: 14px 16px;
+
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.20);
+
+  color: rgba(255,255,255,0.85);
+  line-height: 1.45;
+  font-size: 14px;
+
+  max-height: 0;
+  overflow: hidden;
+  padding-top: 0;
+  padding-bottom: 0;
+  opacity: 0;
+
+  transition: max-height 0.28s ease, opacity 0.22s ease, padding 0.22s ease;
+}
+
+/* Active state */
+.faq-item.active .faq-answer {
+  max-height: 220px; /* enough for most answers */
+  opacity: 1;
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
+
+/* Make active item slightly highlighted */
+.faq-item.active .faq-question {
+  background: rgba(255,255,255,0.09);
+  border-color: rgba(255,255,255,0.16);
+}
+
+/* Mobile tweaks */
+@media (max-width: 480px) {
+  .faq-page {
+    padding: 22px 14px 45px;
+  }
+  .faq-question {
+    padding: 14px 14px;
+  }
+  .faq-text {
+    font-size: 15px;
+  }
+}
