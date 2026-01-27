@@ -2775,3 +2775,46 @@ button.menu-btn {
   background: rgba(255,255,255,0.08);
   border: 1px solid rgba(255,255,255,0.15);
 }
+
+/* ===== POLISHED HAMBURGER MENU ===== */
+
+button.menu-btn {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 8px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+  gap: 4px; /* tighter spacing */
+
+  background: transparent; /* cleaner look */
+  border: none;
+
+  cursor: pointer;
+}
+
+/* the lines */
+button.menu-btn span {
+  display: block;
+  width: 20px;
+  height: 2px;
+
+  background-color: #ffffff;
+  border-radius: 2px;
+  opacity: 0.95;
+}
+
+/* subtle hover (desktop only) */
+@media (hover: hover) {
+  button.menu-btn:hover span {
+    opacity: 1;
+  }
+}
+
+.top-header {
+  padding-right: 12px;
+}
