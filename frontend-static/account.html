@@ -22,13 +22,30 @@ var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
 </script>
 <!-- End of Tawk.to Script -->
 
-<header class="site-header">
-  <div class="logo">SimClaire</div>
+<!-- TOP HEADER -->
+<header class="top-header">
+  <div class="header-left">
+    <a href="/" class="brand">SimClaire</a>
+  </div>
 
-  <button class="menu-btn" id="menuBtn">
-    <span></span><span></span><span></span>
-  </button>
+    <button id="menuToggle" class="menu-toggle" aria-label="Menu">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+  </div>
 </header>
+
+<!-- SLIDE MENU -->
+<div id="menuPanel" class="menu-panel">
+  <a href="/">Home</a>
+  <a href="/index.html#results">Browse Plans</a>
+  <a href="/install.html">How it works</a>
+  <a href="/faq.html">FAQ</a>
+  <a href="/support.html">Support</a>
+  <a href="/account.html">Account</a>
+  <a href="/refund-policy.html">Refund Policy</a>
+</div>
 
 <nav class="mobile-menu" id="mobileMenu">
   <a href="/">Home</a>
@@ -112,3 +129,22 @@ var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
   </div>
 </footer>
 </html>
+
+<script>
+  const menuToggle = document.getElementById("menuToggle");
+  const menuPanel = document.getElementById("menuPanel");
+
+  menuToggle.addEventListener("click", (e) => {
+    e.stopPropagation();
+    menuToggle.classList.toggle("active");
+    menuPanel.classList.toggle("open");
+  });
+
+  // Close on link click
+  menuPanel.querySelectorAll("a").forEach(link => {
+    link.addEventListener("click", () => {
+      menuToggle.classList.remove("active");
+      menuPanel.classList.remove("open");
+    });
+  });
+</script>
