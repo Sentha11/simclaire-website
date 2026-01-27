@@ -87,19 +87,20 @@
 </footer>
 
 <script>
-/* Hamburger Menu */
 const menuBtn = document.getElementById("menuBtn");
 const menuPanel = document.getElementById("menuPanel");
 
-menuBtn.addEventListener("click", e => {
-  e.stopPropagation();
+menuBtn.addEventListener("click", () => {
+  menuBtn.classList.toggle("active");
   menuPanel.classList.toggle("hidden");
 });
 
-document.addEventListener("click", e => {
-  if (!menuPanel.contains(e.target) && !menuBtn.contains(e.target)) {
+/* Close menu when clicking a link */
+menuPanel.querySelectorAll("a").forEach(link => {
+  link.addEventListener("click", () => {
+    menuBtn.classList.remove("active");
     menuPanel.classList.add("hidden");
-  }
+  });
 });
 </script>
 
