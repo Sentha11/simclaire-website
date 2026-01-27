@@ -214,21 +214,10 @@ var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
     menuPanel.classList.toggle("hidden");
   });
 
-  // Close on link click
-  menuPanel.querySelectorAll("a").forEach(link => {
-    link.addEventListener("click", () => {
-      menuToggle.classList.remove("active");
-      menuPanel.classList.add("hidden");
-    });
-  });
-
-  // Close when clicking outside
   document.addEventListener("click", (e) => {
     if (!menuPanel.contains(e.target) && !menuToggle.contains(e.target)) {
       menuToggle.classList.remove("active");
       menuPanel.classList.add("hidden");
     }
   });
-
 </script>
-

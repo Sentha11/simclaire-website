@@ -2956,3 +2956,43 @@ button.menu-btn span {
 .menu-toggle.active span:nth-child(3) {
   transform: rotate(-45deg) translate(7px, -7px);
 }
+
+/* ===== FORCE HAMBURGER VISIBILITY ===== */
+
+.menu-toggle {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  width: 36px;
+  height: 28px;
+  background: transparent;
+  border: none;
+  z-index: 9999; /* THIS IS KEY */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+.menu-toggle span {
+  display: block;
+  width: 100%;
+  height: 3px;
+  background-color: #ffffff !important;
+  border-radius: 2px;
+  opacity: 1 !important;
+  transform-origin: center;
+  transition: all 0.35s ease;
+}
+
+.menu-toggle.active span:nth-child(1) {
+  transform: rotate(45deg) translate(6px, 6px);
+}
+
+.menu-toggle.active span:nth-child(2) {
+  opacity: 0;
+}
+
+.menu-toggle.active span:nth-child(3) {
+  transform: rotate(-45deg) translate(6px, -6px);
+}
