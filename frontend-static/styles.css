@@ -2368,3 +2368,45 @@ body {
     font-size: 15px;
   }
 }
+
+/* ===== FAQ SPACING TIGHTEN ===== */
+
+/* Reduce space between categories */
+.faq-category {
+  margin-bottom: 24px; /* was ~40px */
+}
+
+/* Reduce space between FAQ items */
+.faq-item {
+  margin-bottom: 8px; /* was ~12px */
+}
+
+/* Reduce question padding */
+.faq-question {
+  padding: 14px 16px; /* was 18px 20px */
+}
+
+/* Reduce answer padding */
+.faq-item.active .faq-answer {
+  padding: 0 16px 14px; /* was 0 20px 18px */
+}
+
+/* Slightly reduce answer line spacing */
+.faq-answer {
+  line-height: 1.5;
+}
+
+/* Mobile: even tighter */
+@media (max-width: 640px) {
+  .faq-question {
+    padding: 12px 14px;
+  }
+
+  .faq-item.active .faq-answer {
+    padding: 0 14px 12px;
+  }
+
+  .faq-category {
+    margin-bottom: 20px;
+  }
+}
