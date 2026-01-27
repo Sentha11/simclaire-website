@@ -2996,3 +2996,42 @@ button.menu-btn span {
 .menu-toggle.active span:nth-child(3) {
   transform: rotate(-45deg) translate(6px, -6px);
 }
+
+/* ===== HAMBURGER (FINAL, WORKING) ===== */
+
+.menu-toggle {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  width: 36px;
+  height: 26px;
+  background: transparent;
+  border: none;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+.menu-toggle span {
+  display: block;
+  height: 3px;
+  width: 100%;
+  background: #ffffff;
+  border-radius: 2px;
+  transition: all 0.3s ease;
+}
+
+/* Animate to X */
+.menu-toggle.active span:nth-child(1) {
+  transform: translateY(11px) rotate(45deg);
+}
+
+.menu-toggle.active span:nth-child(2) {
+  opacity: 0;
+}
+
+.menu-toggle.active span:nth-child(3) {
+  transform: translateY(-11px) rotate(-45deg);
+}
