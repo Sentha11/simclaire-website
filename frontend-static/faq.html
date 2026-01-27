@@ -35,16 +35,17 @@
   <a href="/refund-policy.html">Refund Policy</a>
 </div>
 
-<!-- ================= FAQ CONTENT ================= -->
-<main class="faq-container">
+<!-- ================= FAQ PAGE ================= -->
+<main class="faq-page">
 
-  <h1>Frequently Asked Questions</h1>
-  <p class="faq-subtitle">
-    Quick answers to help you stay connected while traveling.
-  </p>
+  <section class="faq-hero">
+    <h1>Frequently Asked Questions</h1>
+    <p>Quick answers to help you stay connected while traveling.</p>
+  </section>
 
   <section class="faq-list">
 
+    <!-- FAQ ITEM -->
     <div class="faq-item">
       <button class="faq-question">
         <span>What is an eSIM?</span>
@@ -52,12 +53,12 @@
       </button>
       <div class="faq-answer">
         <p>
-          An eSIM is a digital SIM that lets you activate a mobile plan
-          without inserting a physical SIM card.
+          An eSIM is a digital SIM that lets you activate a mobile plan without inserting a physical SIM card.
         </p>
       </div>
     </div>
 
+    <!-- FAQ ITEM -->
     <div class="faq-item">
       <button class="faq-question">
         <span>When does my eSIM activate?</span>
@@ -65,12 +66,12 @@
       </button>
       <div class="faq-answer">
         <p>
-          Activation happens when you arrive at your destination
-          or when you manually enable the eSIM, depending on the plan.
+          Your eSIM activates when you arrive at your destination or when you enable it, depending on the plan.
         </p>
       </div>
     </div>
 
+    <!-- FAQ ITEM -->
     <div class="faq-item">
       <button class="faq-question">
         <span>Is my phone compatible?</span>
@@ -78,21 +79,22 @@
       </button>
       <div class="faq-answer">
         <p>
-          Most modern iPhones, Samsung Galaxy, and Google Pixel devices
-          support eSIM. Check your device settings to confirm.
+          Most modern iPhones, Samsung, and Google Pixel devices support eSIM.
         </p>
       </div>
     </div>
 
   </section>
-
 </main>
 
 <!-- ================= FOOTER ================= -->
 <footer class="site-footer">
   <div class="footer-inner">
-    <h3>SimClaire</h3>
-    <p>Instant global eSIMs. No roaming surprises.</p>
+
+    <div class="footer-brand">
+      <strong>SimClaire</strong>
+      <p>Instant global eSIMs. No roaming surprises.</p>
+    </div>
 
     <div class="footer-links">
       <a href="/">Home</a>
@@ -107,62 +109,35 @@
       <a href="/privacy.html">Privacy</a>
     </div>
 
-    <p class="copyright">
-      © 2026 SimClaire. All rights reserved.
-    </p>
+    <p class="footer-copy">© 2026 SimClaire. All rights reserved.</p>
+
   </div>
 </footer>
 
 <!-- ================= SCRIPTS ================= -->
 <script>
-/* Hamburger Menu */
-document.addEventListener("DOMContentLoaded", () => {
-  const btn = document.getElementById("menuBtn");
-  const menu = document.getElementById("mobileMenu");
+/* Hamburger menu */
+const menuBtn = document.getElementById("menuBtn");
+const mobileMenu = document.getElementById("mobileMenu");
 
-  if (btn && menu) {
-    btn.addEventListener("click", () => {
-      menu.classList.toggle("open");
-    });
-
-    menu.querySelectorAll("a").forEach(link => {
-      link.addEventListener("click", () => {
-        menu.classList.remove("open");
-      });
-    });
-  }
+menuBtn.addEventListener("click", () => {
+  mobileMenu.classList.toggle("open");
+  menuBtn.classList.toggle("open");
 });
-</script>
 
-<script>
-/* FAQ Accordion */
-document.addEventListener("DOMContentLoaded", () => {
-  document.querySelectorAll(".faq-question").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const item = btn.closest(".faq-item");
+/* FAQ accordion */
+document.querySelectorAll(".faq-question").forEach(button => {
+  button.addEventListener("click", () => {
+    const item = button.closest(".faq-item");
 
-      document.querySelectorAll(".faq-item").forEach(i => {
-        if (i !== item) i.classList.remove("active");
-      });
-
-      item.classList.toggle("active");
+    // Close others (optional – remove if you want multiple open)
+    document.querySelectorAll(".faq-item").forEach(i => {
+      if (i !== item) i.classList.remove("active");
     });
+
+    item.classList.toggle("active");
   });
 });
-</script>
-
-<!-- ================= LIVE CHAT ================= -->
-<script type="text/javascript">
-var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
-(function(){
-  var s1=document.createElement("script"),
-      s0=document.getElementsByTagName("script")[0];
-  s1.async=true;
-  s1.src='https://embed.tawk.to/69681541047e961985040f8e/1jev96275';
-  s1.charset='UTF-8';
-  s1.setAttribute('crossorigin','*');
-  s0.parentNode.insertBefore(s1,s0);
-})();
 </script>
 
 </body>
