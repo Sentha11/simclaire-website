@@ -2705,3 +2705,55 @@ body {
     font-size: 15px;
   }
 }
+
+/* ================================
+   HAMBURGER MENU (VISIBLE FIX)
+================================ */
+
+.menu-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+
+  cursor: pointer;
+  z-index: 1001;
+}
+
+/* THE WHITE LINES */
+.menu-btn span {
+  width: 22px;
+  height: 2.5px;              /* thicker so it shows */
+  background-color: #ffffff; /* force white */
+  border-radius: 2px;
+  display: block;
+  opacity: 1;                 /* important */
+}
+
+/* Hover feedback */
+.menu-btn:hover {
+  background: rgba(255,255,255,0.12);
+}
+
+/* Active (X animation optional but nice) */
+.menu-btn.active span:nth-child(1) {
+  transform: translateY(8px) rotate(45deg);
+}
+.menu-btn.active span:nth-child(2) {
+  opacity: 0;
+}
+.menu-btn.active span:nth-child(3) {
+  transform: translateY(-8px) rotate(-45deg);
+}
+
+.menu-btn span {
+  transition: transform 0.25s ease, opacity 0.2s ease;
+}
