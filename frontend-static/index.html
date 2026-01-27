@@ -39,7 +39,7 @@ var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
 </header>
 
 <!-- SLIDE MENU -->
-<div id="menuPanel" class="menu-panel hidden">
+<div id="menuPanel" class="menu-panel">
   <a href="/">Home</a>
   <a href="/index.html#results">Browse Plans</a>
   <a href="/install.html">How it works</a>
@@ -211,13 +211,22 @@ var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
   menuToggle.addEventListener("click", (e) => {
     e.stopPropagation();
     menuToggle.classList.toggle("active");
-    menuPanel.classList.toggle("hidden");
+    menuPanel.classList.toggle("open");
   });
 
+  // Close on link click
+  menuPanel.querySelectorAll("a").forEach(link => {
+    link.addEventListener("click", () => {
+      menuToggle.classList.remove("active");
+      menuPanel.classList.remove("open");
+    });
+  });
+
+  // Close on outside click
   document.addEventListener("click", (e) => {
     if (!menuPanel.contains(e.target) && !menuToggle.contains(e.target)) {
       menuToggle.classList.remove("active");
-      menuPanel.classList.add("hidden");
+      menuPanel.classList.remove("open");
     }
   });
 </script>

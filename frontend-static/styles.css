@@ -3035,3 +3035,65 @@ button.menu-btn span {
 .menu-toggle.active span:nth-child(3) {
   transform: translateY(-11px) rotate(-45deg);
 }
+
+/* ===== HAMBURGER BUTTON ===== */
+.menu-toggle {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  width: 36px;
+  height: 26px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: none;
+  border: none;
+  cursor: pointer;
+  z-index: 1001;
+}
+
+.menu-toggle span {
+  height: 3px;
+  width: 100%;
+  background: white;
+  border-radius: 2px;
+  transition: transform 0.3s ease, opacity 0.2s ease;
+}
+
+/* Animate to X */
+.menu-toggle.active span:nth-child(1) {
+  transform: translateY(11px) rotate(45deg);
+}
+.menu-toggle.active span:nth-child(2) {
+  opacity: 0;
+}
+.menu-toggle.active span:nth-child(3) {
+  transform: translateY(-11px) rotate(-45deg);
+}
+
+/* ===== SLIDE MENU ===== */
+.menu-panel {
+  position: fixed;
+  top: 0;
+  right: -260px;
+  width: 260px;
+  height: 100vh;
+  background: rgba(0,0,0,0.95);
+  padding: 80px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  transition: right 0.35s ease;
+  z-index: 1000;
+}
+
+.menu-panel a {
+  color: white;
+  text-decoration: none;
+  font-size: 18px;
+}
+
+/* OPEN STATE */
+.menu-panel.open {
+  right: 0;
+}
