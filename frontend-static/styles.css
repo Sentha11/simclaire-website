@@ -2410,3 +2410,70 @@ body {
     margin-bottom: 20px;
   }
 }
+
+/* ===== FAQ HARD OVERRIDES (spacing + plus alignment) ===== */
+
+/* Target the clickable row (your button) */
+.faq-question {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 16px !important;
+
+  padding: 14px 16px !important;     /* tighter */
+  width: 100% !important;
+  text-align: left !important;
+
+  /* prevents any weird skew/rotate from inherited transforms */
+  transform: none !important;
+}
+
+/* The + icon span (last child) */
+.faq-question span {
+  margin-left: auto !important;      /* pushes it to the far right */
+  width: 28px !important;            /* fixed width = perfect alignment */
+  min-width: 28px !important;
+  height: 28px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  font-weight: 800 !important;
+  line-height: 1 !important;
+  text-align: center !important;
+
+  /* stop rotation/turning */
+  transform: none !important;
+}
+
+/* Tighten spacing between items */
+.faq-item {
+  margin-bottom: 10px !important;
+}
+
+/* Tighten the answer area */
+.faq-answer {
+  padding: 0 16px 14px !important;
+  line-height: 1.5 !important;
+}
+
+/* Tighten spacing between categories/sections (if you have headings) */
+.faq-category,
+.faq-section {
+  margin: 18px 0 10px !important;
+}
+
+/* Mobile: slightly tighter still */
+@media (max-width: 640px) {
+  .faq-question {
+    padding: 12px 14px !important;
+  }
+
+  .faq-answer {
+    padding: 0 14px 12px !important;
+  }
+
+  .faq-item {
+    margin-bottom: 8px !important;
+  }
+}

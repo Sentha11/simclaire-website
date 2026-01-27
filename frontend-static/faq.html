@@ -124,10 +124,32 @@ document.getElementById("faqSearch").addEventListener("input", e => {
   });
 });
 
-/* Mobile menu */
-document.getElementById("menuBtn").onclick = () => {
-  document.getElementById("mobileMenu").classList.toggle("open");
-};
+</script>
+
+<script>
+  const menuBtn = document.getElementById("menuToggle");
+  const menuPanel = document.getElementById("menuPanel");
+
+  menuBtn.addEventListener("click", () => {
+    menuBtn.classList.toggle("active");
+    menuPanel.classList.toggle("hidden");
+  });
+
+  // Close menu on link click
+  menuPanel.querySelectorAll("a").forEach(link => {
+    link.addEventListener("click", () => {
+      menuBtn.classList.remove("active");
+      menuPanel.classList.add("hidden");
+    });
+  });
+
+  // Close on outside click
+  document.addEventListener("click", (e) => {
+    if (!menuPanel.contains(e.target) && !menuBtn.contains(e.target)) {
+      menuBtn.classList.remove("active");
+      menuPanel.classList.add("hidden");
+    }
+  });
 </script>
 
 <footer class="site-footer">
