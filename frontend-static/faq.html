@@ -7,95 +7,158 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 
- <nav class="nav-links">
-      <a href="/">Home</a>
-      <a href="/faq.html">FAQ</a>
-      <a href="/support.html">Support</a>
-      <a href="/account.html" class="account-btn">Account</a>
-      <a href="/install.html" class="top-btn">How to Install</a>
-      <a href="/refund-policy.html">Refund Policy</a>
-  </nav>
-
-<!--Start of Tawk.to Script-->
-<script type="text/javascript">
-var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
-(function(){
-var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
-s1.async=true;
-s1.src='https://embed.tawk.to/69681541047e961985040f8e/1jev96275';
-s1.charset='UTF-8';
-s1.setAttribute('crossorigin','*');
-s0.parentNode.insertBefore(s1,s0);
-})();
-</script>
-<!--End of Tawk.to Script-->
-
 <body class="page-bg">
 
-<!-- Back to Home -->
-<div style="padding: 20px;">
-  <a href="/" class="back-pill">← Back to Home</a>
-</div>
+<!-- HEADER -->
+<header class="site-header">
+  <div class="header-inner">
+    <a href="/" class="logo">SimClaire</a>
 
-<div class="faq-container">
+    <button class="menu-btn" id="menuBtn">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<!-- MOBILE MENU -->
+<nav class="mobile-menu hidden" id="mobileMenu">
+  <a href="/">Home</a>
+  <a href="/#results">Browse Plans</a>
+  <a href="/install.html">How it Works</a>
+  <a href="/faq.html" class="active">FAQ</a>
+  <a href="/support.html">Support</a>
+  <a href="/account.html">Account</a>
+</nav>
+
+<!-- FAQ CONTENT -->
+<main class="faq-container">
 
   <h1>Frequently Asked Questions</h1>
   <p class="faq-subtitle">
-    Everything you need to know about SimClaire eSIMs
+    Quick answers to help you stay connected while traveling.
   </p>
 
-  <div class="faq-item">
-    <button class="faq-question">
-      What is an eSIM?
-      <span>+</span>
-    </button>
-    <div class="faq-answer">
-      <p>
-        An eSIM is a digital SIM that allows you to activate a mobile plan
-        without inserting a physical SIM card.
-      </p>
+  <div class="faq-intro">
+    <p>
+      Buying an eSIM should be simple.  
+      Below are the most common questions travelers ask before getting started.
+    </p>
+  </div>
+
+  <!-- GROUP: GETTING STARTED -->
+  <div class="faq-group">
+    <h2>Getting Started</h2>
+
+    <div class="faq-item">
+      <button class="faq-question">
+        What is an eSIM?
+        <span>+</span>
+      </button>
+      <div class="faq-answer">
+        <p>
+          An eSIM is a digital SIM that lets you activate a mobile plan without
+          inserting a physical SIM card.
+        </p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-question">
+        When does my eSIM activate?
+        <span>+</span>
+      </button>
+      <div class="faq-answer">
+        <p>
+          Your eSIM activates when you arrive at your destination
+          or when you enable it in your phone settings.
+        </p>
+      </div>
     </div>
   </div>
 
-  <div class="faq-item">
-    <button class="faq-question">
-      When does my eSIM activate?
-      <span>+</span>
-    </button>
-    <div class="faq-answer">
-      <p>
-        Your eSIM activates when you arrive at your destination
-        or when you enable it, depending on the plan.
-      </p>
+  <!-- GROUP: COMPATIBILITY -->
+  <div class="faq-group">
+    <h2>Compatibility & Devices</h2>
+
+    <div class="faq-item">
+      <button class="faq-question">
+        Is my phone compatible?
+        <span>+</span>
+      </button>
+      <div class="faq-answer">
+        <p>
+          Most modern smartphones support eSIM.
+          Your device must be eSIM-compatible and unlocked.
+        </p>
+      </div>
     </div>
   </div>
 
-  <div class="faq-item">
-    <button class="faq-question">
-      Is my phone compatible?
-      <span>+</span>
-    </button>
-    <div class="faq-answer">
-      <p>
-        Most modern smartphones support eSIM.
-        Check your device settings or contact support.
-      </p>
+</main>
+
+<!-- FOOTER -->
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-col">
+      <strong>SimClaire</strong>
+      <p>Global eSIMs for modern travelers.</p>
+    </div>
+
+    <div class="footer-col">
+      <a href="/support.html">Support</a>
+      <a href="/faq.html">FAQ</a>
+      <a href="/account.html">My Account</a>
+    </div>
+
+    <div class="footer-col">
+      <a href="/terms.html">Terms</a>
+      <a href="/privacy.html">Privacy</a>
     </div>
   </div>
 
-</div>
+  <p class="footer-copy">© 2026 SimClaire. All rights reserved.</p>
+</footer>
 
-<!-- FAQ Toggle Script (SAFE) -->
+<!-- FAQ TOGGLE -->
 <script>
 document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll(".faq-question").forEach(btn => {
     btn.addEventListener("click", () => {
-      const item = btn.closest(".faq-item");
-      item.classList.toggle("active");
+      btn.closest(".faq-item").classList.toggle("active");
     });
+  });
+
+  // Hamburger
+  const menuBtn = document.getElementById("menuBtn");
+  const mobileMenu = document.getElementById("mobileMenu");
+
+  menuBtn.addEventListener("click", () => {
+    menuBtn.classList.toggle("active");
+    mobileMenu.classList.toggle("hidden");
   });
 });
 </script>
 
 </body>
+<footer class="site-footer">
+  <div class="footer-brand">
+    <h2>SimClaire</h2>
+    <p>Instant global eSIMs. No roaming surprises.</p>
+  </div>
+
+  <div class="footer-links">
+    <h4>Site Links</h4>
+    <a href="/">Home</a>
+    <a href="/#results">Choose Destination</a>
+    <a href="/faq.html">Why an eSIM?</a>
+    <a href="/support.html">Get Support</a>
+  </div>
+
+  <div class="footer-links">
+    <h4>Important</h4>
+    <a href="/terms.html">Terms</a>
+    <a href="/privacy.html">Privacy</a>
+    <a href="/refund-policy.html">Refund Policy</a>
+  </div>
+</footer>
 </html>

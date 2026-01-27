@@ -7,15 +7,105 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 
- <nav class="nav-links">
-      <a href="/">Home</a>
-      <a href="/faq.html">FAQ</a>
-      <a href="/support.html">Support</a>
-      <a href="/account.html" class="account-btn">Account</a>
-      <a href="/install.html" class="top-btn">How to Install</a>
-  </nav>
+<body class="page-bg">
 
-<!--Start of Tawk.to Script-->
+<!-- HEADER -->
+<header class="site-header">
+  <div class="header-inner">
+    <a href="/" class="logo">SimClaire</a>
+
+    <button class="menu-btn" id="menuBtn">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<!-- MOBILE MENU -->
+<nav class="mobile-menu hidden" id="mobileMenu">
+  <a href="/">Home</a>
+  <a href="/#results">Browse Plans</a>
+  <a href="/install.html">How it Works</a>
+  <a href="/faq.html">FAQ</a>
+  <a href="/support.html" class="active">Support</a>
+  <a href="/account.html">Account</a>
+</nav>
+
+<!-- SUPPORT CONTENT -->
+<main class="support-container">
+
+  <h1>Support</h1>
+  <p class="support-subtitle">
+    Real support from real people — before and during your trip.
+  </p>
+
+  <div class="support-grid">
+
+    <!-- PRIMARY -->
+    <div class="support-card primary">
+      <h3>💬 Live Chat</h3>
+      <p>Fastest way to get help</p>
+      <a href="#" id="openLiveChat" class="support-btn">
+        Start Live Chat
+      </a>
+    </div>
+
+    <div class="support-card">
+      <h3>📱 WhatsApp</h3>
+      <p>Instant help while you’re traveling</p>
+      <a href="https://wa.me/14376056560" target="_blank" class="support-btn">
+        Chat on WhatsApp
+      </a>
+    </div>
+
+    <div class="support-card">
+      <h3>📧 Email Support</h3>
+      <p>Orders, receipts, and general support</p>
+      <a href="mailto:care@simclaire.com" class="support-btn">
+        Email Us
+      </a>
+    </div>
+
+  </div>
+
+</main>
+
+<!-- FOOTER -->
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-col">
+      <strong>SimClaire</strong>
+      <p>Global eSIMs for modern travelers.</p>
+    </div>
+
+    <div class="footer-col">
+      <a href="/support.html">Support</a>
+      <a href="/faq.html">FAQ</a>
+      <a href="/account.html">My Account</a>
+    </div>
+
+    <div class="footer-col">
+      <a href="/terms.html">Terms</a>
+      <a href="/privacy.html">Privacy</a>
+    </div>
+  </div>
+
+  <p class="footer-copy">© 2026 SimClaire. All rights reserved.</p>
+</footer>
+
+<!-- HAMBURGER SCRIPT -->
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const menuBtn = document.getElementById("menuBtn");
+  const mobileMenu = document.getElementById("mobileMenu");
+
+  menuBtn.addEventListener("click", () => {
+    menuBtn.classList.toggle("active");
+    mobileMenu.classList.toggle("hidden");
+  });
+});
+</script>
+
+<!-- TAWK CHAT -->
 <script type="text/javascript">
 var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
 (function(){
@@ -27,63 +117,28 @@ s1.setAttribute('crossorigin','*');
 s0.parentNode.insertBefore(s1,s0);
 })();
 </script>
-<!--End of Tawk.to Script-->
-
-<body>
-
-<div class="support-container">
-
-  <h1>Support</h1>
-  <p class="support-subtitle">
-    We’re here to help you anytime
-  </p>
-
-  <div class="support-grid">
-
-    <div class="support-card">
-      <h3>📧 Email Support</h3>
-      <p>Get help with orders and setup</p>
-      <a href="mailto:care@simclaire.com" class="support-btn">
-        Email Us
-      </a>
-    </div>
-
-    <div class="support-card">
-      <h3>💬 WhatsApp</h3>
-      <p>Fast help on the go</p>
-      <a href="https://wa.me/14376056560" target="_blank" class="support-btn">
-        Chat on WhatsApp
-      </a>
-    </div>
-
-    <div class="support-card">
-      <h3>❓ Help Center</h3>
-      <p>Find answers instantly</p>
-      <a href="/faq.html" class="support-btn">
-        View FAQs
-      </a>
-    </div>
-
-  </div>
-
-</div>
-
-<section class="support-options">
-  <h2>Need Help?</h2>
-  <p>Choose the fastest way to reach us.</p>
-
-  <div class="support-cards">
-    <a href="#" id="openLiveChat" class="support-card">
-      💬 <strong>Live Chat</strong>
-      <span>Quick questions & plan selection</span>
-    </a>
-
-    <a href="https://wa.me/14376056560" target="_blank" class="support-card">
-      📱 <strong>WhatsApp</strong>
-      <span>Activation issues or urgent help</span>
-    </a>
-  </div>
-</section>
 
 </body>
+
+<footer class="site-footer">
+  <div class="footer-brand">
+    <h2>SimClaire</h2>
+    <p>Instant global eSIMs. No roaming surprises.</p>
+  </div>
+
+  <div class="footer-links">
+    <h4>Site Links</h4>
+    <a href="/">Home</a>
+    <a href="/#results">Choose Destination</a>
+    <a href="/faq.html">Why an eSIM?</a>
+    <a href="/support.html">Get Support</a>
+  </div>
+
+  <div class="footer-links">
+    <h4>Important</h4>
+    <a href="/terms.html">Terms</a>
+    <a href="/privacy.html">Privacy</a>
+    <a href="/refund-policy.html">Refund Policy</a>
+  </div>
+</footer>
 </html>
