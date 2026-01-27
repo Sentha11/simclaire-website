@@ -15,61 +15,73 @@
     <a href="/" class="logo">SimClaire</a>
 
     <button class="menu-btn" id="menuBtn" aria-label="Open menu">
-      <span></span><span></span><span></span>
+      <span></span>
+      <span></span>
+      <span></span>
     </button>
   </div>
 </header>
 
-<!-- ================= MOBILE MENU ================= -->
 <nav class="mobile-menu" id="mobileMenu">
   <a href="/">Home</a>
   <a href="/#results">Browse Plans</a>
   <a href="/install.html">How it works</a>
-  <a href="/faq.html" class="active">FAQ</a>
+  <a href="/faq.html">FAQ</a>
   <a href="/support.html">Support</a>
   <a href="/account.html">Account</a>
 </nav>
 
 <!-- ================= FAQ CONTENT ================= -->
 <main class="faq-container">
+
   <h1>Frequently Asked Questions</h1>
   <p class="faq-subtitle">
     Quick answers to help you stay connected while traveling.
   </p>
 
-  <div class="faq-list">
+  <section class="faq-list">
 
     <div class="faq-item">
       <button class="faq-question">
         <span>What is an eSIM?</span>
-        <strong>+</strong>
+        <span class="icon">+</span>
       </button>
       <div class="faq-answer">
-        An eSIM is a digital SIM that lets you activate a mobile plan without a physical SIM card.
+        <p>
+          An eSIM is a digital SIM that lets you activate a mobile plan
+          without inserting a physical SIM card.
+        </p>
       </div>
     </div>
 
     <div class="faq-item">
       <button class="faq-question">
         <span>When does my eSIM activate?</span>
-        <strong>+</strong>
+        <span class="icon">+</span>
       </button>
       <div class="faq-answer">
-        Activation occurs when you arrive at your destination or when you enable the eSIM, depending on the plan.
+        <p>
+          Activation happens when you arrive at your destination
+          or when you manually enable the eSIM, depending on the plan.
+        </p>
       </div>
     </div>
 
     <div class="faq-item">
       <button class="faq-question">
         <span>Is my phone compatible?</span>
-        <strong>+</strong>
+        <span class="icon">+</span>
       </button>
       <div class="faq-answer">
-        Most modern iPhones, Samsung, and Google Pixel devices support eSIM. Contact support if unsure.
+        <p>
+          Most modern iPhones, Samsung Galaxy, and Google Pixel devices
+          support eSIM. Check your device settings to confirm.
+        </p>
       </div>
     </div>
 
-  </div>
+  </section>
+
 </main>
 
 <!-- ================= FOOTER ================= -->
@@ -80,44 +92,73 @@
 
     <div class="footer-links">
       <a href="/">Home</a>
+      <a href="/#results">Choose Destination</a>
       <a href="/faq.html">FAQ</a>
       <a href="/support.html">Support</a>
       <a href="/account.html">My Account</a>
+    </div>
+
+    <div class="footer-legal">
       <a href="/terms.html">Terms</a>
       <a href="/privacy.html">Privacy</a>
     </div>
 
-    <p class="copyright">© 2026 SimClaire. All rights reserved.</p>
+    <p class="copyright">
+      © 2026 SimClaire. All rights reserved.
+    </p>
   </div>
 </footer>
 
 <!-- ================= SCRIPTS ================= -->
 <script>
-/* Mobile menu */
-const menuBtn = document.getElementById("menuBtn");
-const mobileMenu = document.getElementById("mobileMenu");
+/* Hamburger Menu */
+document.addEventListener("DOMContentLoaded", () => {
+  const btn = document.getElementById("menuBtn");
+  const menu = document.getElementById("mobileMenu");
 
-menuBtn.addEventListener("click", () => {
-  mobileMenu.classList.toggle("open");
-  menuBtn.classList.toggle("open");
+  if (btn && menu) {
+    btn.addEventListener("click", () => {
+      menu.classList.toggle("open");
+    });
+
+    menu.querySelectorAll("a").forEach(link => {
+      link.addEventListener("click", () => {
+        menu.classList.remove("open");
+      });
+    });
+  }
 });
+</script>
 
-/* FAQ accordion */
-document.querySelectorAll(".faq-question").forEach(btn => {
-  btn.addEventListener("click", () => {
-    const item = btn.closest(".faq-item");
-    const open = document.querySelector(".faq-item.active");
+<script>
+/* FAQ Accordion */
+document.addEventListener("DOMContentLoaded", () => {
+  document.querySelectorAll(".faq-question").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const item = btn.closest(".faq-item");
 
-    if (open && open !== item) {
-      open.classList.remove("active");
-      open.querySelector("strong").textContent = "+";
-    }
+      document.querySelectorAll(".faq-item").forEach(i => {
+        if (i !== item) i.classList.remove("active");
+      });
 
-    item.classList.toggle("active");
-    btn.querySelector("strong").textContent =
-      item.classList.contains("active") ? "−" : "+";
+      item.classList.toggle("active");
+    });
   });
 });
+</script>
+
+<!-- ================= LIVE CHAT ================= -->
+<script type="text/javascript">
+var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
+(function(){
+  var s1=document.createElement("script"),
+      s0=document.getElementsByTagName("script")[0];
+  s1.async=true;
+  s1.src='https://embed.tawk.to/69681541047e961985040f8e/1jev96275';
+  s1.charset='UTF-8';
+  s1.setAttribute('crossorigin','*');
+  s0.parentNode.insertBefore(s1,s0);
+})();
 </script>
 
 </body>
