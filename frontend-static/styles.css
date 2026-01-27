@@ -3220,3 +3220,20 @@ button.menu-btn span {
 .menu-toggle.active span:nth-child(3) {
   transform: translateY(-11px) rotate(-45deg);
 }
+
+#menuToggle {
+  z-index: 9999;
+}
+
+#menu {
+  z-index: 1000;
+}
+
+#menuToggle {
+  padding: 6px;
+  border-radius: 6px;
+}
+
+#menuToggle input:checked ~ span {
+  box-shadow: 0 0 6px rgba(255,255,255,0.6);
+}
