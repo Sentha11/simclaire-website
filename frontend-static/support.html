@@ -11,32 +11,25 @@
 
 <!-- HEADER -->
 <!-- (PASTE SHARED HEADER HERE) -->
- <header class="site-header">
-  <div class="header-inner">
-    <a href="/" class="logo">SimClaire</a>
+<header class="top-header">
+  <a href="/" class="brand">SimClaire</a>
 
-    <nav class="desktop-nav">
-      <a href="/">Home</a>
-      <a href="/#results">Browse Plans</a>
-      <a href="/install.html">How it works</a>
-      <a href="/faq.html">FAQ</a>
-      <a href="/support.html">Support</a>
-      <a href="/account.html">Account</a>
-    </nav>
-
-    <button class="menu-btn" id="menuBtn" aria-label="Open menu">
-      <span></span><span></span><span></span>
-    </button>
-  </div>
+  <button class="menu-btn" id="menuBtn" aria-label="Menu">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
 </header>
 
-<nav class="mobile-menu" id="mobileMenu">
+<!-- SLIDE MENU -->
+<nav id="menuPanel" class="menu-panel hidden">
   <a href="/">Home</a>
-  <a href="/#results">Browse Plans</a>
+  <a href="/index.html#results">Browse Plans</a>
   <a href="/install.html">How it works</a>
   <a href="/faq.html">FAQ</a>
   <a href="/support.html">Support</a>
   <a href="/account.html">Account</a>
+  <a href="/refund-policy.html">Refund Policy</a>
 </nav>
 
 <main class="page-container">
@@ -91,9 +84,20 @@
 </footer>
 
 <script>
-document.getElementById("menuBtn").onclick = () => {
-  document.getElementById("mobileMenu").classList.toggle("open");
-};
+/* Hamburger Menu */
+const menuBtn = document.getElementById("menuBtn");
+const menuPanel = document.getElementById("menuPanel");
+
+menuBtn.addEventListener("click", e => {
+  e.stopPropagation();
+  menuPanel.classList.toggle("hidden");
+});
+
+document.addEventListener("click", e => {
+  if (!menuPanel.contains(e.target) && !menuBtn.contains(e.target)) {
+    menuPanel.classList.add("hidden");
+  }
+});
 </script>
 
 </body>
