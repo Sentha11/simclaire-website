@@ -2482,7 +2482,7 @@ body {
 .faq-item {
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 14px;
-  margin-bottom: 12px; /* tight spacing */
+  margin-bottom: 4px; /* tight spacing */
   overflow: hidden;
 }
 
