@@ -2856,3 +2856,64 @@ button.menu-btn span {
 .menu-btn.active span:nth-child(3) {
   transform: translateY(-7px) rotate(-45deg);
 }
+
+.menu-btn {
+  width: 36px;
+  height: 32px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  z-index: 1001;
+}
+
+.menu-btn span {
+  width: 22px;
+  height: 2px;
+  background: #ffffff;
+  border-radius: 2px;
+  transition: transform 0.3s ease, opacity 0.2s ease;
+}
+
+.menu-btn.active span:nth-child(1) {
+  transform: translateY(6px) rotate(45deg);
+}
+
+.menu-btn.active span:nth-child(2) {
+  opacity: 0;
+}
+
+.menu-btn.active span:nth-child(3) {
+  transform: translateY(-6px) rotate(-45deg);
+}
+
+.menu-panel {
+  position: fixed;
+  top: 60px;
+  right: 16px;
+  width: 220px;
+  background: rgba(20, 20, 30, 0.98);
+  border-radius: 14px;
+  padding: 12px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-6px);
+  transition: all 0.25s ease;
+}
+
+.menu-panel.open {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.menu-panel a {
+  display: block;
+  padding: 8px 10px;
+  font-size: 14px;
+  line-height: 1.2;
+  border-radius: 8px;
+}

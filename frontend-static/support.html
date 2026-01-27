@@ -90,17 +90,26 @@
 const menuBtn = document.getElementById("menuBtn");
 const menuPanel = document.getElementById("menuPanel");
 
-menuBtn.addEventListener("click", () => {
+menuBtn.addEventListener("click", (e) => {
+  e.stopPropagation();
   menuBtn.classList.toggle("active");
-  menuPanel.classList.toggle("hidden");
+  menuPanel.classList.toggle("open");
 });
 
-/* Close menu when clicking a link */
+// Close on link click
 menuPanel.querySelectorAll("a").forEach(link => {
   link.addEventListener("click", () => {
     menuBtn.classList.remove("active");
-    menuPanel.classList.add("hidden");
+    menuPanel.classList.remove("open");
   });
+});
+
+// Close on outside click
+document.addEventListener("click", (e) => {
+  if (!menuPanel.contains(e.target) && !menuBtn.contains(e.target)) {
+    menuBtn.classList.remove("active");
+    menuPanel.classList.remove("open");
+  }
 });
 </script>
 
