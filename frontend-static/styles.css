@@ -2245,3 +2245,38 @@ body {
 .mobile-menu.open {
   right: 0;
 }
+
+/* ===== FAQ HARD RESET (NO ROTATION EVER) ===== */
+
+.faq-item,
+.faq-question,
+.faq-question *,
+.faq-answer {
+  transform: none !important;
+  rotate: 0deg !important;
+  writing-mode: horizontal-tb !important;
+}
+
+/* Ensure layout is horizontal */
+.faq-question {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-align: left;
+}
+
+/* Prevent animation leftovers */
+.faq-answer {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.25s ease;
+}
+
+.faq-item.active .faq-answer {
+  max-height: 300px; /* safe size */
+}
+
+/* Plus / minus icon stays upright */
+.faq-question .icon {
+  transform: none !important;
+}
