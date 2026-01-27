@@ -9,20 +9,10 @@
 
 <body class="page-bg">
 
-<!-- HEADER -->
-<!-- (PASTE SHARED HEADER HERE) -->
- <header class="site-header">
+<!-- ================= HEADER ================= -->
+<header class="site-header">
   <div class="header-inner">
     <a href="/" class="logo">SimClaire</a>
-
-    <nav class="desktop-nav">
-      <a href="/">Home</a>
-      <a href="/#results">Browse Plans</a>
-      <a href="/install.html">How it works</a>
-      <a href="/faq.html">FAQ</a>
-      <a href="/support.html">Support</a>
-      <a href="/account.html">Account</a>
-    </nav>
 
     <button class="menu-btn" id="menuBtn" aria-label="Open menu">
       <span></span><span></span><span></span>
@@ -30,26 +20,29 @@
   </div>
 </header>
 
+<!-- ================= MOBILE MENU ================= -->
 <nav class="mobile-menu" id="mobileMenu">
   <a href="/">Home</a>
   <a href="/#results">Browse Plans</a>
   <a href="/install.html">How it works</a>
-  <a href="/faq.html">FAQ</a>
+  <a href="/faq.html" class="active">FAQ</a>
   <a href="/support.html">Support</a>
   <a href="/account.html">Account</a>
 </nav>
 
-<main class="page-container">
-  <section class="page-hero">
-    <h1>Frequently Asked Questions</h1>
-    <p>Quick answers to help you stay connected while traveling.</p>
-  </section>
+<!-- ================= FAQ CONTENT ================= -->
+<main class="faq-container">
+  <h1>Frequently Asked Questions</h1>
+  <p class="faq-subtitle">
+    Quick answers to help you stay connected while traveling.
+  </p>
 
-  <section class="faq-container">
+  <div class="faq-list">
+
     <div class="faq-item">
       <button class="faq-question">
-        What is an eSIM?
-        <span>+</span>
+        <span>What is an eSIM?</span>
+        <strong>+</strong>
       </button>
       <div class="faq-answer">
         An eSIM is a digital SIM that lets you activate a mobile plan without a physical SIM card.
@@ -58,28 +51,28 @@
 
     <div class="faq-item">
       <button class="faq-question">
-        When does my eSIM activate?
-        <span>+</span>
+        <span>When does my eSIM activate?</span>
+        <strong>+</strong>
       </button>
       <div class="faq-answer">
-        Activation happens when you arrive at your destination or when you enable the eSIM, depending on the plan.
+        Activation occurs when you arrive at your destination or when you enable the eSIM, depending on the plan.
       </div>
     </div>
 
     <div class="faq-item">
       <button class="faq-question">
-        Is my phone compatible?
-        <span>+</span>
+        <span>Is my phone compatible?</span>
+        <strong>+</strong>
       </button>
       <div class="faq-answer">
-        Most modern iPhones, Samsung, and Google Pixel devices support eSIM.
+        Most modern iPhones, Samsung, and Google Pixel devices support eSIM. Contact support if unsure.
       </div>
     </div>
-  </section>
+
+  </div>
 </main>
 
-<!-- FOOTER -->
-<!-- (PASTE SHARED FOOTER HERE) -->
+<!-- ================= FOOTER ================= -->
 <footer class="site-footer">
   <div class="footer-inner">
     <h3>SimClaire</h3>
@@ -87,31 +80,44 @@
 
     <div class="footer-links">
       <a href="/">Home</a>
-      <a href="/#results">Choose Destination</a>
-      <a href="/install.html">Why an eSIM?</a>
-      <a href="/support.html">Get Support</a>
       <a href="/faq.html">FAQ</a>
+      <a href="/support.html">Support</a>
       <a href="/account.html">My Account</a>
       <a href="/terms.html">Terms</a>
       <a href="/privacy.html">Privacy</a>
     </div>
 
-    <p class="copyright">
-      © 2026 SimClaire. All rights reserved.
-    </p>
+    <p class="copyright">© 2026 SimClaire. All rights reserved.</p>
   </div>
 </footer>
 
+<!-- ================= SCRIPTS ================= -->
 <script>
-document.querySelectorAll(".faq-question").forEach(btn => {
-  btn.addEventListener("click", () => {
-    btn.parentElement.classList.toggle("active");
-  });
+/* Mobile menu */
+const menuBtn = document.getElementById("menuBtn");
+const mobileMenu = document.getElementById("mobileMenu");
+
+menuBtn.addEventListener("click", () => {
+  mobileMenu.classList.toggle("open");
+  menuBtn.classList.toggle("open");
 });
 
-document.getElementById("menuBtn").onclick = () => {
-  document.getElementById("mobileMenu").classList.toggle("open");
-};
+/* FAQ accordion */
+document.querySelectorAll(".faq-question").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const item = btn.closest(".faq-item");
+    const open = document.querySelector(".faq-item.active");
+
+    if (open && open !== item) {
+      open.classList.remove("active");
+      open.querySelector("strong").textContent = "+";
+    }
+
+    item.classList.toggle("active");
+    btn.querySelector("strong").textContent =
+      item.classList.contains("active") ? "−" : "+";
+  });
+});
 </script>
 
 </body>
