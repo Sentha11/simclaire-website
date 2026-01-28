@@ -318,7 +318,36 @@ if (!orderResult.rows.length) {
   return res.json({ received: true });
 }
 
-const orderId = orderResult.rows[0].id;
+const orderId = orderResult.rows[0].id;// =====================================================
+// 🔍 KYC CHECK (POST-PAYMENT – NON-BLOCKING)
+// =====================================================
+try {
+  const kycRequired = await shouldTriggerKYC(orderId);
+
+  if (kycRequired) {
+    console.log("🟡 KYC flagged (not enforced yet)", {
+      orderId,
+      email: customerEmail
+    });
+
+    await pool.query(
+      `
+      INSERT INTO identity_verifications (
+        order_id,
+        email,
+        status
+      )
+      VALUES ($1, $2, 'pending')
+      ON CONFLICT (order_id) DO NOTHING
+      `,
+      [orderId, customerEmail]
+    );
+  }
+} catch (err) {
+  console.error("❌ KYC check failed (safe to ignore for now)", err.message);
+}
+
+
 
         console.log("🧾 Order saved:", orderId);
 
