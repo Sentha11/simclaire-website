@@ -78,6 +78,55 @@ app.use(cors());
 // Twilio WhatsApp webhooks are x-www-form-urlencoded
 app.use(express.urlencoded({ extended: false }));
 //app.use(express.json());
+
+// =====================================================
+// STRIPE IDENTITY — CREATE VERIFICATION SESSION (POC)
+// =====================================================
+app.post("/api/identity/create-session", async (req, res) => {
+  try {
+    if (!stripe) {
+      return res.status(500).json({ error: "Stripe not configured" });
+    }
+
+    const { orderId } = req.body;
+
+    if (!orderId) {
+      return res.status(400).json({ error: "orderId is required" });
+    }
+
+    // Create Identity Verification Session
+    const verificationSession = await stripe.identity.verificationSessions.create({
+      type: "document",
+      metadata: {
+        order_id: orderId,
+        source: "simclaire_poc"
+      },
+      return_url: `${APP_BASE_URL}/kyc-complete`
+    });
+
+    // Store session reference
+    await pool.query(
+      `
+      INSERT INTO identity_verifications (
+        order_id,
+        stripe_verification_session_id,
+        status
+      )
+      VALUES ($1, $2, 'pending')
+      `,
+      [orderId, verificationSession.id]
+    );
+
+    return res.json({
+      url: verificationSession.url
+    });
+
+  } catch (err) {
+    console.error("❌ Identity session error:", err.message);
+    return res.status(500).json({ error: "Failed to create identity session" });
+  }
+});
+
 // =====================================================
 // CSV PRICING (PROD FINAL PRICES)
 // =====================================================
@@ -1431,6 +1480,22 @@ app.get("/test-esim", async (req, res) => {
       error: e.response?.data || e.message,
     });
   }
+});
+
+app.get("/kyc-complete", (req, res) => {
+  res.send(`
+    <html>
+      <head>
+        <title>Verification Submitted</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      </head>
+      <body style="font-family: Arial; text-align:center; padding:40px;">
+        <h2>✅ Verification submitted</h2>
+        <p>We’re reviewing your information.</p>
+        <p>You’ll be notified if anything else is needed.</p>
+      </body>
+    </html>
+  `);
 });
 
 app.get("/success", (req, res) => {
