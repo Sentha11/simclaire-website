@@ -8,6 +8,8 @@
 require("dotenv").config();
 //const { Pool } = require("pg");
 
+
+
 const ESIM_BASE_URL = process.env.ESIM_BASE_URL;
 
 const isUAT =
@@ -33,6 +35,39 @@ const  {SocksProxyAgent} = require("socks-proxy-agent");
 const twilio = require("twilio");
 const sgMail = require("@sendgrid/mail");
 const pool = require("./db");
+
+// =====================================================
+// KYC HELPERS
+// =====================================================
+
+async function shouldTriggerKYC(orderId) {
+  const { rows: orderRows } = await pool.query(
+    `SELECT amount, customer_email FROM orders WHERE id = $1`,
+    [orderId]
+  );
+
+  if (orderRows.length === 0) return false;
+
+  const { amount, customer_email } = orderRows[0];
+
+  // Rule 1: Single order ≥ $50
+  if (Number(amount) >= 50) {
+    return true;
+  }
+
+  // Rule 2: Cumulative spend ≥ $50
+  const { rows: sumRows } = await pool.query(
+    `
+    SELECT COALESCE(SUM(amount), 0) AS total
+    FROM orders
+    WHERE customer_email = $1
+      AND payment_status = 'paid'
+    `,
+    [customer_email]
+  );
+
+  return Number(sumRows[0].total) >= 50;
+}
 // =====================================================
 const WHATSAPP_FROM = `whatsapp:${process.env.TWILIO_WHATSAPP_FROM}`;
 
