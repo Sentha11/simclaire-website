@@ -68,6 +68,27 @@ async function shouldTriggerKYC(orderId) {
 
   return Number(sumRows[0].total) >= 50;
 }
+
+async function createIdentitySession({ orderId, email }) {
+  if (!stripe) {
+    throw new Error("Stripe not configured");
+  }
+
+  const session = await stripe.identity.verificationSessions.create({
+    type: "document",
+    metadata: {
+      orderId: String(orderId),
+      email: email || "",
+    },
+    options: {
+      document: {
+        allowed_types: ["passport", "driving_license", "id_card"],
+      },
+    },
+  });
+
+  return session;
+}
 // =====================================================
 const WHATSAPP_FROM = `whatsapp:${process.env.TWILIO_WHATSAPP_FROM}`;
 
@@ -119,6 +140,7 @@ app.use(express.urlencoded({ extended: false }));
 // =====================================================
 app.post("/api/identity/create-session", async (req, res) => {
   try {
+    // Safety check
     if (!stripe) {
       return res.status(500).json({ error: "Stripe not configured" });
     }
@@ -129,35 +151,45 @@ app.post("/api/identity/create-session", async (req, res) => {
       return res.status(400).json({ error: "orderId is required" });
     }
 
-    // Create Identity Verification Session
-    const verificationSession = await stripe.identity.verificationSessions.create({
-      type: "document",
-      metadata: {
-        order_id: orderId,
-        source: "simclaire_poc"
-      },
-      return_url: `${APP_BASE_URL}/kyc-complete`
-    });
+    // Optional: confirm order exists (safe guard)
+    const orderCheck = await pool.query(
+      `SELECT id FROM orders WHERE id = $1`,
+      [orderId]
+    );
 
-    // Store session reference
+    if (orderCheck.rows.length === 0) {
+      return res.status(404).json({ error: "Order not found" });
+    }
+
+    // Create Stripe Identity verification session
+    const verificationSession =
+      await stripe.identity.verificationSessions.create({
+        type: "document",
+        metadata: {
+          orderId: String(orderId),
+        },
+      });
+
+    // Store verification session (DO NOT block anything yet)
     await pool.query(
       `
       INSERT INTO identity_verifications (
         order_id,
-        stripe_verification_session_id,
+        verification_session_id,
         status
       )
-      VALUES ($1, $2, 'pending')
+      VALUES ($1, $2, 'created')
+      ON CONFLICT (order_id) DO NOTHING
       `,
       [orderId, verificationSession.id]
     );
 
+    // Return URL to frontend
     return res.json({
-      url: verificationSession.url
+      url: verificationSession.url,
     });
-
   } catch (err) {
-    console.error("❌ Identity session error:", err.message);
+    console.error("❌ Identity create-session error:", err.message);
     return res.status(500).json({ error: "Failed to create identity session" });
   }
 });
@@ -323,6 +355,29 @@ const orderId = orderResult.rows[0].id;// ======================================
 // =====================================================
 try {
   const kycRequired = await shouldTriggerKYC(orderId);
+
+  if (kycRequired) {
+  await pool.query(
+    `
+    UPDATE orders
+    SET kyc_required = true
+    WHERE id = $1
+    `,
+    [orderId]
+  );
+}
+
+// ⛔ FUTURE KYC ENFORCEMENT HOOK (DISABLED)
+// ---------------------------------------
+// if (kycRequired) {
+//   console.log("⛔ KYC REQUIRED — fulfillment paused", {
+//     orderId,
+//     email: customerEmail
+//   });
+//   return; // ⛔ DO NOT ENABLE YET
+// }
+
+console.log("📡 Purchasing eSIM...");
 
   if (kycRequired) {
     console.log("🟡 KYC flagged (not enforced yet)", {
@@ -1392,6 +1447,7 @@ app.post("/api/account/lookup", async (req, res) => {
       o.amount,
       o.currency,
       o.created_at,
+      o.kyc_required,
       e.esim_status
     FROM orders o
     LEFT JOIN esims e ON e.order_id = o.id
@@ -1596,11 +1652,65 @@ app.get("/success", (req, res) => {
       </head>
       <body>
         <div class="card">
-          <h1>✅ Payment Successful</h1>
-          <p>Thank you for your purchase.</p>
-          <p>A confirmation email has been sent.</p>
-          <p>You may now close this window.</p>
-        </div>
+  <h1>✅ Payment Successful</h1>
+  <p>Thank you for your purchase.</p>
+  <p>Your eSIM is being prepared.</p>
+
+  <hr style="margin:20px 0" />
+
+  <p style="font-size:14px;color:#666">
+    In some cases, we may need to verify your identity to comply with
+    telecom regulations.
+  </p>
+
+  <button id="verifyBtn" style="
+    margin-top:15px;
+    padding:12px 18px;
+    border-radius:8px;
+    border:none;
+    background:#111;
+    color:#fff;
+    cursor:pointer;
+    font-size:14px;
+  ">
+    Verify Identity (if required)
+  </button>
+
+  <p style="font-size:12px;color:#999;margin-top:10px">
+    This usually takes less than 1 minute.
+  </p>
+</div>
+
+<script>
+  document.getElementById("verifyBtn").addEventListener("click", async () => {
+    try {
+      // TEMP: you’ll pass real orderId later
+      const orderId = new URLSearchParams(window.location.search).get("orderId");
+
+      if (!orderId) {
+        alert("Order reference missing");
+        return;
+      }
+
+      const res = await fetch("/api/identity/create-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId })
+      });
+
+      const data = await res.json();
+
+      if (!data.url) {
+        alert("Unable to start verification");
+        return;
+      }
+
+      window.location.href = data.url;
+    } catch (err) {
+      alert("Verification error");
+    }
+  });
+</script>
       </body>
     </html>
   `);
