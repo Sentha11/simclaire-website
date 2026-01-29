@@ -363,73 +363,137 @@ try {
 // =====================================================
 // STRIPE WEBHOOK – FULL eSIM FULFILLMENT
 // =====================================================
-if (event.type === "identity.verification_session.verified") {
-  const session = event.data.object;
-  const orderId = session.metadata?.orderId;
+// =====================================================
+// STRIPE WEBHOOK – FULL eSIM FULFILLMENT
+// =====================================================
+if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
+  app.post(
+    "/api/webhook/stripe",
+    express.raw({ type: "application/json" }),
+    async (req, res) => {
+      const sig = req.headers["stripe-signature"];
+      let event;
 
-  if (!orderId) {
-    console.warn("⚠️ KYC verified but no orderId");
-    return res.json({ received: true });
-  }
+      try {
+        event = stripe.webhooks.constructEvent(
+          req.body,
+          sig,
+          process.env.STRIPE_WEBHOOK_SECRET
+        );
+      } catch (err) {
+        console.error("❌ Stripe signature verification failed:", err.message);
+        return res.status(400).send(`Webhook Error: ${err.message}`);
+      }
 
-  console.log("✅ KYC VERIFIED", { orderId });
+      // ---------------------------------------------
+      // PAYMENT COMPLETED
+      // ---------------------------------------------
+      if (event.type === "checkout.session.completed") {
+        console.log("🚀 Stripe checkout completed");
 
-  // 1️⃣ Mark verification verified
-  await pool.query(
-    `
-    UPDATE identity_verifications
-    SET status = 'verified'
-    WHERE order_id = $1
-    `,
-    [orderId]
+        const session = event.data.object;
+        const metadata = session.metadata || {};
+
+        const customerEmail =
+          session.customer_details?.email ||
+          session.customer_email ||
+          metadata.email ||
+          "unknown@simclaire.com";
+
+        const orderResult = await pool.query(
+          `
+          INSERT INTO orders (
+            stripe_session_id,
+            email,
+            customer_email,
+            product_sku,
+            product_type,
+            quantity,
+            amount,
+            currency,
+            country,
+            mobileno,
+            payment_status
+          )
+          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'paid')
+          ON CONFLICT (stripe_session_id) DO NOTHING
+          RETURNING id
+          `,
+          [
+            session.id,
+            customerEmail,
+            customerEmail,
+            metadata.productSku || "",
+            metadata.productType || "",
+            Number(metadata.quantity || 1),
+            session.amount_total ? session.amount_total / 100 : 0,
+            session.currency || "gbp",
+            metadata.country || "",
+            metadata.mobileno || "",
+          ]
+        );
+
+        if (!orderResult.rows.length) {
+          return res.json({ received: true });
+        }
+
+        const orderId = orderResult.rows[0].id;
+
+        const kycRequired = await shouldTriggerKYC(orderId);
+
+        if (kycRequired) {
+          await pool.query(
+            `
+            INSERT INTO identity_verifications (order_id, email, status)
+            VALUES ($1, $2, 'pending')
+            ON CONFLICT (order_id) DO NOTHING
+            `,
+            [orderId, customerEmail]
+          );
+
+          console.log("⛔ KYC required — fulfillment paused", { orderId });
+          return res.json({ received: true });
+        }
+
+        await fulfillOrder({
+          id: orderId,
+          product_type: metadata.productType,
+          product_sku: metadata.productSku,
+          quantity: metadata.quantity,
+          mobileno: metadata.mobileno,
+          customer_email: customerEmail,
+        });
+
+        return res.json({ received: true });
+      }
+
+      // ---------------------------------------------
+      // KYC VERIFIED → RELEASE eSIM
+      // ---------------------------------------------
+      if (event.type === "identity.verification_session.verified") {
+        const session = event.data.object;
+        const orderId = session.metadata?.orderId;
+
+        if (!orderId) {
+          console.warn("⚠️ KYC verified but no orderId");
+          return res.json({ received: true });
+        }
+
+        await pool.query(
+          `UPDATE identity_verifications SET status='verified' WHERE order_id=$1`,
+          [orderId]
+        );
+
+        await releaseEsimAfterKyc(orderId);
+
+        console.log("✅ KYC verified — eSIM released", { orderId });
+        return res.json({ received: true });
+      }
+
+      return res.json({ received: true });
+    }
   );
-
-  // 2️⃣ Fetch order (⬅️ THIS WAS MISSING)
-  const { rows } = await pool.query(
-    `
-    SELECT *
-    FROM orders
-    WHERE id = $1
-    `,
-    [orderId]
-  );
-
-  if (!rows.length) {
-    console.error("❌ Order not found for KYC release", { orderId });
-    return res.json({ received: true });
-  }
-
-  // 3️⃣ Prevent double issue
-  const { rows: existingEsim } = await pool.query(
-    `SELECT 1 FROM esims WHERE order_id = $1 LIMIT 1`,
-    [orderId]
-  );
-
-  if (existingEsim.length) {
-    console.log("ℹ️ eSIM already issued, skipping", { orderId });
-    return res.json({ received: true });
-  }
-
-  // 4️⃣ Release eSIM
-  await releaseEsimAfterKyc(orderId);
-
-  return res.json({ received: true });
 }
-app.post("/api/checkout", async (req, res) => {
-  const { sku } = req.body;
-
-  const session = await stripe.checkout.sessions.create({
-    mode: "payment",
-    line_items: [{
-      price: process.env[`STRIPE_${sku.toUpperCase()}`],
-      quantity: 1
-    }],
-    success_url: `${FRONTEND_URL}/success`,
-    cancel_url: `${FRONTEND_URL}/cancel`
-  });
-
-  res.json({ url: session.url });
-});
 
 // =====================================================
 // 6) eSIM AUTH + REQUEST WRAPPER (UAT)
