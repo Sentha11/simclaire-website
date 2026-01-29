@@ -69,6 +69,47 @@ async function shouldTriggerKYC(orderId) {
   return Number(sumRows[0].total) >= 50;
 }
 
+async function fulfillOrder(order) {
+  console.log("🚀 Fulfilling order", order.id);
+
+  const payload = {
+    items: [
+      {
+        type: order.product_type,
+        sku: order.product_sku,
+        quantity: Number(order.quantity || 1),
+        mobileno: order.mobileno,
+        emailid: order.customer_email,
+      },
+    ],
+  };
+
+  const esimRes = await esimRequest("post", "/api/esim/purchaseesim", {
+    data: payload,
+  });
+
+  const transactionId = esimRes.uniqueRefno;
+  const activationCode = esimRes.esims?.[0]?.activationcode;
+
+  await pool.query(
+    `
+    INSERT INTO esims (
+      order_id,
+      transaction_id,
+      activation_code,
+      esim_status
+    )
+    VALUES ($1,$2,$3,'issued')
+    `,
+    [order.id, transactionId, activationCode]
+  );
+
+  console.log("📶 eSIM issued", {
+    orderId: order.id,
+    transactionId
+  });
+}
+
 async function createIdentitySession({ orderId, email }) {
   if (!stripe) {
     throw new Error("Stripe not configured");
@@ -88,6 +129,49 @@ async function createIdentitySession({ orderId, email }) {
   });
 
   return session;
+}
+
+async function isKycCleared(orderId) {
+  const { rows } = await pool.query(
+    `
+    SELECT status
+    FROM identity_verifications
+    WHERE order_id = $1
+    ORDER BY created_at DESC
+    LIMIT 1
+    `,
+    [orderId]
+  );
+
+  // No record = no KYC required
+  if (!rows.length) return true;
+
+  return rows[0].status === "verified";
+}
+
+async function releaseEsimAfterKyc(orderId) {
+  const { rows } = await pool.query(
+    `
+    SELECT *
+    FROM orders
+    WHERE id = $1
+    `,
+    [orderId]
+  );
+
+  if (!rows.length) {
+    console.error("❌ Order not found for KYC release", orderId);
+    return;
+  }
+
+  const order = rows[0];
+
+  console.log("🚀 Releasing eSIM after KYC", orderId);
+
+  // ⚠️ IMPORTANT:
+  // You must extract your existing fulfillment logic
+  // into a function called fulfillOrder(order)
+  await fulfillOrder(order);
 }
 // =====================================================
 const WHATSAPP_FROM = `whatsapp:${process.env.TWILIO_WHATSAPP_FROM}`;
@@ -279,292 +363,58 @@ try {
 // =====================================================
 // STRIPE WEBHOOK – FULL eSIM FULFILLMENT
 // =====================================================
-if (stripe && process.env.STRIPE_WEBHOOK_SECRET) {
-  app.post(
-    "/api/webhook/stripe",
-    express.raw({ type: "application/json" }),
-    async (req, res) => {
-    const sig = req.headers['stripe-signature'];
-      let event;
-  try {
-      event = stripe.webhooks.constructEvent(
-        req.body, // <-- RAW BUFFER (this is the fix)
-        sig,
-        process.env.STRIPE_WEBHOOK_SECRET
-      );
-    } catch (err) {
-         console.error('❌ Stripe signature verification failed:', err.message);
-      return res.status(400).send(`Webhook Error: ${err.message}`);
-    }
+if (event.type === "identity.verification_session.verified") {
+  const session = event.data.object;
+  const orderId = session.metadata?.orderId;
 
-      // -------------------------------------------------
-      // PAYMENT COMPLETED
-      // -------------------------------------------------
-      if (event.type === "checkout.session.completed") {
-        console.log("🚀 Stripe webhook reached checkout.session.completed");
-        const session = event.data.object;
-        const metadata = session.metadata || {};
-        
-        const customerEmail =
-        session.customer_details?.email?.trim() ||
-        session.customer_email?.trim() ||
-        metadata.email?.trim() ||
-        "unknown@simclaire.com";
+  if (!orderId) {
+    console.warn("⚠️ KYC verified but no orderId");
+    return res.json({ received: true });
+  }
 
-      const orderResult = await pool.query(
-  `
-  INSERT INTO orders (
-    stripe_session_id,
-    email,
-    customer_email,
-    product_sku,
-    product_type,
-    quantity,
-    amount,
-    currency,
-    country,
-    mobileno,
-    payment_status
-  )
-  VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
-  ON CONFLICT (stripe_session_id) DO NOTHING
-  RETURNING id
-  `,
-  [
-    session.id,
-    customerEmail,            // ✅ NEVER NULL
-    customerEmail,            // ✅ NEVER NULL
-    metadata.productSku || "",
-    metadata.productType || "",
-    Number(metadata.quantity || 1),
-    session.amount_total ? session.amount_total / 100 : 0,
-    session.currency || "gbp",
-    metadata.country || "",
-    metadata.mobileno || "",
-    "paid"
-  ]
-);
+  console.log("✅ KYC VERIFIED", { orderId });
 
-if (!orderResult.rows.length) {
-  console.log("⚠️ Duplicate Stripe webhook ignored:", session.id);
-  return res.json({ received: true });
-}
-
-const orderId = orderResult.rows[0].id;// =====================================================
-// 🔍 KYC CHECK (POST-PAYMENT – NON-BLOCKING)
-// =====================================================
-try {
-  const kycRequired = await shouldTriggerKYC(orderId);
-
-  if (kycRequired) {
+  // 1️⃣ Mark verification verified
   await pool.query(
     `
-    UPDATE orders
-    SET kyc_required = true
+    UPDATE identity_verifications
+    SET status = 'verified'
+    WHERE order_id = $1
+    `,
+    [orderId]
+  );
+
+  // 2️⃣ Fetch order (⬅️ THIS WAS MISSING)
+  const { rows } = await pool.query(
+    `
+    SELECT *
+    FROM orders
     WHERE id = $1
     `,
     [orderId]
   );
-}
 
-// ⛔ FUTURE KYC ENFORCEMENT HOOK (DISABLED)
-// ---------------------------------------
-// if (kycRequired) {
-//   console.log("⛔ KYC REQUIRED — fulfillment paused", {
-//     orderId,
-//     email: customerEmail
-//   });
-//   return; // ⛔ DO NOT ENABLE YET
-// }
-
-console.log("📡 Purchasing eSIM...");
-
-  if (kycRequired) {
-    console.log("🟡 KYC flagged (not enforced yet)", {
-      orderId,
-      email: customerEmail
-    });
-
-    await pool.query(
-      `
-      INSERT INTO identity_verifications (
-        order_id,
-        email,
-        status
-      )
-      VALUES ($1, $2, 'pending')
-      ON CONFLICT (order_id) DO NOTHING
-      `,
-      [orderId, customerEmail]
-    );
+  if (!rows.length) {
+    console.error("❌ Order not found for KYC release", { orderId });
+    return res.json({ received: true });
   }
-} catch (err) {
-  console.error("❌ KYC check failed (safe to ignore for now)", err.message);
-}
 
-
-
-        console.log("🧾 Order saved:", orderId);
-
-        console.log("✅ Stripe payment completed:", session.id);
-
-       // const customerEmail = session.customer_details?.email;
-        
-       // const whatsappTo =
-      // metadata.whatsappTo ||
-       // (metadata.mobileno ? `whatsapp:+${metadata.mobileno}` : null);
-
-        console.log("🧾 Metadata received:", metadata);
-
-         // ===============================
-          // SAFE / BULLETPROOF MOBILE FIX
-          // ===============================
-          // ✅ MOBILE NUMBER (DO NOT NORMALIZE)
-          const mobileno = String(metadata.mobileno || "").trim();
-
-        if (!mobileno) {
-          console.error("❌ Missing mobileno — order saved but fulfillment skipped", {
-            orderId,
-            sessionId: session.id
-          });
-          return res.json({ received: true });
-        }
-
-          console.log("📞 Using mobileno (exact):", mobileno);
-
-        try {
-          // =============================================
-          // ✅ FIX #2: PURCHASE eSIM - send items array with sku/quantity/destinationId
-          // =============================================
-          console.log("📡 Purchasing eSIM...");
-
-          if (!metadata.productType) {
-            console.error("❌ Missing productType", {
-              sku: metadata.productSku,
-              metadata,
-            });
-            throw new Error("Missing productType for eSIM purchase");
-          }
-
-          const payload = {
-            items: [
-              {
-                type: metadata.productType,
-                sku: metadata.productSku,
-                quantity: Number(metadata.quantity || 1),
-                mobileno: mobileno,
-                emailid: metadata.email,
-              },
-            ],
-          };
-         
-          console.log("🧪 eSIM TYPE CHECK", {
-              sku: metadata.productSku,
-              productType: metadata.productType,
-            });
-          console.log("📤 purchaseesim payload:", payload);
-
-          const esimRes = await esimRequest("post", "/api/esim/purchaseesim", {
-            data: payload,
-          });
-
-          console.log("✅ eSIM queued:", esimRes);
-
-          // Keep your original pattern (in case API nests data)
-          //const esim = esimRes?.data || esimRes || {};
-          const transactionId = esimRes.uniqueRefno;
-          const activationCode = esimRes.esims?.[0]?.activationcode;
-
-          await pool.query(
-            `
-            INSERT INTO esims (
-              order_id,
-              transaction_id,
-              activation_code,
-              esim_status
-            )
-            VALUES ($1,$2,$3,$4)
-            `,
-            [
-              orderId,
-              transactionId || null,
-              activationCode || null,
-              "issued"
-            ]
-          );
-
-          console.log("📶 eSIM stored for order:", orderId);
-
-          console.log("✅ eSIM purchased");
-          console.log("📄 Transaction ID:", transactionId);
-          console.log("🔑 Activation Code:", activationCode);
-
-          
-          //if (!metadata?.acceptedTerms) {
-           // return res.status(400).json({
-            //  error: "Terms and Conditions must be accepted",
-            //});
-         // }
-          // ===============================
-          // FIX 4️⃣ – POST-PURCHASE THANK YOU WHATSAPP
-          // ===============================
-
-         // ✅ Build WhatsApp destination safely
-          let whatsappToFinal = null;
-
-          if (metadata.whatsappTo && metadata.whatsappTo.trim()) {
-            whatsappToFinal = metadata.whatsappTo.trim();
-          } else if (mobileno) {
-            whatsappToFinal = `whatsapp:+${mobileno}`;
-          }
-
-          console.log("📱 Final WhatsApp To:", whatsappToFinal);
-
-          const thankYouMessage =
-            "✅ Thank you for your purchase!\n\n" +
-            "📧 Your eSIM setup instructions have been sent to your email.\n\n" +
-            "📱 Need help? Reply support anytime.\n\n" +
-            "✈️ Safe travels!\n— SimClaire";
-
-          if (
-            twilioClient &&
-            WHATSAPP_FROM &&
-            whatsappToFinal &&
-            whatsappToFinal.startsWith("whatsapp:")
-          ) {
-            console.log("📤 WhatsApp send attempt", {
-            from: WHATSAPP_FROM,
-            to: whatsappToFinal,
-            });
-
-            await twilioClient.messages.create({
-              from: WHATSAPP_FROM,   // ✅ FIXED
-              to: whatsappToFinal,
-              body: thankYouMessage,
-            });
-          } else {
-            console.log("📵 WhatsApp skipped", {
-              from: WHATSAPP_FROM,
-              to: whatsappToFinal,
-            });
-          }
-          console.log("✅ Order completed end-to-end", {
-          transactionId,
-          activationCode,
-          email: metadata.email,
-          whatsappTo: whatsappToFinal,
-        });
-        
-        } catch (err) {
-          console.error("❌ Fulfillment error:", err.response?.data || err.message);
-        }
-      }
-
-      res.json({ received: true });
-    }
+  // 3️⃣ Prevent double issue
+  const { rows: existingEsim } = await pool.query(
+    `SELECT 1 FROM esims WHERE order_id = $1 LIMIT 1`,
+    [orderId]
   );
-}
 
+  if (existingEsim.length) {
+    console.log("ℹ️ eSIM already issued, skipping", { orderId });
+    return res.json({ received: true });
+  }
+
+  // 4️⃣ Release eSIM
+  await releaseEsimAfterKyc(orderId);
+
+  return res.json({ received: true });
+}
 app.post("/api/checkout", async (req, res) => {
   const { sku } = req.body;
 

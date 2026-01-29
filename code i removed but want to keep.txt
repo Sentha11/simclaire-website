@@ -1,0 +1,118 @@
+ console.log("📡 Purchasing eSIM...");
+
+          if (!metadata.productType) {
+            console.error("❌ Missing productType", {
+              sku: metadata.productSku,
+              metadata,
+            });
+            throw new Error("Missing productType for eSIM purchase");
+          }
+
+          const payload = {
+            items: [
+              {
+                type: metadata.productType,
+                sku: metadata.productSku,
+                quantity: Number(metadata.quantity || 1),
+                mobileno: mobileno,
+                emailid: metadata.email,
+              },
+            ],
+          };
+         
+          console.log("🧪 eSIM TYPE CHECK", {
+              sku: metadata.productSku,
+              productType: metadata.productType,
+            });
+          console.log("📤 purchaseesim payload:", payload);
+
+          const esimRes = await esimRequest("post", "/api/esim/purchaseesim", {
+            data: payload,
+          });
+
+          console.log("✅ eSIM queued:", esimRes);
+
+          // Keep your original pattern (in case API nests data)
+          //const esim = esimRes?.data || esimRes || {};
+          const transactionId = esimRes.uniqueRefno;
+          const activationCode = esimRes.esims?.[0]?.activationcode;
+
+          await pool.query(
+            `
+            INSERT INTO esims (
+              order_id,
+              transaction_id,
+              activation_code,
+              esim_status
+            )
+            VALUES ($1,$2,$3,$4)
+            `,
+            [
+              orderId,
+              transactionId || null,
+              activationCode || null,
+              "issued"
+            ]
+          );
+
+          console.log("📶 eSIM stored for order:", orderId);
+
+          console.log("✅ eSIM purchased");
+          console.log("📄 Transaction ID:", transactionId);
+          console.log("🔑 Activation Code:", activationCode);
+
+          
+          //if (!metadata?.acceptedTerms) {
+           // return res.status(400).json({
+            //  error: "Terms and Conditions must be accepted",
+            //});
+         // }
+          // ===============================
+          // FIX 4️⃣ – POST-PURCHASE THANK YOU WHATSAPP
+          // ===============================
+
+         // ✅ Build WhatsApp destination safely
+          let whatsappToFinal = null;
+
+          if (metadata.whatsappTo && metadata.whatsappTo.trim()) {
+            whatsappToFinal = metadata.whatsappTo.trim();
+          } else if (mobileno) {
+            whatsappToFinal = `whatsapp:+${mobileno}`;
+          }
+
+          console.log("📱 Final WhatsApp To:", whatsappToFinal);
+
+          const thankYouMessage =
+            "✅ Thank you for your purchase!\n\n" +
+            "📧 Your eSIM setup instructions have been sent to your email.\n\n" +
+            "📱 Need help? Reply support anytime.\n\n" +
+            "✈️ Safe travels!\n— SimClaire";
+
+          if (
+            twilioClient &&
+            WHATSAPP_FROM &&
+            whatsappToFinal &&
+            whatsappToFinal.startsWith("whatsapp:")
+          ) {
+            console.log("📤 WhatsApp send attempt", {
+            from: WHATSAPP_FROM,
+            to: whatsappToFinal,
+            });
+
+            await twilioClient.messages.create({
+              from: WHATSAPP_FROM,   // ✅ FIXED
+              to: whatsappToFinal,
+              body: thankYouMessage,
+            });
+          } else {
+            console.log("📵 WhatsApp skipped", {
+              from: WHATSAPP_FROM,
+              to: whatsappToFinal,
+            });
+          }
+          console.log("✅ Order completed end-to-end", {
+          transactionId,
+          activationCode,
+          email: metadata.email,
+          whatsappTo: whatsappToFinal,
+        });
