@@ -5,6 +5,8 @@ const resultsDiv = document.getElementById("accountResults");
 const actionsDiv = document.getElementById("accountActions");
 const statusText = document.getElementById("accountStatus");
 
+const stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
+
 // ===============================
 // LOAD ACCOUNT PURCHASES
 // ===============================
@@ -65,9 +67,18 @@ async function loadAccount() {
 }
 
         <div class="account-actions">
-          <button onclick="resendEmail('${p.id}')">📩 Email</button>
-          <button onclick="resendWhatsApp('${p.id}')">💬 WhatsApp</button>
-        </div>
+  <button onclick="resendEmail('${p.id}')">📩 Email</button>
+  <button onclick="resendWhatsApp('${p.id}')">💬 WhatsApp</button>
+
+  ${
+    p.kyc_required && p.kyc_status !== 'verified'
+      ? `<button
+           class="btn btn-primary"
+           onclick="startIdentityVerification('${p.id}')">
+           🪪 Verify Identity
+         </button>`
+      : ''
+  }
 
       </div>
     `).join("");
@@ -175,5 +186,37 @@ function getStatusClass(status) {
       return "status-expired";
     default:
       return "status-delivered";
+  }
+}
+
+async function startIdentityVerification(orderId) {
+  try {
+    const res = await fetch("/api/identity/create-session", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ orderId })
+    });
+
+    const data = await res.json();
+
+    if (!data.clientSecret) {
+      alert("Unable to start verification");
+      return;
+    }
+
+    const { error } = await stripe.verifyIdentity(
+      data.clientSecret
+    );
+
+    if (error) {
+      console.error("Stripe Identity error:", error);
+      alert(error.message || "Verification failed");
+    }
+
+  } catch (err) {
+    console.error("Identity launch error:", err);
+    alert("Unable to start verification");
   }
 }
